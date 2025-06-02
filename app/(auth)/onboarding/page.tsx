@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import type { Database } from '@/types/database.types'
 
 const CERTIFICATIONS = [
   { value: 'sdvosb', label: 'Service-Disabled Veteran-Owned Small Business' },
@@ -50,32 +51,39 @@ export default function OnboardingPage() {
 
       // Create company
       console.log('[Onboarding] Creating company:', formData.company_name)
-      const { data: company, error: companyError } = await supabase
+      const companyInsert = {
+        name: formData.company_name,
+        naics_codes: formData.naics_codes.split(',').map(code => code.trim()),
+        certifications: formData.certifications,
+        subscription_plan: 'starter' as const,
+        subscription_status: 'active'
+      }
+      
+      const { data: company, error: companyError } = await (supabase as any)
         .from('companies')
-        .insert({
-          name: formData.company_name,
-          naics_codes: formData.naics_codes.split(',').map(code => code.trim()),
-          certifications: formData.certifications,
-        })
+        .insert(companyInsert)
         .select()
         .single()
+        
+      type CompanyResponse = Database['public']['Tables']['companies']['Row']
+      const createdCompany = company as CompanyResponse | null
 
       if (companyError) {
         console.error('[Onboarding] Company creation error:', companyError)
         throw companyError
       }
       
-      console.log('[Onboarding] Company created:', company.id)
+      console.log('[Onboarding] Company created:', createdCompany?.id)
 
       // Update profile
       console.log('[Onboarding] Updating profile for user:', user.id)
-      const { error: profileError } = await supabase
+      const { error: profileError } = await (supabase as any)
         .from('profiles')
         .update({
           full_name: formData.full_name,
           phone: formData.phone,
           title: formData.title,
-          company_id: company.id,
+          company_id: createdCompany?.id,
           onboarding_completed: true,
         })
         .eq('id', user.id)

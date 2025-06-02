@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
 
     // Get unique tags for filter options
     const allTags = enhancedOpportunities.flatMap(opp => opp.tags || [])
-    const uniqueTags = [...new Set(allTags)].sort()
+    const uniqueTags = Array.from(new Set(allTags)).sort()
 
     // Count reminders due soon (next 7 days)
     const now = new Date()

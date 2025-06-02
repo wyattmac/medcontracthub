@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { RemindersWidget } from '@/components/dashboard/reminders/reminders-widget'
+import { CompanyRecommendationsWidget } from '@/components/dashboard/ai/company-recommendations-widget'
 import { TrendingUp, FileText, Bookmark, DollarSign } from 'lucide-react'
 
 export default function DashboardPage() {
@@ -90,9 +91,10 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Reminders Sidebar */}
-        <div className="lg:col-span-1">
+        {/* Right Sidebar */}
+        <div className="lg:col-span-1 space-y-6">
           <RemindersWidget />
+          <CompanyRecommendationsWidget />
         </div>
       </div>
     </div>

@@ -3,41 +3,76 @@
 
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { logger } from '@/lib/errors/logger'
+
+const protectedRoutes = [
+  '/dashboard',
+  '/opportunities',
+  '/saved',
+  '/proposals',
+  '/settings'
+]
+
+const authRoutes = [
+  '/login',
+  '/signup'
+]
+
+const publicRoutes = [
+  '/',
+  '/about',
+  '/pricing',
+  '/contact'
+]
 
 export async function middleware(request: NextRequest) {
-  console.log('[Middleware] Processing request:', request.nextUrl.pathname)
+  const pathname = request.nextUrl.pathname
+  const requestId = `mw_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  
+  // Log request
+  logger.debug(`Middleware processing request`, {
+    requestId,
+    pathname,
+    method: request.method
+  })
   
   // Early return for static assets and API routes
   if (
-    request.nextUrl.pathname.startsWith('/_next') ||
-    request.nextUrl.pathname.startsWith('/api') ||
-    request.nextUrl.pathname.includes('.')
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.') ||
+    pathname === '/favicon.ico'
   ) {
-    console.log('[Middleware] Skipping static/API route')
     return NextResponse.next()
   }
 
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  let supabaseResponse = NextResponse.next({ request })
 
   try {
+    // Check for required environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      logger.error('Missing Supabase environment variables in middleware')
+      // Allow public routes to proceed
+      if (publicRoutes.some(route => pathname === route)) {
+        return NextResponse.next()
+      }
+      // Redirect to error page for protected routes
+      return NextResponse.redirect(new URL('/error?code=config', request.url))
+    }
+
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
         cookies: {
           getAll() {
             return request.cookies.getAll()
           },
           setAll(cookiesToSet: any[]) {
-            cookiesToSet.forEach(({ name, value, options }: any) => {
-              console.log('[Middleware] Setting cookie:', name)
+            cookiesToSet.forEach(({ name, value }: any) => {
               request.cookies.set(name, value)
             })
-            supabaseResponse = NextResponse.next({
-              request,
-            })
+            supabaseResponse = NextResponse.next({ request })
             cookiesToSet.forEach(({ name, value, options }: any) =>
               supabaseResponse.cookies.set(name, value, options)
             )
@@ -47,50 +82,69 @@ export async function middleware(request: NextRequest) {
     )
 
     // IMPORTANT: DO NOT REMOVE auth.getUser()
-    console.log('[Middleware] Checking user authentication...')
-    const {
-      data: { user },
-      error
-    } = await supabase.auth.getUser()
+    // Add timeout to prevent hanging
+    const authCheck = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<{ data: { user: null }, error: Error }>((_, reject) => 
+        setTimeout(() => reject(new Error('Auth check timeout')), 5000)
+      )
+    ]).catch(error => {
+      logger.error('Auth check failed', error, { requestId })
+      return { data: { user: null }, error }
+    })
+
+    const { data: { user }, error } = authCheck
 
     if (error) {
-      console.error('[Middleware] Auth error:', error.message)
+      logger.warn('Auth error in middleware', { 
+        error: error.message,
+        requestId,
+        pathname 
+      })
     }
 
-    console.log('[Middleware] User authenticated:', !!user)
+    // Check if route requires authentication
+    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+    const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
 
     // Protect dashboard routes
-    if (
-      (request.nextUrl.pathname.startsWith('/dashboard') ||
-       request.nextUrl.pathname.startsWith('/opportunities') ||
-       request.nextUrl.pathname.startsWith('/saved') ||
-       request.nextUrl.pathname.startsWith('/proposals') ||
-       request.nextUrl.pathname.startsWith('/settings')) &&
-      !user
-    ) {
-      console.log('[Middleware] Redirecting unauthenticated user to login')
+    if (isProtectedRoute && !user) {
+      logger.info('Redirecting unauthenticated user to login', { 
+        requestId,
+        from: pathname 
+      })
       const url = request.nextUrl.clone()
       url.pathname = '/login'
+      url.searchParams.set('from', pathname)
       return NextResponse.redirect(url)
     }
 
     // Redirect authenticated users away from auth pages
-    if (
-      (request.nextUrl.pathname.startsWith('/login') ||
-       request.nextUrl.pathname.startsWith('/signup')) &&
-      user
-    ) {
-      console.log('[Middleware] Redirecting authenticated user to dashboard')
+    if (isAuthRoute && user) {
+      logger.info('Redirecting authenticated user to dashboard', { 
+        requestId,
+        from: pathname 
+      })
+      const from = request.nextUrl.searchParams.get('from')
       const url = request.nextUrl.clone()
-      url.pathname = '/dashboard'
+      url.pathname = from || '/dashboard'
+      url.searchParams.delete('from')
       return NextResponse.redirect(url)
     }
 
-    console.log('[Middleware] Request allowed to proceed')
+    // Add request ID to response headers
+    supabaseResponse.headers.set('x-request-id', requestId)
+    
     return supabaseResponse
   } catch (error) {
-    console.error('[Middleware] Unexpected error:', error)
-    // Allow request to proceed on error to prevent blocking the site
+    logger.error('Middleware error', error, { requestId, pathname })
+    
+    // For critical errors on protected routes, redirect to error page
+    if (protectedRoutes.some(route => pathname.startsWith(route))) {
+      return NextResponse.redirect(new URL('/error?code=middleware', request.url))
+    }
+    
+    // Allow request to proceed for public routes
     return NextResponse.next()
   }
 }

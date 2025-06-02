@@ -8,6 +8,7 @@ import { OpportunitiesContainer } from '@/components/dashboard/opportunities/opp
 import { OpportunitiesFilters } from '@/components/dashboard/opportunities/opportunities-filters'
 import { OpportunitiesList } from '@/components/dashboard/opportunities/opportunities-list'
 import { OpportunitiesStats } from '@/components/dashboard/opportunities/opportunities-stats'
+import { SyncStatusWidget } from '@/components/dashboard/sync/sync-status-widget'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export const metadata: Metadata = {
@@ -46,7 +47,7 @@ export default function OpportunitiesPage({ searchParams }: IOpportunitiesPagePr
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Filters Sidebar */}
-        <aside className="lg:col-span-1">
+        <aside className="lg:col-span-1 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Filters</CardTitle>
@@ -64,6 +65,8 @@ export default function OpportunitiesPage({ searchParams }: IOpportunitiesPagePr
               </Suspense>
             </CardContent>
           </Card>
+          
+          <SyncStatusWidget />
         </aside>
 
         {/* Opportunities List */}

@@ -3,45 +3,47 @@
  * GET /api/opportunities/search
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { Database } from '@/types/database.types'
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
 import { getOpportunitiesFromDatabase, calculateOpportunityMatch } from '@/lib/sam-gov/utils'
+import { DatabaseError, NotFoundError } from '@/lib/errors/types'
+import { dbLogger } from '@/lib/errors/logger'
 
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = createServerComponentClient<Database>({ cookies })
-    
-    // Check authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+// Query validation schema
+const searchQuerySchema = z.object({
+  q: z.string().optional(),
+  naics: z.string().optional(),
+  state: z.string().length(2).optional(),
+  status: z.enum(['active', 'awarded', 'cancelled', 'expired']).optional(),
+  deadline_from: z.string().datetime().optional(),
+  deadline_to: z.string().datetime().optional(),
+  limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('25'),
+  offset: z.string().transform(Number).pipe(z.number().min(0)).default('0')
+})
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
+export const GET = routeHandler.GET(
+  async ({ request, user, supabase }: IRouteContext) => {
     const { searchParams } = new URL(request.url)
     
-    // Parse query parameters
+    // Parse and validate query parameters
+    const queryData = Object.fromEntries(searchParams)
+    const validatedQuery = searchQuerySchema.parse(queryData)
+    
+    // Build filters
     const filters = {
-      searchQuery: searchParams.get('q') || undefined,
-      naicsCodes: searchParams.get('naics')?.split(',').filter(Boolean) || undefined,
-      state: searchParams.get('state') || undefined,
-      status: searchParams.get('status') as 'active' | 'awarded' | 'cancelled' | 'expired' || undefined,
-      responseDeadlineFrom: searchParams.get('deadline_from') || undefined,
-      responseDeadlineTo: searchParams.get('deadline_to') || undefined,
-      limit: parseInt(searchParams.get('limit') || '25'),
-      offset: parseInt(searchParams.get('offset') || '0')
+      searchQuery: validatedQuery.q,
+      naicsCodes: validatedQuery.naics?.split(',').filter(Boolean),
+      state: validatedQuery.state,
+      status: validatedQuery.status,
+      responseDeadlineFrom: validatedQuery.deadline_from,
+      responseDeadlineTo: validatedQuery.deadline_to,
+      limit: validatedQuery.limit,
+      offset: validatedQuery.offset
     }
 
     // Get user's company NAICS codes for match scoring
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select(`
         company_id,
@@ -49,6 +51,15 @@ export async function GET(request: NextRequest) {
       `)
       .eq('id', user.id)
       .single()
+
+    if (profileError) {
+      dbLogger.error('Failed to fetch user profile', profileError)
+      throw new DatabaseError('Failed to fetch user profile')
+    }
+
+    if (!profile?.company_id) {
+      throw new NotFoundError('Company profile')
+    }
 
     const companyNaicsCodes = (profile?.companies as any)?.naics_codes || []
 
@@ -61,11 +72,8 @@ export async function GET(request: NextRequest) {
     const { data: opportunities, error, count } = await getOpportunitiesFromDatabase(filters)
 
     if (error) {
-      console.error('Database search error:', error)
-      return NextResponse.json(
-        { error: 'Search failed' },
-        { status: 500 }
-      )
+      dbLogger.error('Database search failed', error, { filters })
+      throw new DatabaseError('Search failed', undefined, error)
     }
 
     // Calculate match scores and enhance data
@@ -89,10 +97,12 @@ export async function GET(request: NextRequest) {
 
     // Log search activity
     if (filters.searchQuery || filters.naicsCodes) {
-      await supabase.rpc('log_audit', {
+      supabase.rpc('log_audit', {
         p_action: 'search_opportunities',
         p_entity_type: 'opportunities',
         p_changes: { filters, resultCount: enhancedOpportunities.length }
+      }).catch((error: any) => {
+        dbLogger.warn('Failed to log search activity', error)
       })
     }
 
@@ -100,19 +110,17 @@ export async function GET(request: NextRequest) {
       opportunities: enhancedOpportunities,
       totalCount: count || 0,
       hasMore: (filters.offset + filters.limit) < (count || 0),
-      nextOffset: enhancedOpportunities.length === filters.limit ? filters.offset + filters.limit : null,
-      filters
+      nextOffset: enhancedOpportunities.length === filters.limit 
+        ? filters.offset + filters.limit 
+        : null,
+      filters: {
+        ...filters,
+        naicsCodes: filters.naicsCodes || []
+      }
     })
-
-  } catch (error) {
-    console.error('Search opportunities error:', error)
-    
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+  },
+  {
+    requireAuth: true,
+    validateQuery: searchQuerySchema
   }
-}
+)

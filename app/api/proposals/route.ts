@@ -1,32 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { routeHandler, IRouteContext, createPaginatedResponse } from '@/lib/api/route-handler'
+import { DatabaseError, NotFoundError } from '@/lib/errors/types'
+import { dbLogger } from '@/lib/errors/logger'
 
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = await createClient()
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+// Query validation schemas
+const getProposalsSchema = z.object({
+  status: z.enum(['draft', 'submitted', 'won', 'lost', 'withdrawn']).optional(),
+  limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('10'),
+  offset: z.string().transform(Number).pipe(z.number().min(0)).default('0')
+})
+
+export const GET = routeHandler.GET(
+  async ({ request, user, supabase }: IRouteContext) => {
+    // Parse and validate query parameters
+    const searchParams = request.nextUrl.searchParams
+    const queryData = Object.fromEntries(searchParams)
+    const { status, limit, offset } = getProposalsSchema.parse(queryData)
 
     // Get user's company ID
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('company_id')
       .eq('id', user.id)
       .single()
 
-    if (!profile?.company_id) {
-      return NextResponse.json({ error: 'Company not found' }, { status: 404 })
+    if (profileError) {
+      dbLogger.error('Failed to fetch user profile', profileError)
+      throw new DatabaseError('Failed to fetch user profile')
     }
 
-    // Parse query parameters
-    const searchParams = request.nextUrl.searchParams
-    const status = searchParams.get('status')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    if (!profile?.company_id) {
+      throw new NotFoundError('Company profile')
+    }
 
     // Build query
     let query = supabase
@@ -58,8 +64,8 @@ export async function GET(request: NextRequest) {
     const { data: proposals, error } = await query
 
     if (error) {
-      console.error('Error fetching proposals:', error)
-      return NextResponse.json({ error: 'Failed to fetch proposals' }, { status: 500 })
+      dbLogger.error('Error fetching proposals', error, { status, limit, offset })
+      throw new DatabaseError('Failed to fetch proposals', undefined, error)
     }
 
     // Get total count for pagination
@@ -72,108 +78,104 @@ export async function GET(request: NextRequest) {
       countQuery = countQuery.eq('status', status)
     }
 
-    const { count } = await countQuery
+    const { count, error: countError } = await countQuery
 
-    return NextResponse.json({
-      proposals,
-      pagination: {
-        total: count || 0,
-        limit,
-        offset,
-        has_more: (count || 0) > offset + limit
-      }
-    })
-
-  } catch (error) {
-    console.error('Unexpected error in proposals GET:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = await createClient()
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (countError) {
+      dbLogger.warn('Failed to get proposal count', countError)
     }
 
+    return createPaginatedResponse(proposals || [], {
+      offset,
+      limit,
+      total: count || 0
+    })
+  },
+  {
+    requireAuth: true,
+    validateQuery: getProposalsSchema
+  }
+)
+
+// Create proposal schema
+const createProposalSchema = z.object({
+  opportunity_id: z.string().uuid(),
+  title: z.string().min(1).max(255),
+  solicitation_number: z.string().optional(),
+  submission_deadline: z.string().datetime().optional(),
+  total_proposed_price: z.number().positive().optional(),
+  proposal_summary: z.string().optional(),
+  win_probability: z.number().min(0).max(100).optional(),
+  notes: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  sections: z.array(z.object({
+    section_type: z.string(),
+    title: z.string(),
+    content: z.string().optional(),
+    is_required: z.boolean().optional(),
+    max_pages: z.number().positive().optional()
+  })).optional()
+})
+
+export const POST = routeHandler.POST(
+  async ({ request, user, supabase }: IRouteContext) => {
+    const body = await request.json()
+    const validatedData = createProposalSchema.parse(body)
+
     // Get user's company ID
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('company_id')
       .eq('id', user.id)
       .single()
 
+    if (profileError) {
+      dbLogger.error('Failed to fetch user profile', profileError)
+      throw new DatabaseError('Failed to fetch user profile')
+    }
+
     if (!profile?.company_id) {
-      return NextResponse.json({ error: 'Company not found' }, { status: 404 })
+      throw new NotFoundError('Company profile')
     }
 
-    const body = await request.json()
-    const {
-      opportunity_id,
-      title,
-      solicitation_number,
-      submission_deadline,
-      total_proposed_price,
-      proposal_summary,
-      win_probability,
-      notes,
-      tags,
-      sections
-    } = body
-
-    // Validate required fields
-    if (!opportunity_id || !title) {
-      return NextResponse.json(
-        { error: 'Missing required fields: opportunity_id, title' },
-        { status: 400 }
-      )
-    }
-
-    // Verify opportunity exists and user has access
-    const { data: opportunity } = await supabase
+    // Verify opportunity exists
+    const { data: opportunity, error: oppError } = await supabase
       .from('opportunities')
       .select('id')
-      .eq('id', opportunity_id)
+      .eq('id', validatedData.opportunity_id)
       .single()
 
-    if (!opportunity) {
-      return NextResponse.json({ error: 'Opportunity not found' }, { status: 404 })
+    if (oppError || !opportunity) {
+      throw new NotFoundError('Opportunity')
     }
 
     // Create proposal
     const { data: proposal, error: proposalError } = await supabase
       .from('proposals')
       .insert({
-        opportunity_id,
+        opportunity_id: validatedData.opportunity_id,
         company_id: profile.company_id,
         created_by: user.id,
-        title,
-        solicitation_number,
-        submission_deadline: submission_deadline ? new Date(submission_deadline).toISOString() : null,
-        total_proposed_price: total_proposed_price ? parseFloat(total_proposed_price) : null,
-        proposal_summary,
-        win_probability: win_probability ? parseFloat(win_probability) : null,
-        notes,
-        tags: tags || []
+        title: validatedData.title,
+        solicitation_number: validatedData.solicitation_number,
+        submission_deadline: validatedData.submission_deadline,
+        total_proposed_price: validatedData.total_proposed_price,
+        proposal_summary: validatedData.proposal_summary,
+        win_probability: validatedData.win_probability,
+        notes: validatedData.notes,
+        tags: validatedData.tags || [],
+        status: 'draft'
       })
       .select()
       .single()
 
     if (proposalError) {
-      console.error('Error creating proposal:', proposalError)
-      return NextResponse.json({ error: 'Failed to create proposal' }, { status: 500 })
+      dbLogger.error('Error creating proposal', proposalError)
+      throw new DatabaseError('Failed to create proposal', undefined, proposalError)
     }
 
     // Create default sections if provided
-    if (sections && Array.isArray(sections) && sections.length > 0) {
-      const sectionsToInsert = sections.map((section, index) => ({
+    if (validatedData.sections && validatedData.sections.length > 0) {
+      const sectionsToInsert = validatedData.sections.map((section, index) => ({
         proposal_id: proposal.id,
         section_type: section.section_type,
         title: section.title,
@@ -188,18 +190,25 @@ export async function POST(request: NextRequest) {
         .insert(sectionsToInsert)
 
       if (sectionsError) {
-        console.error('Error creating proposal sections:', sectionsError)
+        dbLogger.warn('Error creating proposal sections', sectionsError)
         // Don't fail the whole request, just log the error
       }
     }
 
-    return NextResponse.json({ proposal }, { status: 201 })
+    // Log audit
+    supabase.rpc('log_audit', {
+      p_action: 'create_proposal',
+      p_entity_type: 'proposals',
+      p_entity_id: proposal.id,
+      p_changes: { title: proposal.title }
+    }).catch((error: any) => {
+      dbLogger.warn('Failed to log proposal creation', error)
+    })
 
-  } catch (error) {
-    console.error('Unexpected error in proposals POST:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ proposal }, { status: 201 })
+  },
+  {
+    requireAuth: true,
+    validateBody: createProposalSchema
   }
-}
+)

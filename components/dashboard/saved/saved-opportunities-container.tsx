@@ -138,7 +138,7 @@ export function SavedOpportunitiesContainer({ userId }: ISavedOpportunitiesConta
                 <div className="text-6xl">📌</div>
                 <h3 className="text-lg font-medium">No saved opportunities</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  You haven't saved any opportunities yet. Start by browsing available opportunities and bookmarking the ones you're interested in.
+                  You haven&apos;t saved any opportunities yet. Start by browsing available opportunities and bookmarking the ones you&apos;re interested in.
                 </p>
                 <Button asChild>
                   <a href="/dashboard/opportunities">

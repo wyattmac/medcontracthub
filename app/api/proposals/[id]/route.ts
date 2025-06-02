@@ -68,7 +68,7 @@ export async function GET(
           )
         )
       `)
-      .eq('id', id)
+      .eq('id', id as any)
       .single()
 
     if (error) {
@@ -119,7 +119,7 @@ export async function PUT(
     } = body
 
     // Update proposal
-    const { data: proposal, error } = await supabase
+    const { data: proposal, error } = await (supabase as any)
       .from('proposals')
       .update({
         title,
@@ -132,7 +132,7 @@ export async function PUT(
         notes,
         tags: tags || []
       })
-      .eq('id', id)
+      .eq('id', id as any)
       .select()
       .single()
 
@@ -170,7 +170,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('proposals')
       .delete()
-      .eq('id', id)
+      .eq('id', id as any)
 
     if (error) {
       console.error('Error deleting proposal:', error)

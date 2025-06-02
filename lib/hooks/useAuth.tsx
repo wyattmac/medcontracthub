@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: IAuthProviderProps) {
   const router = useRouter()
   const supabase = createClient()
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     console.log('[useAuth] Refreshing profile...')
     
     if (!user) {
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: IAuthProviderProps) {
     } catch (error) {
       console.error('[useAuth] Unexpected error in refreshProfile:', error)
     }
-  }
+  }, [user, supabase])
 
   useEffect(() => {
     const getUser = async () => {
@@ -134,7 +134,7 @@ export function AuthProvider({ children }: IAuthProviderProps) {
       console.log('[useAuth] Cleaning up auth subscription')
       subscription.unsubscribe()
     }
-  }, [supabase, router])
+  }, [supabase, router, refreshProfile])
 
   const signOut = async () => {
     console.log('[useAuth] Signing out...')

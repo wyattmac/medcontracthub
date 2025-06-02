@@ -66,7 +66,12 @@ export class SAMApiClient {
       clearTimeout(timeoutId)
 
       if (!response.ok) {
-        const errorData: ISAMErrorResponse = await response.json().catch(() => ({
+        const errorData: ISAMErrorResponse = await Promise.race([
+          response.json(),
+          new Promise<ISAMErrorResponse>((_, reject) => 
+            setTimeout(() => reject(new Error('JSON parsing timeout')), 10000)
+          )
+        ]).catch(() => ({
           title: 'HTTP Error',
           detail: `Request failed with status ${response.status}`,
           status: response.status
@@ -75,7 +80,13 @@ export class SAMApiClient {
         throw new SAMApiError(errorData.detail, errorData.status, errorData)
       }
 
-      const data: ISAMOpportunitiesResponse = await response.json()
+      // Add timeout for JSON parsing
+      const data: ISAMOpportunitiesResponse = await Promise.race([
+        response.json(),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('JSON parsing timeout')), 15000)
+        )
+      ])
       return data
 
     } catch (error) {
