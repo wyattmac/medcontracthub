@@ -51,7 +51,59 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['companies']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['companies']['Insert']>
       }
-      // Add other tables as needed
+      opportunities: {
+        Row: {
+          id: string
+          notice_id: string
+          title: string
+          description: string | null
+          agency: string
+          sub_agency: string | null
+          office: string | null
+          posted_date: string
+          response_deadline: string
+          archive_date: string | null
+          naics_code: string | null
+          naics_description: string | null
+          place_of_performance_state: string | null
+          place_of_performance_city: string | null
+          set_aside_type: string | null
+          contract_type: string | null
+          estimated_value_min: number | null
+          estimated_value_max: number | null
+          award_date: string | null
+          award_amount: number | null
+          awardee_name: string | null
+          awardee_duns: string | null
+          status: 'active' | 'awarded' | 'cancelled' | 'expired'
+          solicitation_number: string | null
+          primary_contact_name: string | null
+          primary_contact_email: string | null
+          primary_contact_phone: string | null
+          attachments: any[]
+          additional_info: any
+          sam_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['opportunities']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['opportunities']['Insert']>
+      }
+      saved_opportunities: {
+        Row: {
+          id: string
+          user_id: string
+          opportunity_id: string
+          notes: string | null
+          tags: string[]
+          is_pursuing: boolean
+          reminder_date: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['saved_opportunities']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['saved_opportunities']['Insert']>
+      }
     }
     Views: {}
     Functions: {}
