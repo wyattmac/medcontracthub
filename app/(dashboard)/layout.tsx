@@ -20,10 +20,10 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Opportunities', href: '/opportunities', icon: Search },
-  { name: 'Saved', href: '/saved', icon: Bookmark },
-  { name: 'Proposals', href: '/proposals', icon: FileText },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Opportunities', href: '/dashboard/opportunities', icon: Search },
+  { name: 'Saved', href: '/dashboard/saved', icon: Bookmark },
+  { name: 'Proposals', href: '/dashboard/proposals', icon: FileText },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {

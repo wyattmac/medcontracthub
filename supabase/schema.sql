@@ -34,6 +34,26 @@ create type subscription_plan as enum (
   'enterprise'   -- $997/month
 );
 
+create type proposal_status as enum (
+  'draft',       -- In progress, not yet submitted
+  'submitted',   -- Submitted to government
+  'under_review',-- Being reviewed by agency
+  'awarded',     -- Proposal was successful
+  'rejected',    -- Proposal was unsuccessful
+  'withdrawn'    -- Proposal was withdrawn
+);
+
+create type proposal_section_type as enum (
+  'executive_summary',
+  'technical_approach',
+  'management_approach',
+  'past_performance',
+  'pricing',
+  'certifications',
+  'attachments',
+  'other'
+);
+
 -- Extend auth.users with profile data
 -- Note: We don't create auth.users as it's managed by Supabase Auth
 -- Instead, we'll create a profiles table that references it
@@ -173,6 +193,126 @@ create table public.audit_logs (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Proposals table
+create table public.proposals (
+  id uuid default uuid_generate_v4() primary key,
+  opportunity_id uuid references public.opportunities(id) on delete cascade not null,
+  company_id uuid references public.companies(id) on delete cascade not null,
+  created_by uuid references auth.users(id) on delete set null not null,
+  title text not null,
+  status proposal_status default 'draft',
+  solicitation_number text,
+  submission_deadline timestamp with time zone,
+  submitted_at timestamp with time zone,
+  submitted_by uuid references auth.users(id) on delete set null,
+  total_proposed_price numeric(15, 2),
+  proposal_summary text,
+  win_probability numeric(3, 2), -- 0.00 to 1.00
+  ai_generated boolean default false,
+  ai_generation_prompt text,
+  ai_generation_model text,
+  version_number integer default 1,
+  parent_proposal_id uuid references public.proposals(id) on delete set null,
+  notes text,
+  tags text[] default '{}',
+  metadata jsonb default '{}'::jsonb,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Proposal sections table
+create table public.proposal_sections (
+  id uuid default uuid_generate_v4() primary key,
+  proposal_id uuid references public.proposals(id) on delete cascade not null,
+  section_type proposal_section_type not null,
+  title text not null,
+  content text,
+  word_count integer,
+  sort_order integer default 0,
+  is_required boolean default false,
+  max_pages integer,
+  ai_generated boolean default false,
+  ai_generation_prompt text,
+  last_edited_by uuid references auth.users(id) on delete set null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Proposal attachments table
+create table public.proposal_attachments (
+  id uuid default uuid_generate_v4() primary key,
+  proposal_id uuid references public.proposals(id) on delete cascade not null,
+  section_id uuid references public.proposal_sections(id) on delete set null,
+  file_name text not null,
+  file_path text not null, -- Supabase storage path
+  file_size bigint,
+  file_type text,
+  description text,
+  is_required boolean default false,
+  uploaded_by uuid references auth.users(id) on delete set null not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Proposal submissions table (tracks submission attempts)
+create table public.proposal_submissions (
+  id uuid default uuid_generate_v4() primary key,
+  proposal_id uuid references public.proposals(id) on delete cascade not null,
+  submission_method text not null, -- 'sam_gov', 'email', 'portal', 'manual'
+  submission_reference text, -- External reference number
+  submitted_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  submitted_by uuid references auth.users(id) on delete set null not null,
+  submission_status text default 'pending', -- 'pending', 'confirmed', 'failed'
+  confirmation_number text,
+  response_data jsonb default '{}'::jsonb,
+  error_message text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Proposal collaborators table
+create table public.proposal_collaborators (
+  id uuid default uuid_generate_v4() primary key,
+  proposal_id uuid references public.proposals(id) on delete cascade not null,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  role text not null default 'editor', -- 'owner', 'editor', 'reviewer', 'viewer'
+  permissions jsonb default '{"can_edit": true, "can_submit": false, "can_delete": false}'::jsonb,
+  invited_by uuid references auth.users(id) on delete set null,
+  invited_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  accepted_at timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(proposal_id, user_id)
+);
+
+-- Proposal templates table
+create table public.proposal_templates (
+  id uuid default uuid_generate_v4() primary key,
+  company_id uuid references public.companies(id) on delete cascade not null,
+  created_by uuid references auth.users(id) on delete set null not null,
+  name text not null,
+  description text,
+  category text, -- 'general', 'medical_supplies', 'services', etc.
+  template_data jsonb not null, -- Structured template content
+  is_public boolean default false,
+  usage_count integer default 0,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Proposal reviews table (for internal review process)
+create table public.proposal_reviews (
+  id uuid default uuid_generate_v4() primary key,
+  proposal_id uuid references public.proposals(id) on delete cascade not null,
+  reviewer_id uuid references auth.users(id) on delete set null not null,
+  review_type text not null default 'general', -- 'general', 'technical', 'pricing', 'compliance'
+  status text not null default 'pending', -- 'pending', 'approved', 'rejected', 'needs_changes'
+  comments text,
+  score integer, -- 1-10 rating
+  recommendations text,
+  reviewed_at timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
 -- Create indexes for performance
 create index idx_opportunities_status on public.opportunities(status);
 create index idx_opportunities_response_deadline on public.opportunities(response_deadline);
@@ -183,6 +323,20 @@ create index idx_opportunity_analyses_opportunity on public.opportunity_analyses
 create index idx_opportunity_analyses_company on public.opportunity_analyses(company_id);
 create index idx_audit_logs_user on public.audit_logs(user_id);
 create index idx_audit_logs_created on public.audit_logs(created_at);
+
+-- Proposal indexes
+create index idx_proposals_company on public.proposals(company_id);
+create index idx_proposals_opportunity on public.proposals(opportunity_id);
+create index idx_proposals_status on public.proposals(status);
+create index idx_proposals_submission_deadline on public.proposals(submission_deadline);
+create index idx_proposal_sections_proposal on public.proposal_sections(proposal_id);
+create index idx_proposal_sections_type on public.proposal_sections(section_type);
+create index idx_proposal_attachments_proposal on public.proposal_attachments(proposal_id);
+create index idx_proposal_submissions_proposal on public.proposal_submissions(proposal_id);
+create index idx_proposal_collaborators_proposal on public.proposal_collaborators(proposal_id);
+create index idx_proposal_collaborators_user on public.proposal_collaborators(user_id);
+create index idx_proposal_templates_company on public.proposal_templates(company_id);
+create index idx_proposal_reviews_proposal on public.proposal_reviews(proposal_id);
 
 -- Create updated_at trigger function
 create or replace function public.handle_updated_at()
@@ -209,6 +363,21 @@ create trigger handle_saved_opportunities_updated_at before update on public.sav
 create trigger handle_email_subscriptions_updated_at before update on public.email_subscriptions
   for each row execute function public.handle_updated_at();
 
+create trigger handle_proposals_updated_at before update on public.proposals
+  for each row execute function public.handle_updated_at();
+
+create trigger handle_proposal_sections_updated_at before update on public.proposal_sections
+  for each row execute function public.handle_updated_at();
+
+create trigger handle_proposal_attachments_updated_at before update on public.proposal_attachments
+  for each row execute function public.handle_updated_at();
+
+create trigger handle_proposal_templates_updated_at before update on public.proposal_templates
+  for each row execute function public.handle_updated_at();
+
+create trigger handle_proposal_reviews_updated_at before update on public.proposal_reviews
+  for each row execute function public.handle_updated_at();
+
 -- Enable Row Level Security on all tables
 alter table public.companies enable row level security;
 alter table public.profiles enable row level security;
@@ -217,6 +386,15 @@ alter table public.saved_opportunities enable row level security;
 alter table public.opportunity_analyses enable row level security;
 alter table public.email_subscriptions enable row level security;
 alter table public.audit_logs enable row level security;
+
+-- Enable RLS on proposal tables
+alter table public.proposals enable row level security;
+alter table public.proposal_sections enable row level security;
+alter table public.proposal_attachments enable row level security;
+alter table public.proposal_submissions enable row level security;
+alter table public.proposal_collaborators enable row level security;
+alter table public.proposal_templates enable row level security;
+alter table public.proposal_reviews enable row level security;
 
 -- RLS Policies
 
@@ -395,3 +573,244 @@ $$ language plpgsql security definer;
 
 -- Grant execute permission on audit log function
 grant execute on function public.log_audit to authenticated;
+
+-- Proposal RLS Policies
+
+-- Proposals policies
+create policy "Users can view proposals for their company"
+  on public.proposals for select
+  to authenticated
+  using (
+    company_id in (
+      select company_id from public.profiles
+      where profiles.id = auth.uid()
+    )
+  );
+
+create policy "Users can create proposals for their company"
+  on public.proposals for insert
+  to authenticated
+  with check (
+    company_id in (
+      select company_id from public.profiles
+      where profiles.id = auth.uid()
+    ) and created_by = auth.uid()
+  );
+
+create policy "Users can update proposals they have access to"
+  on public.proposals for update
+  to authenticated
+  using (
+    id in (
+      select proposal_id from public.proposal_collaborators
+      where user_id = auth.uid()
+      and (permissions->>'can_edit')::boolean = true
+    )
+    or created_by = auth.uid()
+  );
+
+create policy "Users can delete proposals they own"
+  on public.proposals for delete
+  to authenticated
+  using (
+    created_by = auth.uid()
+    or id in (
+      select proposal_id from public.proposal_collaborators
+      where user_id = auth.uid()
+      and (permissions->>'can_delete')::boolean = true
+    )
+  );
+
+-- Proposal sections policies
+create policy "Users can view proposal sections they have access to"
+  on public.proposal_sections for select
+  to authenticated
+  using (
+    proposal_id in (
+      select id from public.proposals
+      where company_id in (
+        select company_id from public.profiles
+        where profiles.id = auth.uid()
+      )
+    )
+  );
+
+create policy "Users can manage proposal sections they can edit"
+  on public.proposal_sections for all
+  to authenticated
+  using (
+    proposal_id in (
+      select p.id from public.proposals p
+      left join public.proposal_collaborators pc on p.id = pc.proposal_id
+      where (p.created_by = auth.uid())
+      or (pc.user_id = auth.uid() and (pc.permissions->>'can_edit')::boolean = true)
+    )
+  )
+  with check (
+    proposal_id in (
+      select p.id from public.proposals p
+      left join public.proposal_collaborators pc on p.id = pc.proposal_id
+      where (p.created_by = auth.uid())
+      or (pc.user_id = auth.uid() and (pc.permissions->>'can_edit')::boolean = true)
+    )
+  );
+
+-- Proposal attachments policies
+create policy "Users can view proposal attachments they have access to"
+  on public.proposal_attachments for select
+  to authenticated
+  using (
+    proposal_id in (
+      select id from public.proposals
+      where company_id in (
+        select company_id from public.profiles
+        where profiles.id = auth.uid()
+      )
+    )
+  );
+
+create policy "Users can manage proposal attachments they can edit"
+  on public.proposal_attachments for all
+  to authenticated
+  using (
+    proposal_id in (
+      select p.id from public.proposals p
+      left join public.proposal_collaborators pc on p.id = pc.proposal_id
+      where (p.created_by = auth.uid())
+      or (pc.user_id = auth.uid() and (pc.permissions->>'can_edit')::boolean = true)
+    )
+  )
+  with check (
+    proposal_id in (
+      select p.id from public.proposals p
+      left join public.proposal_collaborators pc on p.id = pc.proposal_id
+      where (p.created_by = auth.uid())
+      or (pc.user_id = auth.uid() and (pc.permissions->>'can_edit')::boolean = true)
+    ) and uploaded_by = auth.uid()
+  );
+
+-- Proposal submissions policies
+create policy "Users can view proposal submissions for their company"
+  on public.proposal_submissions for select
+  to authenticated
+  using (
+    proposal_id in (
+      select id from public.proposals
+      where company_id in (
+        select company_id from public.profiles
+        where profiles.id = auth.uid()
+      )
+    )
+  );
+
+create policy "Users can create proposal submissions"
+  on public.proposal_submissions for insert
+  to authenticated
+  with check (
+    proposal_id in (
+      select p.id from public.proposals p
+      left join public.proposal_collaborators pc on p.id = pc.proposal_id
+      where (p.created_by = auth.uid())
+      or (pc.user_id = auth.uid() and (pc.permissions->>'can_submit')::boolean = true)
+    ) and submitted_by = auth.uid()
+  );
+
+-- Proposal collaborators policies
+create policy "Users can view collaborators for proposals they have access to"
+  on public.proposal_collaborators for select
+  to authenticated
+  using (
+    proposal_id in (
+      select id from public.proposals
+      where company_id in (
+        select company_id from public.profiles
+        where profiles.id = auth.uid()
+      )
+    )
+  );
+
+create policy "Proposal owners can manage collaborators"
+  on public.proposal_collaborators for all
+  to authenticated
+  using (
+    proposal_id in (
+      select id from public.proposals
+      where created_by = auth.uid()
+    )
+  )
+  with check (
+    proposal_id in (
+      select id from public.proposals
+      where created_by = auth.uid()
+    )
+  );
+
+-- Proposal templates policies
+create policy "Users can view templates for their company"
+  on public.proposal_templates for select
+  to authenticated
+  using (
+    company_id in (
+      select company_id from public.profiles
+      where profiles.id = auth.uid()
+    )
+    or is_public = true
+  );
+
+create policy "Users can create templates for their company"
+  on public.proposal_templates for insert
+  to authenticated
+  with check (
+    company_id in (
+      select company_id from public.profiles
+      where profiles.id = auth.uid()
+    ) and created_by = auth.uid()
+  );
+
+create policy "Users can update their own templates"
+  on public.proposal_templates for update
+  to authenticated
+  using (created_by = auth.uid());
+
+create policy "Users can delete their own templates"
+  on public.proposal_templates for delete
+  to authenticated
+  using (created_by = auth.uid());
+
+-- Proposal reviews policies
+create policy "Users can view reviews for proposals they have access to"
+  on public.proposal_reviews for select
+  to authenticated
+  using (
+    proposal_id in (
+      select id from public.proposals
+      where company_id in (
+        select company_id from public.profiles
+        where profiles.id = auth.uid()
+      )
+    )
+  );
+
+create policy "Users can create reviews for proposals they can review"
+  on public.proposal_reviews for insert
+  to authenticated
+  with check (
+    proposal_id in (
+      select p.id from public.proposals p
+      left join public.proposal_collaborators pc on p.id = pc.proposal_id
+      where p.company_id in (
+        select company_id from public.profiles
+        where profiles.id = auth.uid()
+      )
+    ) and reviewer_id = auth.uid()
+  );
+
+create policy "Users can update their own reviews"
+  on public.proposal_reviews for update
+  to authenticated
+  using (reviewer_id = auth.uid());
+
+create policy "Users can delete their own reviews"
+  on public.proposal_reviews for delete
+  to authenticated
+  using (reviewer_id = auth.uid());

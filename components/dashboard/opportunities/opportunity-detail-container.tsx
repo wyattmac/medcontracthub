@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { SaveOpportunityButton } from './save-opportunity-button'
 import { EditOpportunityNotesModal } from './edit-opportunity-notes-modal'
+import { OpportunityAnalysisButton } from '../ai/opportunity-analysis-button'
 import { 
   ArrowLeft, 
   Calendar, 
@@ -24,7 +25,8 @@ import {
   Download,
   Clock,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Plus
 } from 'lucide-react'
 import { formatDistanceToNow, format, isAfter, isBefore } from 'date-fns'
 import { calculateOpportunityMatch } from '@/lib/sam-gov/utils'
@@ -446,9 +448,22 @@ export function OpportunityDetailContainer({
                 </Button>
               )}
               
-              <Button variant="outline" className="w-full">
-                Generate Analysis
+              <Button className="w-full" asChild>
+                <a href={`/dashboard/proposals/new?opportunity_id=${opportunity.id}`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Proposal
+                </a>
               </Button>
+              
+              <OpportunityAnalysisButton 
+                opportunityId={opportunity.id}
+                opportunityTitle={opportunity.title}
+                trigger={
+                  <Button variant="outline" className="w-full">
+                    Generate Analysis
+                  </Button>
+                }
+              />
               
               <Button variant="outline" className="w-full">
                 Set Reminder
