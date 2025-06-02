@@ -1,41 +1,42 @@
 /**
- * Opportunities List - Display opportunities with match scores and key info
+ * Saved Opportunities List - Display saved opportunities with enhanced tracking
  */
 
 'use client'
 
 import Link from 'next/link'
-import { Database } from '@/types/database.types'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, formatDeadline } from '@/lib/sam-gov/utils'
-import { SaveOpportunityButton } from './save-opportunity-button'
+import { SaveOpportunityButton } from '../opportunities/save-opportunity-button'
+import { EditOpportunityNotesModal } from '../opportunities/edit-opportunity-notes-modal'
 import { 
   Calendar, 
   MapPin, 
   Building2, 
   DollarSign, 
   Target,
-  ExternalLink
+  ExternalLink,
+  Clock,
+  Eye,
+  Edit3,
+  AlertTriangle
 } from 'lucide-react'
+import { format, isAfter, isBefore } from 'date-fns'
 
-type OpportunityWithMatch = Database['public']['Tables']['opportunities']['Row'] & {
-  matchScore: number
-  isSaved: boolean
-}
-
-interface IOpportunitiesListProps {
-  opportunities: OpportunityWithMatch[]
+interface ISavedOpportunitiesListProps {
+  opportunities: any[]
   isLoading: boolean
+  onUpdate: () => void
 }
 
-export function OpportunitiesList({ opportunities, isLoading }: IOpportunitiesListProps) {
+export function SavedOpportunitiesList({ opportunities, isLoading, onUpdate }: ISavedOpportunitiesListProps) {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
-          <OpportunityCardSkeleton key={i} />
+        {[...Array(3)].map((_, i) => (
+          <SavedOpportunityCardSkeleton key={i} />
         ))}
       </div>
     )
@@ -43,30 +44,45 @@ export function OpportunitiesList({ opportunities, isLoading }: IOpportunitiesLi
 
   return (
     <div className="space-y-4">
-      {opportunities.map((opportunity) => (
-        <OpportunityCard key={opportunity.id} opportunity={opportunity} />
+      {opportunities.map((savedOpp) => (
+        <SavedOpportunityCard 
+          key={savedOpp.id} 
+          savedOpportunity={savedOpp} 
+          onUpdate={onUpdate}
+        />
       ))}
     </div>
   )
 }
 
-function OpportunityCard({ opportunity }: { opportunity: OpportunityWithMatch }) {
+function SavedOpportunityCard({ 
+  savedOpportunity, 
+  onUpdate 
+}: { 
+  savedOpportunity: any
+  onUpdate: () => void 
+}) {
+  const { opportunity } = savedOpportunity
   const deadline = formatDeadline(opportunity.response_deadline)
+  
+  // Check if reminder is due soon
+  const reminderDueSoon = savedOpportunity.reminder_date && 
+    new Date(savedOpportunity.reminder_date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   
   // Determine match score color and label
   const getMatchBadge = (score: number) => {
-    if (score >= 0.8) {
+    if (score >= 80) {
       return { variant: 'default' as const, label: 'Excellent Match', color: 'bg-green-500' }
-    } else if (score >= 0.6) {
+    } else if (score >= 60) {
       return { variant: 'secondary' as const, label: 'Good Match', color: 'bg-blue-500' }
-    } else if (score >= 0.4) {
+    } else if (score >= 40) {
       return { variant: 'outline' as const, label: 'Fair Match', color: 'bg-yellow-500' }
     } else {
       return { variant: 'outline' as const, label: 'Low Match', color: 'bg-gray-400' }
     }
   }
 
-  const matchBadge = getMatchBadge(opportunity.matchScore)
+  const matchBadge = getMatchBadge(opportunity.matchScore * 100)
 
   // Determine urgency styling for deadline
   const getUrgencyStyle = (urgency: string) => {
@@ -94,6 +110,24 @@ function OpportunityCard({ opportunity }: { opportunity: OpportunityWithMatch })
               </Badge>
               <div className={`w-2 h-2 rounded-full ${matchBadge.color}`} />
               <span className="text-xs text-muted-foreground">{matchBadge.label}</span>
+              
+              {/* Pursuing indicator */}
+              {savedOpportunity.is_pursuing && (
+                <Badge variant="default" className="text-xs">
+                  Pursuing
+                </Badge>
+              )}
+              
+              {/* Reminder indicator */}
+              {savedOpportunity.reminder_date && (
+                <Badge 
+                  variant={reminderDueSoon ? "destructive" : "outline"} 
+                  className="text-xs"
+                >
+                  <Clock className="w-3 h-3 mr-1" />
+                  Reminder
+                </Badge>
+              )}
             </div>
             
             <Link 
@@ -111,10 +145,24 @@ function OpportunityCard({ opportunity }: { opportunity: OpportunityWithMatch })
           </div>
 
           <div className="flex items-center gap-2 ml-4">
-            <SaveOpportunityButton 
+            <EditOpportunityNotesModal 
               opportunityId={opportunity.id}
-              isSaved={opportunity.isSaved}
+              opportunity={{
+                title: opportunity.title,
+                saved_opportunities: [savedOpportunity]
+              }}
+              trigger={
+                <Button variant="ghost" size="sm">
+                  <Edit3 className="h-4 w-4" />
+                </Button>
+              }
             />
+            
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/dashboard/opportunities/${opportunity.id}`}>
+                <Eye className="h-4 w-4" />
+              </Link>
+            </Button>
             
             {opportunity.sam_url && (
               <Button variant="ghost" size="sm" asChild>
@@ -197,7 +245,61 @@ function OpportunityCard({ opportunity }: { opportunity: OpportunityWithMatch })
           </div>
         </div>
 
-        {/* Tags and Metadata */}
+        {/* Saved Opportunity Details */}
+        <div className="space-y-3 mb-4">
+          {/* Notes Preview */}
+          {savedOpportunity.notes && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Notes</p>
+              <p className="text-sm bg-gray-50 p-2 rounded text-gray-700 line-clamp-2">
+                {savedOpportunity.notes}
+              </p>
+            </div>
+          )}
+
+          {/* Tags */}
+          {savedOpportunity.tags && savedOpportunity.tags.length > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Tags</p>
+              <div className="flex flex-wrap gap-1">
+                {savedOpportunity.tags.map((tag: string) => (
+                  <Badge key={tag} variant="outline" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Reminder Date */}
+          {savedOpportunity.reminder_date && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Reminder</p>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-3 w-3 text-muted-foreground" />
+                <span className="text-sm">
+                  {format(new Date(savedOpportunity.reminder_date), 'PPP')}
+                </span>
+                {reminderDueSoon && (
+                  <Badge variant="destructive" className="text-xs">
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    Due Soon
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Saved Date */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Saved</p>
+            <p className="text-sm">
+              {format(new Date(savedOpportunity.created_at), 'PPp')}
+            </p>
+          </div>
+        </div>
+
+        {/* Basic opportunity metadata */}
         <div className="flex flex-wrap gap-2">
           {opportunity.naics_code && (
             <Badge variant="outline" className="text-xs">
@@ -229,7 +331,7 @@ function OpportunityCard({ opportunity }: { opportunity: OpportunityWithMatch })
   )
 }
 
-function OpportunityCardSkeleton() {
+function SavedOpportunityCardSkeleton() {
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -252,10 +354,9 @@ function OpportunityCardSkeleton() {
             </div>
           ))}
         </div>
-        <div className="flex gap-2">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-6 w-16 bg-muted animate-pulse rounded" />
-          ))}
+        <div className="space-y-3">
+          <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+          <div className="h-8 w-full bg-muted animate-pulse rounded" />
         </div>
       </CardContent>
     </Card>

@@ -13,6 +13,7 @@ import {
   defaultShouldDehydrateQuery,
 } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { Toaster } from 'sonner'
 import * as React from 'react'
 
 function makeQueryClient() {
@@ -72,6 +73,7 @@ export function Providers({ children }: IProvidersProps) {
     <QueryClientProvider client={queryClient}>
       {children}
       <ReactQueryDevtools initialIsOpen={false} />
+      <Toaster position="top-right" richColors />
     </QueryClientProvider>
   )
 }

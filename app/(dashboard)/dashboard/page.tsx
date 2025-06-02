@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { RemindersWidget } from '@/components/dashboard/reminders/reminders-widget'
 import { TrendingUp, FileText, Bookmark, DollarSign } from 'lucide-react'
 
 export default function DashboardPage() {
@@ -69,21 +70,31 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>
-            Your latest actions and updates
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-gray-500">
-            <p>No recent activity</p>
-            <p className="text-sm mt-2">Start by exploring opportunities</p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Activity */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>
+                Your latest actions and updates
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-gray-500">
+                <p>No recent activity</p>
+                <p className="text-sm mt-2">Start by exploring opportunities</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Reminders Sidebar */}
+        <div className="lg:col-span-1">
+          <RemindersWidget />
+        </div>
+      </div>
     </div>
   )
 }

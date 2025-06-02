@@ -221,8 +221,8 @@ export async function getOpportunitiesFromDatabase(filters: {
     .from('opportunities')
     .select(`
       *,
-      saved_opportunities!inner(id, user_id, notes, tags, is_pursuing, reminder_date)
-    `)
+      saved_opportunities!left(id, user_id, notes, tags, is_pursuing, reminder_date)
+    `, { count: 'exact' })
   
   // Apply filters
   if (filters.naicsCodes && filters.naicsCodes.length > 0) {
