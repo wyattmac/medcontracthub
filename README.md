@@ -435,7 +435,6 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 This project uses Model Context Protocol (MCP) servers for enhanced development:
 
 - **GitHub MCP**: Version control and collaboration
-- **Filesystem MCP**: File operations and management
 - **Context7 MCP**: Library documentation and best practices research
 
 **Important**: Always research patterns using Context7 before implementing new features. See [CLAUDE.md](./CLAUDE.md) for detailed MCP usage guidelines.
