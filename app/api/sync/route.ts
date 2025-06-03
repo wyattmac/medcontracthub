@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database.types'
-import { SAMApiClient } from '@/lib/sam-gov/client'
+import { samApiClient } from '@/lib/sam-gov'
 import { syncOpportunitiesToDatabase } from '@/lib/sam-gov/utils'
 
 // Use service role for background operations
@@ -59,8 +59,8 @@ async function performSync(request: NextRequest) {
 
     console.log('Starting opportunity sync...', { forceSync, naicsFilter, limit })
 
-    // Initialize SAM.gov API client
-    const samClient = new SAMApiClient()
+    // Use the default SAM.gov API client
+    const samClient = samApiClient
 
     // Build search parameters for active opportunities
     const samParams: any = {
@@ -92,17 +92,17 @@ async function performSync(request: NextRequest) {
 
       const response = await samClient.getOpportunities(samParams)
       
-      if (!response.opportunities || response.opportunities.length === 0) {
+      if (!response.opportunitiesData || response.opportunitiesData.length === 0) {
         break
       }
 
-      allOpportunities = allOpportunities.concat(response.opportunities)
-      totalFetched += response.opportunities.length
+      allOpportunities = allOpportunities.concat(response.opportunitiesData)
+      totalFetched += response.opportunitiesData.length
       
-      console.log(`Fetched page ${page + 1}: ${response.opportunities.length} opportunities`)
+      console.log(`Fetched page ${page + 1}: ${response.opportunitiesData.length} opportunities`)
 
       // Check if we have more pages
-      if (response.opportunities.length < samParams.limit) {
+      if (response.opportunitiesData.length < samParams.limit) {
         break
       }
 

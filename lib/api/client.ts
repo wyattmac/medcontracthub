@@ -165,7 +165,7 @@ export async function checkApiHealth(): Promise<{
   const startTime = Date.now()
   
   try {
-    await apiClient.get('/api/health', { timeout: 10000 })
+    await apiClient.get('/api/health')
     return {
       healthy: true,
       responseTime: Date.now() - startTime

@@ -814,3 +814,61 @@ create policy "Users can delete their own reviews"
   on public.proposal_reviews for delete
   to authenticated
   using (reviewer_id = auth.uid());
+
+-- Analytics functions
+create or replace function public.get_opportunities_timeline(
+  p_user_id uuid,
+  p_start_date timestamp with time zone,
+  p_end_date timestamp with time zone,
+  p_interval_days integer default 1
+) returns table (
+  date text,
+  total_opportunities integer,
+  new_opportunities integer,
+  saved_count integer
+) language plpgsql security definer as $$
+begin
+  return query
+  with date_series as (
+    select 
+      generate_series(
+        date_trunc('day', p_start_date),
+        date_trunc('day', p_end_date),
+        interval '1 day' * p_interval_days
+      )::date as series_date
+  ),
+  opportunities_by_date as (
+    select 
+      date_trunc('day', o.created_at)::date as opp_date,
+      count(*) as new_opps
+    from public.opportunities o
+    where o.created_at >= p_start_date 
+      and o.created_at <= p_end_date
+    group by date_trunc('day', o.created_at)::date
+  ),
+  saved_by_date as (
+    select 
+      date_trunc('day', so.created_at)::date as saved_date,
+      count(*) as saved_opps
+    from public.saved_opportunities so
+    where so.user_id = p_user_id
+      and so.created_at >= p_start_date 
+      and so.created_at <= p_end_date
+    group by date_trunc('day', so.created_at)::date
+  ),
+  total_opps as (
+    select count(*)::integer as total_count
+    from public.opportunities
+    where created_at <= p_end_date
+  )
+  select 
+    ds.series_date::text as date,
+    (select total_count from total_opps) as total_opportunities,
+    coalesce(obd.new_opps, 0)::integer as new_opportunities,
+    coalesce(sbd.saved_opps, 0)::integer as saved_count
+  from date_series ds
+  left join opportunities_by_date obd on ds.series_date = obd.opp_date
+  left join saved_by_date sbd on ds.series_date = sbd.saved_date
+  order by ds.series_date;
+end;
+$$;

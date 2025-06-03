@@ -11,6 +11,7 @@ import {
   Search,
   Bookmark,
   FileText,
+  BarChart3,
   Settings,
   Menu,
   X,
@@ -23,6 +24,7 @@ const navigation = [
   { name: 'Opportunities', href: '/dashboard/opportunities', icon: Search },
   { name: 'Saved', href: '/dashboard/saved', icon: Bookmark },
   { name: 'Proposals', href: '/dashboard/proposals', icon: FileText },
+  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]
 
@@ -78,7 +80,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           {/* Navigation */}
           <nav className="flex-1 space-y-1 px-3 py-4">
             {navigation.map((item) => {
-              const isActive = pathname === item.href
+              const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
               return (
                 <Link
                   key={item.name}

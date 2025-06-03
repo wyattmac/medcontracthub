@@ -121,6 +121,7 @@ export const GET = routeHandler.GET(
   },
   {
     requireAuth: true,
-    validateQuery: searchQuerySchema
+    validateQuery: searchQuerySchema,
+    rateLimit: 'search'
   }
 )

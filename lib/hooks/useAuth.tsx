@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
@@ -31,12 +31,13 @@ export function AuthProvider({ children }: IAuthProviderProps) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
+  const mountedRef = useRef(true)
 
   const refreshProfile = useCallback(async () => {
     console.log('[useAuth] Refreshing profile...')
     
-    if (!user) {
-      console.log('[useAuth] No user, skipping profile refresh')
+    if (!user || !mountedRef.current) {
+      console.log('[useAuth] No user or component unmounted, skipping profile refresh')
       return
     }
 
@@ -44,40 +45,40 @@ export function AuthProvider({ children }: IAuthProviderProps) {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', user.id as any)
         .single()
 
-      if (profileError) {
+      if (!mountedRef.current) return // Check if still mounted after async operation
+
+      if (profileError || !profileData) {
         console.error('[useAuth] Profile fetch error:', profileError)
         return
       }
 
-      if (profileData) {
-        console.log('[useAuth] Profile loaded:', profileData.id)
-        setProfile(profileData)
+      console.log('[useAuth] Profile loaded:', (profileData as any).id)
+      setProfile(profileData as any) // Type assertion for database schema compatibility
 
-        if (profileData.company_id) {
-          const { data: companyData, error: companyError } = await supabase
-            .from('companies')
-            .select('*')
-            .eq('id', profileData.company_id)
-            .single()
+      if ((profileData as any).company_id) {
+        const { data: companyData, error: companyError } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', (profileData as any).company_id)
+          .single()
 
-          if (companyError) {
-            console.error('[useAuth] Company fetch error:', companyError)
-            return
-          }
+        if (!mountedRef.current) return // Check if still mounted after async operation
 
-          if (companyData) {
-            console.log('[useAuth] Company loaded:', companyData.name)
-            setCompany(companyData)
-          }
+        if (companyError || !companyData) {
+          console.error('[useAuth] Company fetch error:', companyError)
+          return
         }
+
+        console.log('[useAuth] Company loaded:', (companyData as any).name)
+        setCompany(companyData as any) // Type assertion for database schema compatibility
       }
     } catch (error) {
       console.error('[useAuth] Unexpected error in refreshProfile:', error)
     }
-  }, [user, supabase])
+  }, [user?.id, supabase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const getUser = async () => {
@@ -85,6 +86,8 @@ export function AuthProvider({ children }: IAuthProviderProps) {
       
       try {
         const { data: { user }, error } = await supabase.auth.getUser()
+        
+        if (!mountedRef.current) return // Check if still mounted
         
         if (error) {
           console.error('[useAuth] Initial auth error:', error)
@@ -95,14 +98,16 @@ export function AuthProvider({ children }: IAuthProviderProps) {
         if (user) {
           console.log('[useAuth] User found:', user.email)
           setUser(user)
-          await refreshProfile()
+          // Don't call refreshProfile here - it will be called by the auth state change handler
         } else {
           console.log('[useAuth] No user found')
         }
       } catch (error) {
         console.error('[useAuth] Unexpected error getting user:', error)
       } finally {
-        setLoading(false)
+        if (mountedRef.current) {
+          setLoading(false)
+        }
       }
     }
 
@@ -110,12 +115,14 @@ export function AuthProvider({ children }: IAuthProviderProps) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: any, session: any) => {
+        if (!mountedRef.current) return // Check if still mounted
+        
         console.log('[useAuth] Auth state changed:', event)
         
         if (session?.user) {
           console.log('[useAuth] Session user:', session.user.email)
           setUser(session.user)
-          await refreshProfile()
+          // refreshProfile will be called automatically due to user state change
         } else {
           console.log('[useAuth] No session, clearing user data')
           setUser(null)
@@ -132,9 +139,17 @@ export function AuthProvider({ children }: IAuthProviderProps) {
 
     return () => {
       console.log('[useAuth] Cleaning up auth subscription')
+      mountedRef.current = false
       subscription.unsubscribe()
     }
-  }, [supabase, router, refreshProfile])
+  }, [supabase, router]) // Removed refreshProfile dependency
+
+  // Separate effect to handle profile refresh when user changes
+  useEffect(() => {
+    if (user && mountedRef.current) {
+      refreshProfile()
+    }
+  }, [user?.id, refreshProfile]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const signOut = async () => {
     console.log('[useAuth] Signing out...')

@@ -36,9 +36,28 @@ export async function login(formData: FormData) {
     }
 
     console.log('[Login Action] Login successful for:', data.user?.email)
+    
+    // Check if user has completed onboarding
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', data.user.id as any) // Type assertion for database compatibility
+      .single()
+    
     revalidatePath('/', 'layout')
+    
+    // Redirect to onboarding if profile doesn't have a company_id
+    if (!profile || profileError || !(profile as any)?.company_id) {
+      console.log('[Login Action] User needs to complete onboarding')
+      redirect('/onboarding')
+    }
+    
     redirect('/dashboard')
-  } catch (error) {
+  } catch (error: any) {
+    // Handle Next.js redirect (not an actual error)
+    if (error?.digest?.includes('NEXT_REDIRECT')) {
+      throw error
+    }
     console.error('[Login Action] Unexpected error:', error)
     redirect('/login?error=' + encodeURIComponent('An unexpected error occurred'))
   }
@@ -75,7 +94,11 @@ export async function signup(formData: FormData) {
     console.log('[Signup Action] Signup successful for:', data.user?.email)
     revalidatePath('/', 'layout')
     redirect('/onboarding')
-  } catch (error) {
+  } catch (error: any) {
+    // Handle Next.js redirect (not an actual error)
+    if (error?.digest?.includes('NEXT_REDIRECT')) {
+      throw error
+    }
     console.error('[Signup Action] Unexpected error:', error)
     redirect('/signup?error=' + encodeURIComponent('An unexpected error occurred'))
   }

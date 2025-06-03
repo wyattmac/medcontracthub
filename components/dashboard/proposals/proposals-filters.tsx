@@ -3,13 +3,15 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 
+interface IProposalFilters {
+  status: string
+  limit: number
+  offset: number
+}
+
 interface ProposalsFiltersProps {
-  filters: {
-    status: string
-    limit: number
-    offset: number
-  }
-  onFilterChange: (filters: Partial<typeof filters>) => void
+  filters: IProposalFilters
+  onFilterChange: (filters: Partial<IProposalFilters>) => void
 }
 
 const statusOptions = [

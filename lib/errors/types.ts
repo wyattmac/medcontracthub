@@ -139,12 +139,12 @@ export class ExternalAPIError extends AppError {
 }
 
 export class RateLimitError extends AppError {
-  constructor(service: string, retryAfter?: number) {
+  constructor(message: string = 'Rate limit exceeded', retryAfter?: number) {
     super(
       ErrorCode.API_RATE_LIMIT,
-      `Rate limit exceeded for ${service}`,
+      message,
       429,
-      { service, retryAfter }
+      { retryAfter }
     )
   }
 }

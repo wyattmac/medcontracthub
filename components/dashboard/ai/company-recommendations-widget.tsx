@@ -164,7 +164,7 @@ export function CompanyRecommendationsWidget() {
                     <div className="flex-1 min-w-0">
                       <Badge 
                         variant={opp.urgency === 'high' ? 'destructive' : 
-                                opp.urgency === 'medium' ? 'warning' : 'outline'}
+                                opp.urgency === 'medium' ? 'secondary' : 'outline'}
                         className="text-xs mb-2"
                       >
                         {opp.urgency} urgency

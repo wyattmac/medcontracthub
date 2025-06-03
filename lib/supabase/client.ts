@@ -24,8 +24,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export function createClient() {
   try {
     const client = createBrowserClient<Database>(
-      supabaseUrl,
-      supabaseAnonKey,
+      supabaseUrl!,
+      supabaseAnonKey!,
       {
         global: {
           headers: {

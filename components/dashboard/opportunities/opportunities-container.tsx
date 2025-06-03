@@ -4,14 +4,16 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { OpportunitiesList } from './opportunities-list'
+import { VirtualizedOpportunitiesList } from './virtualized-opportunities-list'
 import { OpportunityPagination } from './opportunity-pagination'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, AlertCircle } from 'lucide-react'
+import { RefreshCw, AlertCircle, Grid, List } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { BulkExportButton } from './bulk-export-button'
 
 interface IOpportunitiesContainerProps {
   searchParams?: {
@@ -27,6 +29,7 @@ interface IOpportunitiesContainerProps {
 
 export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainerProps) {
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams?.page || '1'))
+  const [useVirtualization, setUseVirtualization] = useState(false)
   const limit = 25
   const offset = (currentPage - 1) * limit
 
@@ -85,6 +88,15 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
     window.history.replaceState({}, '', url.toString())
   }
 
+  const opportunities = searchResult?.opportunities || []
+  const totalCount = searchResult?.totalCount || 0
+  const hasMore = searchResult?.hasMore || false
+
+  // Auto-enable virtualization for large datasets
+  const shouldUseVirtualization = useMemo(() => {
+    return useVirtualization || totalCount > 100
+  }, [useVirtualization, totalCount])
+
   if (isError) {
     return (
       <Card>
@@ -109,37 +121,70 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
     )
   }
 
-  const opportunities = searchResult?.opportunities || []
-  const totalCount = searchResult?.totalCount || 0
-  const hasMore = searchResult?.hasMore || false
-
   return (
     <div className="space-y-6">
-      {/* Header with results count and refresh */}
+      {/* Header with results count and controls */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           {isLoading ? (
             'Loading opportunities...'
           ) : (
-            `${totalCount.toLocaleString()} opportunities found`
+            <>
+              {`${totalCount.toLocaleString()} opportunities found`}
+              {shouldUseVirtualization && (
+                <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                  Virtual scrolling enabled
+                </span>
+              )}
+            </>
           )}
         </div>
-        <Button 
-          onClick={handleRefresh} 
-          variant="outline" 
-          size="sm"
-          disabled={isFetching}
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        
+        <div className="flex items-center gap-2">
+          {/* Export Button */}
+          <BulkExportButton
+            filters={filters}
+            totalCount={totalCount}
+            onExport={(type, options) => {
+              console.log(`Exported ${type} with options:`, options)
+            }}
+          />
+          
+          {/* Virtualization toggle */}
+          <Button
+            onClick={() => setUseVirtualization(!useVirtualization)}
+            variant={shouldUseVirtualization ? "default" : "outline"}
+            size="sm"
+            title={shouldUseVirtualization ? "Switch to standard list" : "Enable virtual scrolling"}
+          >
+            {shouldUseVirtualization ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
+          </Button>
+          
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline" 
+            size="sm"
+            disabled={isFetching}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Opportunities List */}
-      <OpportunitiesList 
-        opportunities={opportunities} 
-        isLoading={isLoading}
-      />
+      {shouldUseVirtualization ? (
+        <VirtualizedOpportunitiesList 
+          opportunities={opportunities} 
+          isLoading={isLoading}
+          height={600}
+        />
+      ) : (
+        <OpportunitiesList 
+          opportunities={opportunities} 
+          isLoading={isLoading}
+        />
+      )}
 
       {/* Pagination */}
       {!isLoading && totalCount > limit && (

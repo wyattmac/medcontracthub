@@ -10,7 +10,8 @@ const protectedRoutes = [
   '/opportunities',
   '/saved',
   '/proposals',
-  '/settings'
+  '/settings',
+  '/onboarding'  // Onboarding requires auth but is handled separately
 ]
 
 const authRoutes = [
@@ -117,6 +118,58 @@ export async function middleware(request: NextRequest) {
       url.pathname = '/login'
       url.searchParams.set('from', pathname)
       return NextResponse.redirect(url)
+    }
+
+    // Check if user has completed onboarding
+    if (user && isProtectedRoute && pathname !== '/onboarding') {
+      // Fetch user profile to check onboarding status
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+
+      if (profileError) {
+        logger.error('Error fetching profile in middleware', profileError, { 
+          requestId,
+          userId: user.id 
+        })
+      }
+
+      // If user doesn't have a company_id, they haven't completed onboarding
+      if (!profile?.company_id) {
+        logger.info('Redirecting user to complete onboarding', { 
+          requestId,
+          userId: user.id,
+          from: pathname 
+        })
+        const url = request.nextUrl.clone()
+        url.pathname = '/onboarding'
+        url.searchParams.set('from', pathname)
+        return NextResponse.redirect(url)
+      }
+    }
+
+    // Handle onboarding page access for users who already completed it
+    if (user && pathname === '/onboarding') {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+
+      // If user already has a company, redirect to dashboard
+      if (profile?.company_id) {
+        logger.info('User already completed onboarding, redirecting to dashboard', { 
+          requestId,
+          userId: user.id 
+        })
+        const from = request.nextUrl.searchParams.get('from')
+        const url = request.nextUrl.clone()
+        url.pathname = from || '/dashboard'
+        url.searchParams.delete('from')
+        return NextResponse.redirect(url)
+      }
     }
 
     // Redirect authenticated users away from auth pages

@@ -1,0 +1,95 @@
+
+> medcontracthub@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.29
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1933ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 989ms (144 modules)
+[2025-06-02T23:29:39.326Z] [DEBUG] [App] Middleware processing request | requestId="mw_1748906979326_grrztvy3e" pathname="/" method="GET"
+ ○ Compiling / ...
+ ✓ Compiled / in 5.7s (755 modules)
+ ✓ Compiled in 674ms (371 modules)
+ GET / 200 in 6451ms
+[2025-06-02T23:29:53.665Z] [DEBUG] [App] Middleware processing request | requestId="mw_1748906993665_mfhae8hmi" pathname="/" method="GET"
+[2025-06-02T23:29:53.668Z] [WARN] [App] Auth error in middleware | error="Auth session missing!" requestId="mw_1748906993665_mfhae8hmi" pathname="/"
+ GET / 200 in 78ms
+[2025-06-02T23:30:12.966Z] [DEBUG] [App] Middleware processing request | requestId="mw_1748907012966_nat8wvcib" pathname="/login" method="GET"
+[2025-06-02T23:30:13.278Z] [INFO] [App] Redirecting authenticated user to dashboard | requestId="mw_1748907012966_nat8wvcib" from="/login"
+[2025-06-02T23:30:13.300Z] [DEBUG] [App] Middleware processing request | requestId="mw_1748907013300_r9bx9xgzl" pathname="/dashboard" method="GET"
+[2025-06-02T23:30:13.515Z] [INFO] [App] Redirecting user to complete onboarding | requestId="mw_1748907013300_r9bx9xgzl" userId="92f2542e-e2d6-49a0-b519-d21a13399dcc" from="/dashboard"
+[2025-06-02T23:30:13.538Z] [DEBUG] [App] Middleware processing request | requestId="mw_1748907013538_c3np4zbul" pathname="/onboarding" method="GET"
+ ○ Compiling /onboarding ...
+ ✓ Compiled /onboarding in 1610ms (919 modules)
+[2025-06-02T23:30:15.433Z] [DEBUG] [App] Middleware processing request | requestId="mw_1748907015433_ar3aa6s1u" pathname="/onboarding" method="GET"
+ ✓ Compiled in 301ms (486 modules)
+ ✓ Compiled in 441ms (447 modules)
+ ✓ Compiled in 270ms (447 modules)
+ ✓ Compiled in 241ms (447 modules)
+ ✓ Compiled in 300ms (447 modules)
+ ✓ Compiled in 663ms (919 modules)
+ ✓ Compiled in 315ms (447 modules)
+ ✓ Compiled in 269ms (447 modules)
+ ✓ Compiled in 242ms (447 modules)
+ ✓ Compiled in 307ms (447 modules)
+ ✓ Compiled in 267ms (447 modules)
+ ✓ Compiled in 237ms (486 modules)
+ ✓ Compiled in 231ms (486 modules)
+ ✓ Compiled in 988ms (919 modules)
+ ✓ Compiled in 472ms (447 modules)
+ ✓ Compiled in 387ms (447 modules)
+ ✓ Compiled in 323ms (447 modules)
+ ✓ Compiled in 256ms (447 modules)
+ ✓ Compiled in 223ms (447 modules)
+ ✓ Compiled in 280ms (447 modules)
+ ✓ Compiled in 339ms (447 modules)
+ ✓ Compiled in 262ms (447 modules)
+ ✓ Compiled in 244ms (447 modules)
+ ✓ Compiled in 318ms (447 modules)
+ ✓ Compiled in 868ms (919 modules)
+ ✓ Compiled in 346ms (919 modules)
+ ✓ Compiled in 501ms (919 modules)
+ ✓ Compiled in 437ms (1063 modules)
+ ✓ Compiled in 167ms (486 modules)
+ ✓ Compiled in 948ms (1063 modules)
+ ✓ Compiled in 529ms (1063 modules)
+ ✓ Compiled in 217ms (447 modules)
+ ✓ Compiled in 266ms (447 modules)
+ ✓ Compiled in 266ms (447 modules)
+ ✓ Compiled in 232ms (447 modules)
+ ✓ Compiled in 230ms (447 modules)
+ ✓ Compiled in 251ms (447 modules)
+ ✓ Compiled in 261ms (447 modules)
+ ✓ Compiled in 255ms (447 modules)
+ ✓ Compiled in 256ms (447 modules)
+ ✓ Compiled in 237ms (447 modules)
+ ✓ Compiled in 320ms (447 modules)
+ ✓ Compiled in 214ms (486 modules)
+ ✓ Compiled in 768ms (1077 modules)
+ ✓ Compiled in 355ms (447 modules)
+ ✓ Compiled in 251ms (447 modules)
+ ✓ Compiled in 222ms (447 modules)
+ ✓ Compiled in 208ms (447 modules)
+ ✓ Compiled in 461ms (447 modules)
+ ✓ Compiled in 258ms (447 modules)
+ ✓ Compiled in 320ms (486 modules)
+ ✓ Compiled in 1194ms (1063 modules)
+ ✓ Compiled in 556ms (1063 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 387ms (447 modules)
+ ✓ Compiled in 279ms (447 modules)
+ ✓ Compiled in 248ms (447 modules)
+ ✓ Compiled in 239ms (447 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 924ms (1063 modules)
+ ✓ Compiled in 287ms (447 modules)
+ ✓ Compiled in 296ms (447 modules)
+ ✓ Compiled in 318ms (447 modules)
+ ✓ Compiled in 266ms (447 modules)
+ ✓ Compiled in 324ms (447 modules)
+ ✓ Compiled in 230ms (447 modules)
+ ✓ Compiled in 193ms (447 modules)

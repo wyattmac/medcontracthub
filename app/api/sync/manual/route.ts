@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { Database } from '@/types/database.types'
-import { SAMApiClient } from '@/lib/sam-gov/client'
+import { samApiClient } from '@/lib/sam-gov'
 import { syncOpportunitiesToDatabase } from '@/lib/sam-gov/utils'
 
 export async function POST(request: NextRequest) {
@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
       p_changes: { limit, naicsFilter, triggered_by: user.id }
     })
 
-    // Initialize SAM.gov API client
-    const samClient = new SAMApiClient()
+    // Use the default SAM.gov API client
+    const samClient = samApiClient
 
     // Build search parameters for recent active opportunities
     const samParams: any = {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     // Fetch opportunities from SAM.gov
     const response = await samClient.getOpportunities(samParams)
     
-    if (!response.opportunities || response.opportunities.length === 0) {
+    if (!response.opportunitiesData || response.opportunitiesData.length === 0) {
       await supabase.rpc('log_audit', {
         p_action: 'manual_sync',
         p_entity_type: 'opportunities',
@@ -86,17 +86,17 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    console.log(`Manual sync fetched ${response.opportunities.length} opportunities`)
+    console.log(`Manual sync fetched ${response.opportunitiesData.length} opportunities`)
 
     // Sync to database
-    const syncResult = await syncOpportunitiesToDatabase(response.opportunities)
+    const syncResult = await syncOpportunitiesToDatabase(response.opportunitiesData)
 
     // Log sync completion
     await supabase.rpc('log_audit', {
       p_action: 'manual_sync',
       p_entity_type: 'opportunities',
       p_changes: {
-        fetched: response.opportunities.length,
+        fetched: response.opportunitiesData.length,
         inserted: syncResult.inserted,
         updated: syncResult.updated,
         errors: syncResult.errors.length,
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: `Manual sync completed: ${syncResult.inserted} new, ${syncResult.updated} updated`,
       stats: {
-        fetched: response.opportunities.length,
+        fetched: response.opportunitiesData.length,
         inserted: syncResult.inserted,
         updated: syncResult.updated,
         errors: syncResult.errors

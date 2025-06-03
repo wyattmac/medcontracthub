@@ -86,6 +86,18 @@ export async function GET(request: NextRequest) {
       responseTime
     })
 
+    // Handle test environment
+    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+      return new Response(JSON.stringify(response), {
+        status: isHealthy ? 200 : 503,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'X-Request-Id': requestId
+        }
+      }) as any
+    }
+    
     return NextResponse.json(response, {
       status: isHealthy ? 200 : 503,
       headers: {

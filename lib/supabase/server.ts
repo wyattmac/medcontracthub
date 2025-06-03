@@ -27,8 +27,8 @@ export async function createClient() {
     const cookieStore = await cookies()
 
     const client = createServerClient<Database>(
-      supabaseUrl,
-      supabaseAnonKey,
+      supabaseUrl!,
+      supabaseAnonKey!,
       {
         cookies: {
           getAll() {
@@ -96,8 +96,8 @@ export function createServiceClient() {
 
   try {
     return createServerClient<Database>(
-      supabaseUrl,
-      serviceRoleKey,
+      supabaseUrl!,
+      serviceRoleKey!,
       {
         cookies: {
           getAll: () => [],

@@ -35,7 +35,7 @@ export default function ErrorPage({
         </Alert>
 
         <div className="space-y-3">
-          {errorDetails.actions.map((action, index) => (
+          {errorDetails.actions.map((action: any, index: number) => (
             <div key={index}>
               {action.type === 'link' ? (
                 <Link href={action.href} className="block">

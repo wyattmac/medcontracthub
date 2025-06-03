@@ -26,6 +26,14 @@ export function formatErrorResponse(
   // Log error for monitoring
   logError(error, errorResponse)
   
+  // Handle test environment where NextResponse.json might not be available
+  if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    return new Response(JSON.stringify({ error: errorResponse }), {
+      status: errorResponse.statusCode || 500,
+      headers: { 'Content-Type': 'application/json' }
+    }) as NextResponse<IErrorResponse>
+  }
+  
   return NextResponse.json(
     { error: errorResponse },
     { status: errorResponse.statusCode || 500 }

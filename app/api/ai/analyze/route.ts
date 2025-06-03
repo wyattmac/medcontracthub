@@ -3,37 +3,22 @@
  * POST /api/ai/analyze
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { Database } from '@/types/database.types'
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
 import { analyzeOpportunity } from '@/lib/ai/claude-client'
+import { DatabaseError, NotFoundError, ValidationError } from '@/lib/errors/types'
+import { aiLogger } from '@/lib/errors/logger'
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = createServerComponentClient<Database>({ cookies })
-    
-    // Check authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+// Request body validation
+const analyzeRequestSchema = z.object({
+  opportunityId: z.string().uuid('Invalid opportunity ID format')
+})
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const { opportunityId } = await request.json()
-
-    if (!opportunityId) {
-      return NextResponse.json(
-        { error: 'Opportunity ID is required' },
-        { status: 400 }
-      )
-    }
+export const POST = routeHandler.POST(
+  async ({ request, user, supabase }: IRouteContext) => {
+    const body = await request.json()
+    const { opportunityId } = analyzeRequestSchema.parse(body)
 
     // Get opportunity details
     const { data: opportunity, error: opportunityError } = await supabase
@@ -43,10 +28,8 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (opportunityError || !opportunity) {
-      return NextResponse.json(
-        { error: 'Opportunity not found' },
-        { status: 404 }
-      )
+      aiLogger.error('Opportunity not found', opportunityError, { opportunityId, userId: user.id })
+      throw new NotFoundError('Opportunity')
     }
 
     // Get user's company profile
@@ -65,10 +48,8 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (profileError || !profile) {
-      return NextResponse.json(
-        { error: 'Company profile not found' },
-        { status: 404 }
-      )
+      aiLogger.error('Company profile not found', profileError, { userId: user.id })
+      throw new NotFoundError('Company profile')
     }
 
     const company = profile.companies as any
@@ -120,7 +101,7 @@ export async function POST(request: NextRequest) {
       })
 
     if (insertError) {
-      console.error('Error caching analysis:', insertError)
+      aiLogger.warn('Error caching analysis', { error: insertError, opportunityId, userId: user.id })
       // Continue anyway - we have the analysis
     }
 
@@ -134,6 +115,15 @@ export async function POST(request: NextRequest) {
         win_probability: analysis.winProbability,
         competition_level: analysis.competitionLevel
       }
+    }).catch((error: any) => {
+      aiLogger.warn('Failed to log analysis audit', error)
+    })
+
+    aiLogger.info('AI analysis completed', {
+      opportunityId,
+      userId: user.id,
+      winProbability: analysis.winProbability,
+      competitionLevel: analysis.competitionLevel
     })
 
     return NextResponse.json({
@@ -141,16 +131,10 @@ export async function POST(request: NextRequest) {
       cached: false,
       analyzedAt: new Date().toISOString()
     })
-
-  } catch (error) {
-    console.error('AI analysis error:', error)
-    
-    return NextResponse.json(
-      { 
-        error: 'Analysis failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+  },
+  {
+    requireAuth: true,
+    validateBody: analyzeRequestSchema,
+    rateLimit: 'ai'
   }
-}
+)

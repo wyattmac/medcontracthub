@@ -160,6 +160,7 @@ export const dbLogger = new Logger('Database')
 export const authLogger = new Logger('Auth')
 export const aiLogger = new Logger('AI')
 export const syncLogger = new Logger('Sync')
+export const emailLogger = new Logger('Email')
 
 // Default logger
 export const logger = new Logger('App')

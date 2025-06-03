@@ -14,9 +14,11 @@ import {
 import { 
   AuthenticationError, 
   ValidationError,
+  RateLimitError,
   AppError 
 } from '@/lib/errors/types'
 import { apiLogger } from '@/lib/errors/logger'
+import { rateLimit, rateLimitConfigs, createRateLimitHeaders } from '@/lib/rate-limit'
 
 // Validate environment on module load
 if (process.env.NODE_ENV === 'production') {
@@ -39,9 +41,9 @@ export interface IRouteOptions {
   requireAuth?: boolean
   validateBody?: z.ZodSchema
   validateQuery?: z.ZodSchema
-  rateLimit?: {
-    requests: number
-    window: number // in seconds
+  rateLimit?: 'auth' | 'api' | 'search' | 'sync' | 'ai' | {
+    interval: number
+    uniqueTokenPerInterval: number
   }
 }
 
@@ -73,6 +75,22 @@ export function createRouteHandler(
     })
 
     try {
+      // Apply rate limiting if configured
+      if (options.rateLimit) {
+        const rateLimitConfig = typeof options.rateLimit === 'string' 
+          ? rateLimitConfigs[options.rateLimit]
+          : options.rateLimit
+          
+        const rateLimitResult = await rateLimit(request, rateLimitConfig)
+        
+        if (!rateLimitResult.success) {
+          throw new RateLimitError(
+            `Rate limit exceeded. Try again in ${rateLimitResult.retryAfter} seconds.`,
+            rateLimitResult.retryAfter
+          )
+        }
+      }
+      
       // Initialize context
       const context: IRouteContext = {
         request,
@@ -122,6 +140,20 @@ export function createRouteHandler(
       // Add standard headers
       response.headers.set('X-Request-Id', requestId)
       response.headers.set('X-Response-Time', `${Date.now() - startTime}ms`)
+      
+      // Add rate limit headers if rate limiting was applied
+      if (options.rateLimit) {
+        const rateLimitConfig = typeof options.rateLimit === 'string' 
+          ? rateLimitConfigs[options.rateLimit]
+          : options.rateLimit
+          
+        const rateLimitResult = await rateLimit(request, rateLimitConfig)
+        const rateLimitHeaders = createRateLimitHeaders(rateLimitResult)
+        
+        rateLimitHeaders.forEach((value, key) => {
+          response.headers.set(key, value)
+        })
+      }
       
       // Log success
       apiLogger.info(`${method} ${request.nextUrl.pathname} completed`, {

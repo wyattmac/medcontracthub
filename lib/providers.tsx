@@ -69,11 +69,6 @@ function makeQueryClient() {
         },
       },
     },
-    logger: {
-      log: (message) => logger.debug(message),
-      warn: (message) => logger.warn(message),
-      error: (message) => logger.error('Query Client Error', message),
-    },
   })
 }
 
@@ -152,9 +147,6 @@ export function Providers({ children }: IProvidersProps) {
               background: 'var(--background)',
               color: 'var(--foreground)',
               border: '1px solid var(--border)',
-            },
-            error: {
-              duration: 7000,
             },
           }}
         />

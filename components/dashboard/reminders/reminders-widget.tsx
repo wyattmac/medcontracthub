@@ -118,7 +118,7 @@ function ReminderItem({ reminder, type }: { reminder: any, type: 'reminder' | 'd
       if (days <= 3) {
         return { label: distance, variant: 'destructive' as const, urgent: true }
       } else if (days <= 7) {
-        return { label: distance, variant: 'warning' as const, urgent: false }
+        return { label: distance, variant: 'secondary' as const, urgent: false }
       } else {
         return { label: distance, variant: 'outline' as const, urgent: false }
       }

@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { SaveOpportunityButton } from './save-opportunity-button'
 import { EditOpportunityNotesModal } from './edit-opportunity-notes-modal'
 import { OpportunityAnalysisButton } from '../ai/opportunity-analysis-button'
+import { ReminderButton } from './reminder-button'
 import { 
   ArrowLeft, 
   Calendar, 
@@ -465,9 +466,12 @@ export function OpportunityDetailContainer({
                 }
               />
               
-              <Button variant="outline" className="w-full">
-                Set Reminder
-              </Button>
+              <ReminderButton
+                opportunityId={opportunity.id}
+                opportunityTitle={opportunity.title}
+                deadline={opportunity.response_deadline}
+                className="w-full"
+              />
             </CardContent>
           </Card>
 
