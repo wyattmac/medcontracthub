@@ -5,6 +5,51 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { logger } from '@/lib/errors/logger'
 
+/**
+ * Add security headers to response
+ */
+function addSecurityHeaders(response: NextResponse): void {
+  // Content Security Policy - Strict policy for production security
+  const cspDirectives = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: https: blob:",
+    "connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.sam.gov https://api.resend.com",
+    "frame-src 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests"
+  ].join('; ')
+  
+  // Apply security headers
+  response.headers.set('Content-Security-Policy', cspDirectives)
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  
+  // HSTS - Force HTTPS in production
+  if (process.env.NODE_ENV === 'production') {
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
+  }
+  
+  // Permissions Policy - Restrict dangerous features
+  response.headers.set('Permissions-Policy', [
+    'camera=()',
+    'microphone=()',
+    'geolocation=()',
+    'payment=()',
+    'usb=()',
+    'magnetometer=()',
+    'gyroscope=()',
+    'fullscreen=(self)'
+  ].join(', '))
+}
+
 const protectedRoutes = [
   '/dashboard',
   '/opportunities',
@@ -37,14 +82,21 @@ export async function middleware(request: NextRequest) {
     method: request.method
   })
   
-  // Early return for static assets and API routes
+  // Early return for static assets and API routes, but add security headers
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
     pathname.includes('.') ||
     pathname === '/favicon.ico'
   ) {
-    return NextResponse.next()
+    const response = NextResponse.next()
+    
+    // Add security headers even to static assets
+    if (!pathname.startsWith('/_next/static')) {
+      addSecurityHeaders(response)
+    }
+    
+    return response
   }
 
   let supabaseResponse = NextResponse.next({ request })
@@ -198,7 +250,9 @@ export async function middleware(request: NextRequest) {
     }
     
     // Allow request to proceed for public routes
-    return NextResponse.next()
+    const response = NextResponse.next()
+    addSecurityHeaders(response)
+    return response
   }
 }
 

@@ -19,6 +19,8 @@ import {
 } from '@/lib/errors/types'
 import { apiLogger } from '@/lib/errors/logger'
 import { rateLimit, rateLimitConfigs, createRateLimitHeaders } from '@/lib/rate-limit'
+import { sanitizeRequestBody } from '@/lib/security/sanitization'
+import { csrfProtection } from '@/lib/security/csrf'
 
 // Validate environment on module load
 if (process.env.NODE_ENV === 'production') {
@@ -35,6 +37,7 @@ export interface IRouteContext {
   user?: any
   supabase?: any
   requestId: string
+  sanitizedBody?: any
 }
 
 export interface IRouteOptions {
@@ -44,6 +47,14 @@ export interface IRouteOptions {
   rateLimit?: 'auth' | 'api' | 'search' | 'sync' | 'ai' | {
     interval: number
     uniqueTokenPerInterval: number
+  }
+  sanitization?: {
+    body?: Record<string, 'text' | 'basic' | 'rich' | 'search' | 'url' | 'filename'>
+    skipSanitization?: boolean
+  }
+  csrf?: {
+    enabled?: boolean
+    skipCSRF?: boolean
   }
 }
 
@@ -91,6 +102,15 @@ export function createRouteHandler(
         }
       }
       
+      // Apply CSRF protection for state-changing requests
+      if (options.csrf?.enabled !== false && !options.csrf?.skipCSRF && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+        const csrfResult = await csrfProtection(request)
+        
+        if (!csrfResult.success) {
+          throw new ValidationError('CSRF token validation failed. Please refresh the page and try again.')
+        }
+      }
+      
       // Initialize context
       const context: IRouteContext = {
         request,
@@ -124,12 +144,37 @@ export function createRouteHandler(
         }
       }
 
-      // Validate request body
-      if (options.validateBody && ['POST', 'PUT', 'PATCH'].includes(method)) {
+      // Validate and sanitize request body
+      if (['POST', 'PUT', 'PATCH'].includes(method)) {
         try {
-          const body = await request.json()
-          await options.validateBody.parseAsync(body)
+          let body = await request.json()
+          
+          // Apply sanitization unless explicitly skipped
+          if (!options.sanitization?.skipSanitization) {
+            body = sanitizeRequestBody(body, options.sanitization?.body)
+            
+            // Log sanitization activity in development
+            if (process.env.NODE_ENV === 'development') {
+              apiLogger.debug('Request body sanitized', {
+                requestId,
+                originalKeys: Object.keys(body || {}),
+                sanitizationConfig: options.sanitization?.body
+              })
+            }
+          }
+          
+          // Validate the sanitized body
+          if (options.validateBody) {
+            await options.validateBody.parseAsync(body)
+          }
+          
+          // Add sanitized body to context for handler access
+          context.sanitizedBody = body
+          
         } catch (error) {
+          if (error instanceof ValidationError) {
+            throw error
+          }
           throw new ValidationError('Invalid request body', error)
         }
       }

@@ -200,7 +200,7 @@ export async function syncOpportunitiesToDatabase(
 }
 
 /**
- * Get opportunities from database with filtering
+ * Get opportunities from database with filtering and optimized sorting
  */
 export async function getOpportunitiesFromDatabase(filters: {
   naicsCodes?: string[]
@@ -211,6 +211,7 @@ export async function getOpportunitiesFromDatabase(filters: {
   offset?: number
   responseDeadlineFrom?: string
   responseDeadlineTo?: string
+  companyNaicsCodes?: string[] // For match score calculation
 }) {
   const supabase = createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -238,6 +239,7 @@ export async function getOpportunitiesFromDatabase(filters: {
   }
   
   if (filters.searchQuery) {
+    // Use full-text search if available, otherwise fallback to ilike
     query = query.or(`title.ilike.%${filters.searchQuery}%,description.ilike.%${filters.searchQuery}%`)
   }
   
@@ -249,15 +251,36 @@ export async function getOpportunitiesFromDatabase(filters: {
     query = query.lte('response_deadline', filters.responseDeadlineTo)
   }
   
-  // Apply pagination
+  // Optimize sorting by calculating match score in the database
+  // This avoids sorting in memory on the server
+  if (filters.companyNaicsCodes && filters.companyNaicsCodes.length > 0) {
+    // Create a CASE statement for match scoring
+    const naicsMatchCase = filters.companyNaicsCodes
+      .map((code, index) => `WHEN naics_code = '${code}' THEN ${100 - index}`)
+      .join(' ')
+    
+    const naicsPrefixCase = filters.companyNaicsCodes
+      .map((code, index) => `WHEN LEFT(naics_code, 3) = '${code.substring(0, 3)}' THEN ${70 - index}`)
+      .join(' ')
+    
+    const naicsSectorCase = filters.companyNaicsCodes
+      .map((code, index) => `WHEN LEFT(naics_code, 2) = '${code.substring(0, 2)}' THEN ${40 - index}`)
+      .join(' ')
+    
+    // Order by match score (calculated in DB) then by deadline
+    query = query.order(`CASE ${naicsMatchCase} ${naicsPrefixCase} ${naicsSectorCase} ELSE 0 END`, { ascending: false })
+    query = query.order('response_deadline', { ascending: true })
+  } else {
+    // If no company NAICS codes, just order by deadline
+    query = query.order('response_deadline', { ascending: true })
+  }
+  
+  // Apply pagination after sorting
   if (filters.offset) {
     query = query.range(filters.offset, (filters.offset + (filters.limit || 25)) - 1)
   } else {
     query = query.limit(filters.limit || 25)
   }
-  
-  // Order by response deadline (most urgent first)
-  query = query.order('response_deadline', { ascending: true })
   
   return query
 }

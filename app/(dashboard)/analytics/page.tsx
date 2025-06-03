@@ -4,10 +4,25 @@
  */
 
 import { Suspense } from 'react'
-import { AnalyticsDashboard } from '@/components/dashboard/analytics/analytics-dashboard'
-import { AnalyticsFilters } from '@/components/dashboard/analytics/analytics-filters'
+import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart3, TrendingUp, Target, Activity } from 'lucide-react'
+
+// Lazy load heavy components
+const AnalyticsDashboard = dynamic(
+  () => import('@/components/dashboard/analytics/analytics-dashboard').then(mod => ({ default: mod.AnalyticsDashboard })),
+  {
+    loading: () => <AnalyticsDashboardSkeleton />,
+    ssr: false // Disable SSR for chart components
+  }
+)
+
+const AnalyticsFilters = dynamic(
+  () => import('@/components/dashboard/analytics/analytics-filters').then(mod => ({ default: mod.AnalyticsFilters })),
+  {
+    loading: () => <div className="h-10 w-64 bg-muted animate-pulse rounded" />,
+  }
+)
 
 interface IAnalyticsPageProps {
   searchParams?: {
@@ -88,9 +103,7 @@ export default function AnalyticsPage({ searchParams }: IAnalyticsPageProps) {
       </div>
 
       {/* Main Analytics Dashboard */}
-      <Suspense fallback={<AnalyticsDashboardSkeleton />}>
-        <AnalyticsDashboard searchParams={searchParams} />
-      </Suspense>
+      <AnalyticsDashboard searchParams={searchParams} />
     </div>
   )
 }

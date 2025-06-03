@@ -9,6 +9,7 @@ import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
 import { getOpportunitiesFromDatabase, calculateOpportunityMatch } from '@/lib/sam-gov/utils'
 import { DatabaseError, NotFoundError } from '@/lib/errors/types'
 import { dbLogger } from '@/lib/errors/logger'
+import { searchCache, createCacheKey } from '@/lib/utils/cache'
 
 // Query validation schema
 const searchQuerySchema = z.object({
@@ -68,15 +69,44 @@ export const GET = routeHandler.GET(
       filters.naicsCodes = companyNaicsCodes
     }
 
-    // Search opportunities
-    const { data: opportunities, error, count } = await getOpportunitiesFromDatabase(filters)
+    // Pass company NAICS codes for optimized database sorting
+    const enhancedFilters = {
+      ...filters,
+      companyNaicsCodes
+    }
+
+    // Create cache key for this search
+    const cacheKey = createCacheKey('search', {
+      ...enhancedFilters,
+      userId: user.id
+    })
+
+    // Check cache first
+    const cachedResult = searchCache.getWithStats<{
+      opportunities: any[]
+      count: number
+    }>(cacheKey)
+
+    if (cachedResult) {
+      dbLogger.debug('Cache hit for search', { cacheKey })
+      return NextResponse.json({
+        opportunities: cachedResult.opportunities,
+        total: cachedResult.count,
+        page: Math.floor(validatedQuery.offset / validatedQuery.limit) + 1,
+        pageSize: validatedQuery.limit
+      })
+    }
+
+    // Search opportunities with optimized database sorting
+    const { data: opportunities, error, count } = await getOpportunitiesFromDatabase(enhancedFilters)
 
     if (error) {
       dbLogger.error('Database search failed', error, { filters })
       throw new DatabaseError('Search failed', undefined, error)
     }
 
-    // Calculate match scores and enhance data
+    // Enhance data with client-side match scores and saved status
+    // The opportunities are already sorted by the database
     const enhancedOpportunities = (opportunities || []).map(opportunity => {
       const matchScore = calculateOpportunityMatch(opportunity, companyNaicsCodes)
       
@@ -87,13 +117,11 @@ export const GET = routeHandler.GET(
       }
     })
 
-    // Sort by match score (highest first) then by response deadline
-    enhancedOpportunities.sort((a, b) => {
-      if (a.matchScore !== b.matchScore) {
-        return b.matchScore - a.matchScore
-      }
-      return new Date(a.response_deadline).getTime() - new Date(b.response_deadline).getTime()
-    })
+    // Cache the results for 5 minutes
+    searchCache.set(cacheKey, {
+      opportunities: enhancedOpportunities,
+      count: count || 0
+    }, 300) // 5 minutes TTL
 
     // Log search activity
     if (filters.searchQuery || filters.naicsCodes) {
@@ -122,6 +150,14 @@ export const GET = routeHandler.GET(
   {
     requireAuth: true,
     validateQuery: searchQuerySchema,
-    rateLimit: 'search'
+    rateLimit: 'search',
+    sanitization: {
+      // Search queries need special sanitization
+      body: {
+        q: 'search',
+        title: 'text',
+        description: 'text'
+      }
+    }
   }
 )

@@ -188,7 +188,19 @@ export const POST = routeHandler.POST(
     validateQuery: z.object({
       // Optional query parameters for testing
       preview: z.string().optional(),
-    })
+    }),
+    rateLimit: 'api',
+    sanitization: {
+      body: {
+        // Sanitize all text content in emails
+        companyName: 'text',
+        firstName: 'text',
+        opportunityTitle: 'text',
+        solicitationNumber: 'text',
+        description: 'basic', // Allow basic formatting
+        estimatedValue: 'text'
+      }
+    }
   }
 )
 

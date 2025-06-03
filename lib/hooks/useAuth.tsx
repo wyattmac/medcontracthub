@@ -33,6 +33,13 @@ export function AuthProvider({ children }: IAuthProviderProps) {
   const supabase = createClient()
   const mountedRef = useRef(true)
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
   const refreshProfile = useCallback(async () => {
     console.log('[useAuth] Refreshing profile...')
     
@@ -78,7 +85,8 @@ export function AuthProvider({ children }: IAuthProviderProps) {
     } catch (error) {
       console.error('[useAuth] Unexpected error in refreshProfile:', error)
     }
-  }, [user?.id, supabase]) // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, supabase])
 
   useEffect(() => {
     const getUser = async () => {
@@ -149,7 +157,8 @@ export function AuthProvider({ children }: IAuthProviderProps) {
     if (user && mountedRef.current) {
       refreshProfile()
     }
-  }, [user?.id, refreshProfile]) // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, refreshProfile])
 
   const signOut = async () => {
     console.log('[useAuth] Signing out...')

@@ -1,10 +1,10 @@
 # MedContractHub
 
-AI-powered platform to help medical supply companies discover, analyze, and win federal contracts through SAM.gov integration.
+AI-powered platform for medical supply wholesale distributors to discover, source, and win federal contracts through intelligent document processing and automated supplier discovery.
 
 ## 🚀 Overview
 
-MedContractHub is a comprehensive federal contracting platform designed specifically for medical supply companies. It streamlines the process of finding, analyzing, and bidding on government contracts by leveraging AI-powered insights and automated workflows.
+MedContractHub is a comprehensive federal contracting platform designed specifically for medical supply wholesale distributors. It revolutionizes the bidding process by using AI to extract product requirements from government contracts, automatically find suppliers online, and match products to specifications - dramatically reducing the time from RFP to bid submission.
 
 ## 📅 Development Progress
 
@@ -13,6 +13,8 @@ MedContractHub is a comprehensive federal contracting platform designed specific
 - **Day 3**: ✅ Opportunity Management - AI Analysis, Reminders, Sync System
 - **Day 4**: ✅ Error Handling & Reliability - Custom Errors, Logging, Recovery
 - **Day 5**: ✅ Export & Email System - PDF/Excel Reports, Email Notifications Complete
+- **Day 6**: ✅ Performance Optimization - Database queries, bundle splitting, caching, lazy loading
+- **Day 7**: 🚧 Wholesale Distributor AI - Document OCR, product sourcing, supplier discovery (In Planning)
 
 ## 🎯 Key Features
 
@@ -23,6 +25,14 @@ MedContractHub is a comprehensive federal contracting platform designed specific
 - **Performance Analytics**: Track your win rate and optimize your bidding strategy with advanced charts
 - **Compliance Tracking**: Stay compliant with federal requirements and certifications
 - **Export & Reporting**: Generate PDF and Excel reports for opportunities and proposals
+
+### **🤖 Wholesale Distributor AI Features (Coming Soon)**
+- **Intelligent Document Processing**: Extract product requirements from PDFs/Word docs using Mistral OCR
+- **Automated Product Sourcing**: AI searches online suppliers to find matching medical products
+- **Smart Product Matching**: Compare found products against contract specifications with confidence scoring
+- **Supplier Discovery**: Build a database of vetted suppliers with pricing and lead times
+- **Bid Cost Calculation**: Automated cost aggregation for accurate bid pricing
+- **Sourcing Reports**: Comprehensive reports linking requirements to potential suppliers
 
 ### **🤖 AI-Powered Intelligence Engine**
 - **Intelligent Proposal Assistant**: AI-powered proposal generation with compliance checking and past performance integration

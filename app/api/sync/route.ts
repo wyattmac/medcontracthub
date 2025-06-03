@@ -4,53 +4,71 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database.types'
 import { samApiClient } from '@/lib/sam-gov'
 import { syncOpportunitiesToDatabase } from '@/lib/sam-gov/utils'
+import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
+import { ExternalAPIError, DatabaseError } from '@/lib/errors/types'
+import { syncLogger } from '@/lib/errors/logger'
 
 // Use service role for background operations
-const supabase = createClient<Database>(
+const serviceSupabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export async function POST(request: NextRequest) {
-  try {
+// Query validation schema
+const syncQuerySchema = z.object({
+  force: z.string().transform(val => val === 'true').optional(),
+  naics: z.string().optional(),
+  limit: z.string().transform(Number).pipe(z.number().min(1).max(1000)).optional()
+})
+
+export const POST = routeHandler.POST(
+  async ({ request, user, supabase }: IRouteContext) => {
     // Set a reasonable timeout for sync operations
     const syncTimeout = 5 * 60 * 1000 // 5 minutes
     
-    return await Promise.race([
-      performSync(request),
-      new Promise<Response>((_, reject) => 
-        setTimeout(() => reject(new Error('Sync operation timeout - operation may continue in background')), syncTimeout)
-      )
-    ])
-  } catch (error) {
-    console.error('Sync error:', error)
-    
-    return NextResponse.json(
-      { 
-        error: 'Sync failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
-  }
-}
+    try {
+      return await Promise.race([
+        performSync(request, user),
+        new Promise<NextResponse>((_, reject) => 
+          setTimeout(() => reject(new ExternalAPIError('SAM.gov API', 'Sync operation timeout - operation may continue in background')), syncTimeout)
+        )
+      ])
+    } catch (error) {
+      syncLogger.error('Sync operation failed', error as Error, {
+        userId: user?.id,
+        endpoint: '/api/sync'
+      })
 
-async function performSync(request: NextRequest) {
-  try {
-    // Verify authorization for sync operations
-    const authHeader = request.headers.get('authorization')
-    const expectedToken = process.env.SYNC_TOKEN || 'default-sync-token'
-    
-    if (authHeader !== `Bearer ${expectedToken}`) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+      if (error instanceof ExternalAPIError) {
+        throw error
+      }
+
+      throw new ExternalAPIError('SAM.gov API', 'Sync operation failed', undefined, 
+        error instanceof Error ? error.message : 'Unknown error'
       )
     }
+  },
+  {
+    requireAuth: true,
+    validateQuery: syncQuerySchema,
+    rateLimit: 'sync'
+  }
+)
+
+async function performSync(request: NextRequest, user?: any): Promise<NextResponse> {
+  const startTime = Date.now()
+  let totalFetched = 0
+
+  try {
+    syncLogger.info('Starting sync operation', {
+      userId: user?.id,
+      timestamp: new Date().toISOString()
+    })
 
     const { searchParams } = new URL(request.url)
     const forceSync = searchParams.get('force') === 'true'
@@ -128,10 +146,10 @@ async function performSync(request: NextRequest) {
     const syncResult = await syncOpportunitiesToDatabase(allOpportunities)
 
     // Log sync activity
-    await supabase
+    await serviceSupabase
       .from('audit_logs')
       .insert({
-        user_id: null, // System operation
+        user_id: user?.id || null,
         action: 'automated_sync',
         entity_type: 'opportunities',
         changes: {
@@ -162,10 +180,10 @@ async function performSync(request: NextRequest) {
 
     // Log sync failure
     try {
-      await supabase
+      await serviceSupabase
         .from('audit_logs')
         .insert({
-          user_id: null,
+          user_id: user?.id || null,
           action: 'sync_failed',
           entity_type: 'opportunities',
           changes: {
@@ -173,7 +191,7 @@ async function performSync(request: NextRequest) {
           }
         })
     } catch (logError) {
-      console.error('Failed to log sync error:', logError)
+      syncLogger.warn('Failed to log sync error to database', logError as Error)
     }
 
     return NextResponse.json(

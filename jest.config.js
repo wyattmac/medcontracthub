@@ -13,6 +13,16 @@ const customJestConfig = {
   // Automatically clear mock calls, instances and results before every test
   clearMocks: true,
   
+  // Cache configuration for faster runs
+  cache: true,
+  cacheDirectory: '<rootDir>/.jest-cache',
+  
+  // Run tests in parallel for speed
+  maxWorkers: '50%',
+  
+  // Fail fast on first test failure in CI
+  bail: process.env.CI ? 1 : 0,
+  
   // Collect coverage from important files
   collectCoverageFrom: [
     'app/**/*.{js,jsx,ts,tsx}',
@@ -25,6 +35,8 @@ const customJestConfig = {
     '!app/**/error.{js,jsx,ts,tsx}',
     '!app/**/not-found.{js,jsx,ts,tsx}',
     '!app/globals.css',
+    '!**/*.stories.{js,jsx,ts,tsx}',
+    '!**/types/**',
   ],
   
   // Coverage thresholds
@@ -40,14 +52,30 @@ const customJestConfig = {
   // Test environment
   testEnvironment: 'jsdom',
   
-  // Module name mapping for absolute imports
+  // Module name mapping for absolute imports and mocks
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    '^.+\\.(css|less|scss|sass)$': '<rootDir>/__tests__/mocks/styleMock.js',
+    '^.+\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__tests__/mocks/fileMock.js',
   },
   
-  // Transform files
+  // Transform files with SWC for faster compilation
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
+    '^.+\\.(js|jsx|ts|tsx)$': ['@swc/jest', {
+      jsc: {
+        parser: {
+          syntax: 'typescript',
+          tsx: true,
+          decorators: false,
+          dynamicImport: true,
+        },
+        transform: {
+          react: {
+            runtime: 'automatic',
+          },
+        },
+      },
+    }],
   },
   
   // Ignore patterns
@@ -55,6 +83,15 @@ const customJestConfig = {
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
     '<rootDir>/tools/',
+    '<rootDir>/e2e/',
+  ],
+  
+  // Watch mode ignore patterns for better performance
+  watchPathIgnorePatterns: [
+    '<rootDir>/.next/',
+    '<rootDir>/node_modules/',
+    '<rootDir>/tools/',
+    '<rootDir>/.jest-cache/',
   ],
   
   // Test file patterns
@@ -68,6 +105,13 @@ const customJestConfig = {
   
   // Timeout for tests
   testTimeout: 10000,
+  
+  // Globals for faster test execution
+  globals: {
+    'ts-jest': {
+      isolatedModules: true,
+    },
+  },
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

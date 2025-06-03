@@ -93,3 +93,52 @@
  ✓ Compiled in 324ms (447 modules)
  ✓ Compiled in 230ms (447 modules)
  ✓ Compiled in 193ms (447 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 329ms (447 modules)
+ ✓ Compiled in 276ms (447 modules)
+ ✓ Compiled in 237ms (447 modules)
+ ✓ Compiled in 244ms (447 modules)
+ ✓ Compiled in 201ms (447 modules)
+ ✓ Compiled in 268ms (447 modules)
+ ✓ Compiled in 265ms (447 modules)
+ ✓ Compiled in 239ms (447 modules)
+ ✓ Compiled in 190ms (486 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 324ms (447 modules)
+ ✓ Compiled in 268ms (447 modules)
+ ✓ Compiled in 228ms (447 modules)
+ ✓ Compiled in 256ms (144 modules)
+ ✓ Compiled in 104ms (144 modules)
+ ✓ Compiled in 84ms (144 modules)
+ ✓ Compiled in 234ms (486 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 659ms (1063 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 1046ms (447 modules)
+ ✓ Compiled in 410ms (447 modules)
+ ✓ Compiled in 511ms (1063 modules)
+ ✓ Compiled in 255ms (447 modules)
+ ✓ Compiled in 574ms (1063 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 295ms (447 modules)
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+  ▲ Next.js 14.2.29
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+  - Experiments (use with caution):
+    · optimizeCss
+
+ ✓ Starting...
+ ⚠ Found lockfile missing swc dependencies, patching...
+Error: optimization.usedExports can't be used with cacheUnaffected as export usage is a global effect
+    at /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/webpack/bundle5.js:28:307796
+    at Hook.eval [as call] (eval at create (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/webpack/bundle5.js:13:28636), <anonymous>:7:16)
+    at Hook.CALL_DELEGATE [as _call] (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/webpack/bundle5.js:13:25906)
+    at Compilation.seal (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/webpack/bundle5.js:28:100154)
+    at /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/webpack/bundle5.js:28:149081
+    at /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/webpack/bundle5.js:28:99350
+    at _next2 (eval at create (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/webpack/bundle5.js:13:28858), <anonymous>:16:1)
+    at eval (eval at create (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/webpack/bundle5.js:13:28858), <anonymous>:42:1)
+    at /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/webpack/bundle5.js:28:306987
+    at /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/neo-async/async.js:1:9430
+ ⚠ Lockfile was successfully patched, please run "npm install" to ensure @next/swc dependencies are downloaded
