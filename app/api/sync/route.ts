@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database.types'
-import { samApiClient } from '@/lib/sam-gov'
+import { getSAMApiClient } from '@/lib/sam-gov'
 import { syncOpportunitiesToDatabase } from '@/lib/sam-gov/utils'
 import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
 import { ExternalAPIError, DatabaseError } from '@/lib/errors/types'
@@ -78,7 +78,7 @@ async function performSync(request: NextRequest, user?: any): Promise<NextRespon
     console.log('Starting opportunity sync...', { forceSync, naicsFilter, limit })
 
     // Use the default SAM.gov API client
-    const samClient = samApiClient
+    const samClient = getSAMApiClient()
 
     // Build search parameters for active opportunities
     const samParams: any = {

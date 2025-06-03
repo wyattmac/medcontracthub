@@ -14,6 +14,7 @@ import { SaveOpportunityButton } from './save-opportunity-button'
 import { EditOpportunityNotesModal } from './edit-opportunity-notes-modal'
 import { OpportunityAnalysisButton } from '../ai/opportunity-analysis-button'
 import { ReminderButton } from './reminder-button'
+import { ProcessDocumentsButton } from './process-documents-button'
 import { 
   ArrowLeft, 
   Calendar, 
@@ -465,6 +466,14 @@ export function OpportunityDetailContainer({
                   </Button>
                 }
               />
+              
+              {/* Process Documents Button - Show if opportunity has resource links */}
+              {opportunity.additional_info?.resourceLinks?.length > 0 && (
+                <ProcessDocumentsButton
+                  opportunityId={opportunity.id}
+                  documentCount={opportunity.additional_info.resourceLinks.length}
+                />
+              )}
               
               <ReminderButton
                 opportunityId={opportunity.id}

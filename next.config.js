@@ -78,8 +78,10 @@ const nextConfig = {
     }
     
     // Enable tree shaking for ES modules
-    config.optimization.usedExports = true
-    config.optimization.sideEffects = false
+    if (process.env.NODE_ENV === 'production') {
+      config.optimization.usedExports = true
+      config.optimization.sideEffects = false
+    }
     
     return config
   },

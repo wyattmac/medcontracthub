@@ -31,7 +31,7 @@ export {
   SAMApiClient,
   SAMApiError,
   createSAMApiClient,
-  samApiClient
+  getSAMApiClient
 } from './client'
 
 // Hooks

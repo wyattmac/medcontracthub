@@ -36,11 +36,18 @@ export class SAMApiClient {
     const searchParams = new URLSearchParams()
     
     // Set default parameters
+    // SAM.gov v2 API requires postedFrom and postedTo
+    const today = new Date()
+    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+    const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+    
     const defaultParams: ISAMOpportunitiesParams = {
       limit: 100,
       offset: 0,
       active: 'true',
       latest: 'true',
+      postedFrom: params.postedFrom || `${(thirtyDaysAgo.getMonth() + 1).toString().padStart(2, '0')}/${thirtyDaysAgo.getDate().toString().padStart(2, '0')}/${thirtyDaysAgo.getFullYear()}`,
+      postedTo: params.postedTo || `${(thirtyDaysFromNow.getMonth() + 1).toString().padStart(2, '0')}/${thirtyDaysFromNow.getDate().toString().padStart(2, '0')}/${thirtyDaysFromNow.getFullYear()}`,
       ...params
     }
 
@@ -51,7 +58,7 @@ export class SAMApiClient {
       }
     })
 
-    const url = `${this.config.baseUrl}/prod/opportunities/v3/search?${searchParams.toString()}`
+    const url = `${this.config.baseUrl}/opportunities/v2/search?${searchParams.toString()}`
 
     try {
       const controller = new AbortController()
@@ -245,8 +252,17 @@ export function createSAMApiClient(apiKey: string): SAMApiClient {
 }
 
 /**
- * Default SAM API client instance (requires environment variable)
+ * Get default SAM API client instance (lazy initialization)
  */
-export const samApiClient = createSAMApiClient(
-  process.env.SAM_GOV_API_KEY || ''
-)
+let _samApiClient: SAMApiClient | null = null
+
+export function getSAMApiClient(): SAMApiClient {
+  if (!_samApiClient) {
+    const apiKey = process.env.SAM_GOV_API_KEY
+    if (!apiKey) {
+      throw new Error('SAM_GOV_API_KEY environment variable is required')
+    }
+    _samApiClient = createSAMApiClient(apiKey)
+  }
+  return _samApiClient
+}
