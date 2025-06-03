@@ -88,12 +88,12 @@ export default async function TestOCRPage() {
               </ul>
             </div>
 
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg text-sm">
-              <h4 className="font-medium mb-1 text-yellow-800 dark:text-yellow-200">⚠️ Important Note:</h4>
+            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-sm">
+              <h4 className="font-medium mb-1 text-green-800 dark:text-green-200">✅ Native PDF Support:</h4>
               <p className="text-gray-600 dark:text-gray-400">
-                Mistral's vision API currently only supports image files (PNG, JPG, etc). 
-                PDF documents from SAM.gov will need to be converted to images first for OCR processing.
-                In production, we would implement automatic PDF-to-image conversion.
+                Mistral OCR now supports native PDF processing! No conversion needed.
+                The system can handle PDFs up to 50MB in size and 1,000 pages.
+                Processing speed: up to 2,000 pages per minute.
               </p>
             </div>
           </div>
@@ -106,10 +106,11 @@ export default async function TestOCRPage() {
         </CardHeader>
         <CardContent className="prose prose-sm dark:prose-invert">
           <ul>
-            <li>Processing cost: ~$0.04-0.05 per page</li>
+            <li>Processing cost: $0.001 per page (100x cheaper!)</li>
             <li>Cached documents process instantly at no cost</li>
-            <li>Results are saved to the contract_documents table</li>
-            <li>Extracted requirements are saved to product_requirements table</li>
+            <li>Native PDF support - no conversion needed</li>
+            <li>Extracts structured product data automatically</li>
+            <li>Results saved to contract_documents and product_requirements tables</li>
           </ul>
         </CardContent>
       </Card>

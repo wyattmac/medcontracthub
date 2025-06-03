@@ -110,7 +110,7 @@ export function ProcessDocumentsModal({
     onClose()
   }
 
-  const estimatedCost = documentCount * 0.01 // $0.01 per page estimate
+  const estimatedCost = documentCount * 0.001 // $0.001 per page with Mistral OCR
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

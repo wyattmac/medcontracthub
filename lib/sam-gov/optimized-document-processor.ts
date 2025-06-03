@@ -3,7 +3,7 @@
  * Cost-effective processing with caching and batch operations
  */
 
-import { mistralOCR } from '@/lib/ai/mistral-ocr-client'
+import { mistralDocumentOCR } from '@/lib/ai/mistral-document-ocr-client'
 import { costOptimizer } from '@/lib/ai/cost-optimizer'
 import { Database } from '@/types/database.types'
 import { createClient } from '@supabase/supabase-js'
@@ -182,7 +182,7 @@ class OptimizedDocumentProcessor {
           documentId: cacheResult.cacheId || '',
           fileName: this.extractFileName(documentUrl),
           cached: true,
-          requirements: cacheResult.data?.products || [],
+          requirements: cacheResult.data?.structuredData?.products || cacheResult.data?.products || [],
           processingTime: Date.now() - startTime,
           cost: 0 // No cost for cached results
         }
@@ -191,20 +191,19 @@ class OptimizedDocumentProcessor {
 
     // Download document
     const documentBuffer = await this.downloadDocument(documentUrl)
+    const fileName = this.extractFileName(documentUrl)
     
-    // Estimate cost before processing
-    const estimatedPages = Math.ceil(documentBuffer.length / 50000) // Rough estimate
-    const estimatedCost = costOptimizer.estimateOCRCost(estimatedPages)
-
-    // Process with Mistral OCR
-    const ocrResult = await mistralOCR.processDocumentBuffer(
-      documentBuffer,
-      this.extractFileName(documentUrl)
+    // Use new Mistral Document OCR with native PDF support
+    const ocrResult = await mistralDocumentOCR.processDocument(
+      { buffer: documentBuffer, fileName },
+      { 
+        structuredOutput: true,
+        includeImageBase64: false // Don't need images for product extraction
+      }
     )
 
-    // Calculate actual cost
-    const actualPages = ocrResult.structuredData?.metadata?.pageCount || estimatedPages
-    const actualCost = costOptimizer.estimateOCRCost(actualPages)
+    // Calculate actual cost ($0.001 per page)
+    const actualCost = mistralDocumentOCR.calculateCost(ocrResult.metadata.pageCount)
 
     // Cache the result
     await costOptimizer.cacheDocument(
@@ -220,12 +219,16 @@ class OptimizedDocumentProcessor {
       .insert({
         opportunity_id: opportunityId,
         company_id: companyId,
-        file_name: this.extractFileName(documentUrl),
+        file_name: fileName,
         file_url: documentUrl,
         file_type: 'application/pdf',
         file_size: documentBuffer.length,
         ocr_status: 'completed',
-        ocr_result: ocrResult,
+        ocr_result: {
+          pages: ocrResult.pages.length,
+          metadata: ocrResult.metadata,
+          structuredData: ocrResult.structuredData
+        },
         extracted_requirements: ocrResult.structuredData?.products || []
       })
       .select()

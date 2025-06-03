@@ -28,8 +28,8 @@ export class CostOptimizer {
   private supabase: ReturnType<typeof createClient<Database>>
   private config: ICostConfig = {
     mistralOCR: {
-      costPerPage: 0.01,
-      maxPagesPerRequest: 50,
+      costPerPage: 0.001, // Updated to $0.001 per page
+      maxPagesPerRequest: 1000, // Updated to 1000 pages max
       cacheExpiryDays: 30
     },
     claudeAI: {
