@@ -2,7 +2,7 @@
  * Toast Hook - Simple toast notification system
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 export interface ToastProps {
   title: string
@@ -14,6 +14,15 @@ export interface ToastProps {
 // Simple toast implementation - can be enhanced with a more sophisticated library later
 export function useToast() {
   const [toasts, setToasts] = useState<(ToastProps & { id: string })[]>([])
+  const timeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach(timeout => clearTimeout(timeout))
+      timeoutsRef.current.clear()
+    }
+  }, [])
 
   const toast = useCallback((props: ToastProps) => {
     const id = Math.random().toString(36).substr(2, 9)
@@ -21,10 +30,13 @@ export function useToast() {
     
     setToasts(prev => [...prev, newToast])
     
-    // Auto-remove toast after duration
-    setTimeout(() => {
+    // Auto-remove toast after duration with cleanup
+    const timeout = setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
+      timeoutsRef.current.delete(id)
     }, props.duration || 5000)
+    
+    timeoutsRef.current.set(id, timeout)
     
     // Show native notification for now
     if ('Notification' in window && Notification.permission === 'granted') {

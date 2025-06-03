@@ -5,9 +5,15 @@ AI platform for medical distributors to win federal contracts via SAM.gov integr
 Stack: Next.js 14, TypeScript, Supabase, Tailwind CSS | Path: /home/locklearwyatt/projects/medcontracthub
 
 ## Status
-✅ Auth, SAM.gov (22k+), AI analysis, exports, emails, Brave Search
-🚧 Analytics UI, Mistral OCR
-📋 Product sourcing, supplier discovery
+✅ Auth, SAM.gov (22k+), AI analysis, exports, emails, Brave Search, Mistral OCR
+🚧 Virtual scrolling, Testing (0% coverage), Payment integration
+🚨 CRITICAL: Memory leaks, Performance issues, No CI/CD
+
+## 🚨 CRITICAL FIXES REQUIRED
+1. **Memory Leaks** - Fix auth hook subscriptions (4 hrs)
+2. **Virtual Scrolling** - Implement react-window for 22k+ items (8 hrs)
+3. **Test Coverage** - Target 80% coverage (ongoing)
+4. **CI/CD Pipeline** - GitHub Actions setup (8 hrs)
 
 ## Critical Rules
 1. **TypeScript strict** - `as any` only for DB compatibility
@@ -96,17 +102,72 @@ SENTRY_DSN=
 - `middleware.ts` - Auth protection
 - `lib/hooks/useErrorHandler.ts` - Client errors
 
-## Current Tasks
-- [ ] Analytics Dashboard UI
-- [ ] Mistral OCR integration
-- [ ] Product/supplier schema
-- [ ] Web scraping engine
-- [ ] AI matching system
-- [ ] Virtual scrolling
-- [ ] Test coverage
+## 🎯 30-Day Action Plan
+
+### Week 1: Critical Fixes (IMMEDIATE)
+- [ ] Fix memory leaks in useAuth hook (4 hrs)
+- [ ] Implement react-window for opportunities list (8 hrs)
+- [ ] Write auth & payment critical path tests (8 hrs)
+- [ ] Activate Sentry monitoring properly (2 hrs)
+- [ ] Fix N+1 queries in opportunities endpoint (4 hrs)
+
+### Week 2: Infrastructure & Scale
+- [ ] Set up GitHub Actions CI/CD pipeline (8 hrs)
+- [ ] Create staging environment on Vercel (4 hrs)
+- [ ] Implement Redis for rate limiting (8 hrs)
+- [ ] Add Bull.js job queue for OCR processing (8 hrs)
+- [ ] Database query optimization & batching (8 hrs)
+
+### Week 3: Revenue Features
+- [ ] Complete Stripe integration + webhooks (16 hrs)
+- [ ] Build usage metering for AI features (8 hrs)
+- [ ] Implement 14-day trial flow (8 hrs)
+- [ ] Create billing & subscription dashboard (8 hrs)
+
+### Week 4: Production Polish
+- [ ] Security audit & penetration testing (16 hrs)
+- [ ] Load testing with k6 (target 1000 users) (8 hrs)
+- [ ] Implement backup strategy (8 hrs)
+- [ ] Bundle optimization (target < 1.5MB) (8 hrs)
+
+## 👥 Hiring Priorities (IMMEDIATE)
+
+### 1. QA Engineer (Contract/FT)
+- Build comprehensive test suite
+- Set up E2E testing with Playwright
+- Establish testing best practices
+- Budget: $5-8k/month
+
+### 2. DevOps Consultant (2-week contract)
+- Set up CI/CD pipeline
+- Configure monitoring & logging
+- Implement backup strategy
+- Redis & queue infrastructure
+- Budget: $5-10k total
+
+### 3. Security Auditor (1-week audit)
+- HIPAA compliance review
+- Penetration testing
+- Security best practices
+- Budget: $3-5k
+
+## 📊 Performance Targets
+- **Page Load**: < 2 seconds
+- **Bundle Size**: < 1.5MB
+- **API Response**: < 200ms (p95)
+- **Test Coverage**: > 80%
+- **Uptime**: 99.9%
+
+## 🐛 Known Critical Issues
+1. **Memory Leak**: `useAuth` hook missing cleanup
+2. **N+1 Queries**: Opportunities endpoint (22k queries!)
+3. **Bundle Size**: 2.8MB initial load
+4. **No Virtual Scrolling**: Browser crash risk
+5. **Missing Tests**: 0% coverage = no safety net
 
 ## Common Fixes
-- **DB types**: Use `as any` strategically
-- **Auth fails**: Check middleware & RLS
-- **Timeouts**: Add caching, check limits
-- **Large lists**: Need virtualization (pending)
+- **Memory leaks**: Add cleanup to all subscriptions
+- **Performance**: Use react-window for lists > 100 items
+- **N+1 queries**: Batch with `Promise.all()` or dataloader
+- **Bundle size**: Dynamic import large dependencies
+- **Auth fails**: Check middleware & RLS + cleanup subscriptions

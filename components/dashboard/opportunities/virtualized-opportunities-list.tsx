@@ -5,8 +5,9 @@
 
 'use client'
 
-import { useMemo, memo } from 'react'
+import { useMemo, memo, useCallback } from 'react'
 import { FixedSizeList as List } from 'react-window'
+import AutoSizer from 'react-virtualized-auto-sizer'
 import { Database } from '@/types/database.types'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -87,18 +88,24 @@ export function VirtualizedOpportunitiesList({
     )
   }
 
+  // Use AutoSizer for responsive virtualization
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <List
-        height={height}
-        width="100%"
-        itemCount={opportunities.length}
-        itemSize={280} // Approximate height of each opportunity card
-        itemData={memoizedOpportunities}
-        className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-      >
-        {OpportunityItem}
-      </List>
+    <div style={{ height: `${height}px`, width: '100%' }} className="border rounded-lg overflow-hidden">
+      <AutoSizer>
+        {({ height: autoHeight, width }) => (
+          <List
+            height={autoHeight}
+            width={width}
+            itemCount={opportunities.length}
+            itemSize={280} // Approximate height of each opportunity card
+            itemData={memoizedOpportunities}
+            className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+            overscanCount={3} // Render 3 items outside of the visible area for smoother scrolling
+          >
+            {OpportunityItem}
+          </List>
+        )}
+      </AutoSizer>
     </div>
   )
 }
