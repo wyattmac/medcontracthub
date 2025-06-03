@@ -5,9 +5,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { FileText, Loader2, CheckCircle2, AlertCircle, FileSearch } from 'lucide-react'
+import { FileText, Loader2, CheckCircle2, AlertCircle, FileSearch, DollarSign } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/use-toast'
 import { apiClient } from '@/lib/api/client'
+import { formatCurrency } from '@/lib/utils'
 
 interface IProcessDocumentsButtonProps {
   opportunityId: string
@@ -27,9 +29,11 @@ export function ProcessDocumentsButton({
 
   const processDocuments = useMutation({
     mutationFn: async () => {
-      const response = await apiClient.post('/api/ocr/process', {
+      const response = await apiClient.post('/api/ocr/process-optimized', {
         opportunityId,
-        processAllDocuments: true
+        priority: 5,
+        skipCache: false,
+        maxRetries: 3
       })
       return response.data
     },
@@ -158,7 +162,19 @@ export function ProcessDocumentsButton({
                     <p className="text-sm text-green-700 mt-1">
                       Successfully extracted {results.totalRequirements} product requirements
                       from {results.documentsProcessed} documents
+                      {results.documentsCached > 0 && ` (${results.documentsCached} from cache)`}
                     </p>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-green-700">
+                      <span className="flex items-center gap-1">
+                        <DollarSign className="h-3 w-3" />
+                        Cost: {formatCurrency(results.totalCost)}
+                      </span>
+                      {results.savedCost > 0 && (
+                        <span className="flex items-center gap-1">
+                          Saved: {formatCurrency(results.savedCost)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -171,9 +187,16 @@ export function ProcessDocumentsButton({
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">{doc.fileName}</span>
+                        {doc.cached && (
+                          <Badge variant="secondary" className="text-xs">Cached</Badge>
+                        )}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {doc.requirementsFound} requirements • {doc.processingTimeMs}ms
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span>{doc.requirementsFound} requirements</span>
+                        <span>•</span>
+                        <span>{doc.processingTimeMs}ms</span>
+                        <span>•</span>
+                        <span>{formatCurrency(doc.cost)}</span>
                       </div>
                     </div>
                   </Card>

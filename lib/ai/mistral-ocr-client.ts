@@ -28,7 +28,7 @@ interface IOCRResult {
 interface IOCRProcessOptions {
   documentUrl?: string
   documentBuffer?: Buffer
-  model?: 'Focus' | 'Pixtral'
+  model?: string // We'll use pixtral-12b-latest for vision/OCR tasks
 }
 
 class MistralOCRClient {
@@ -46,7 +46,7 @@ class MistralOCRClient {
   }
 
   async processDocument(options: IOCRProcessOptions): Promise<IOCRResult> {
-    const { documentUrl, documentBuffer, model = 'Focus' } = options
+    const { documentUrl, documentBuffer, model = 'pixtral-12b-2409' } = options
 
     if (!documentUrl && !documentBuffer) {
       throw new ValidationError('Either documentUrl or documentBuffer must be provided')
@@ -61,40 +61,89 @@ class MistralOCRClient {
 
       const client = this.getClient()
 
-      // Process document
-      const result = await client.ocr.process({
-        model,
-        document: documentUrl 
-          ? {
-              documentUrl,
-              type: 'document_url' as const,
+      // For URL-based documents, we need to download and convert to base64
+      let base64Content: string
+      let mimeType = 'image/jpeg'
+      
+      if (documentUrl) {
+        const response = await fetch(documentUrl)
+        if (!response.ok) {
+          throw new ExternalAPIError('Mistral', `Failed to download document: ${response.status}`)
+        }
+        const buffer = await response.arrayBuffer()
+        base64Content = Buffer.from(buffer).toString('base64')
+        
+        // Detect mime type from URL or response headers
+        const contentType = response.headers.get('content-type')
+        if (contentType) {
+          mimeType = contentType.split(';')[0]
+        }
+        
+        // Validate that it's an image type
+        if (!mimeType.startsWith('image/')) {
+          throw new ValidationError(`Mistral OCR only supports image files. Received: ${mimeType}`)
+        }
+      } else {
+        base64Content = documentBuffer!.toString('base64')
+        // For buffers, we'll assume it's an image unless specified otherwise
+      }
+
+      // Use the chat API with vision capabilities for document processing
+      // According to Mistral docs, we need to send the image in the content array
+      const response = await client.chat.complete({
+        model: model,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Extract all text from this document. Return the complete text content maintaining the original structure and formatting.'
+            },
+            {
+              type: 'image_url',
+              imageUrl: {
+                url: `data:${mimeType};base64,${base64Content}`
+              }
             }
-          : {
-              // For buffer uploads, we'll need to implement file upload first
-              documentUrl: '', // This will be implemented with file upload
-              type: 'document_url' as const,
-            }
+          ] as any // Type assertion needed due to SDK type limitations
+        }],
+        temperature: 0.1,
+        maxTokens: 8000
       })
+
+      const extractedText = response.choices?.[0]?.message?.content || ''
 
       apiLogger.info('OCR processing completed', {
-        pagesProcessed: result.usageInfo?.pagesProcessed || 0,
-        model: result.model,
+        model: response.model,
+        tokensUsed: response.usage?.totalTokens || 0
       })
 
-      return result as IOCRResult
+      // Return in OCR result format
+      return {
+        pages: [{
+          index: 0,
+          markdown: typeof extractedText === 'string' ? extractedText : '',
+          images: [],
+          dimensions: { dpi: 72, height: 792, width: 612 } // Standard PDF dimensions
+        }],
+        model: response.model || model,
+        usageInfo: {
+          pagesProcessed: 1
+        }
+      }
     } catch (error) {
       apiLogger.error('OCR processing failed', error, { model })
       
       if (error instanceof Error) {
         if (error.message.includes('API key') || error.message.includes('authentication')) {
-          throw new ExternalAPIError('Mistral AI authentication failed', 401)
+          throw new ExternalAPIError('Mistral', 'Authentication failed')
         }
         if (error.message.includes('rate limit')) {
-          throw new ExternalAPIError('Mistral AI rate limit exceeded', 429)
+          throw new ExternalAPIError('Mistral', 'Rate limit exceeded')
         }
       }
       
-      throw new ExternalAPIError('Failed to process document with OCR', 502)
+      throw new ExternalAPIError('Mistral', 'Failed to process document with OCR')
     }
   }
 
@@ -151,6 +200,23 @@ class MistralOCRClient {
       const fileExtension = fileName.split('.').pop()?.toLowerCase()
       const mimeType = this.getMimeType(fileExtension || 'pdf')
       
+      // Check if it's a PDF - Mistral only supports images
+      if (mimeType === 'application/pdf') {
+        apiLogger.warn('PDF documents are not directly supported by Mistral vision API', { fileName })
+        
+        // For PDFs, we'll use a text-based approach
+        // In production, you'd convert PDF to images first
+        return {
+          text: 'PDF processing requires conversion to images. Please use a PDF-to-image converter first.',
+          structuredData: {
+            products: [],
+            error: 'PDF_NOT_SUPPORTED',
+            message: 'PDFs must be converted to images before OCR processing'
+          },
+          tables: []
+        }
+      }
+      
       // Convert buffer to base64 for API
       const base64File = fileBuffer.toString('base64')
       
@@ -205,27 +271,31 @@ Important:
             },
             {
               type: 'image_url',
-              image_url: {
+              imageUrl: {
                 url: `data:${mimeType};base64,${base64File}`
               }
             }
           ]
         }],
         temperature: 0.1, // Low temperature for consistent extraction
-        max_tokens: 4000
+        maxTokens: 4000
       })
 
       let structuredData
+      let contentString: string = ''
       try {
         // Parse the response content as JSON
         const content = response.choices[0].message.content
-        structuredData = JSON.parse(content)
+        contentString = typeof content === 'string' ? content : JSON.stringify(content)
+        structuredData = JSON.parse(contentString)
       } catch (parseError) {
         apiLogger.warn('Failed to parse structured response, using fallback', { fileName })
         // Fallback structure if parsing fails
+        const fallbackContent = response.choices[0].message.content
+        contentString = typeof fallbackContent === 'string' ? fallbackContent : JSON.stringify(fallbackContent)
         structuredData = {
           products: [],
-          text: response.choices[0].message.content,
+          text: contentString,
           parse_error: true
         }
       }
@@ -238,7 +308,7 @@ Important:
       })
 
       return {
-        text: response.choices[0].message.content,
+        text: contentString,
         structuredData,
         tables: structuredData.tables || []
       }

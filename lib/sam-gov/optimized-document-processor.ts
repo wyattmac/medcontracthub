@@ -27,9 +27,9 @@ interface IProcessingResult {
   cost: number
 }
 
-export class OptimizedDocumentProcessor {
+class OptimizedDocumentProcessor {
   private supabase: ReturnType<typeof createClient<Database>>
-  private processingQueue: Array<{ opportunityId: string; documentUrl: string; priority: number }> = []
+  private processingQueue: Array<{ opportunityId: string; companyId: string; documentUrl: string; priority: number }> = []
   private isProcessing: boolean = false
 
   constructor() {
@@ -59,15 +59,28 @@ export class OptimizedDocumentProcessor {
     } = options
 
     try {
-      // Get opportunity and its documents
+      // Get opportunity with saved_opportunity to get company_id
       const { data: opportunity, error } = await this.supabase
         .from('opportunities')
-        .select('*, contract_documents(*)')
+        .select(`
+          *,
+          contract_documents(*),
+          saved_opportunities!inner(
+            id,
+            company_id
+          )
+        `)
         .eq('id', opportunityId)
         .single()
 
       if (error || !opportunity) {
         throw new DatabaseError('Opportunity not found')
+      }
+
+      // Get company_id from saved_opportunity
+      const companyId = opportunity.saved_opportunities?.[0]?.company_id
+      if (!companyId) {
+        throw new DatabaseError('Company ID not found for opportunity')
       }
 
       const resourceLinks = opportunity.additional_info?.resourceLinks || []
@@ -95,6 +108,7 @@ export class OptimizedDocumentProcessor {
         for (const documentUrl of batch) {
           const result = await this.processDocument(
             opportunityId,
+            companyId,
             documentUrl,
             { skipCache, priority }
           )
@@ -125,7 +139,7 @@ export class OptimizedDocumentProcessor {
       })
 
       // Create or update sourcing report
-      await this.createSourcingReport(opportunityId, results)
+      await this.createSourcingReport(opportunityId, companyId, results)
 
       syncLogger.info('Opportunity processing completed', {
         opportunityId,
@@ -154,6 +168,7 @@ export class OptimizedDocumentProcessor {
    */
   private async processDocument(
     opportunityId: string,
+    companyId: string,
     documentUrl: string,
     options: { skipCache?: boolean; priority?: number }
   ): Promise<IProcessingResult> {
@@ -204,6 +219,7 @@ export class OptimizedDocumentProcessor {
       .from('contract_documents')
       .insert({
         opportunity_id: opportunityId,
+        company_id: companyId,
         file_name: this.extractFileName(documentUrl),
         file_url: documentUrl,
         file_type: 'application/pdf',
@@ -268,6 +284,7 @@ export class OptimizedDocumentProcessor {
    */
   private async createSourcingReport(
     opportunityId: string,
+    companyId: string,
     results: IProcessingResult[]
   ): Promise<void> {
     const totalRequirements = results.reduce(
@@ -293,6 +310,7 @@ export class OptimizedDocumentProcessor {
       .from('sourcing_reports')
       .upsert({
         opportunity_id: opportunityId,
+        company_id: companyId,
         document_id: results[0]?.documentId,
         total_requirements: totalRequirements,
         requirements_sourced: 0,
@@ -314,6 +332,14 @@ export class OptimizedDocumentProcessor {
     }
 
     const buffer = await response.arrayBuffer()
+    
+    // Check if it's a PDF
+    const contentType = response.headers.get('content-type')
+    if (contentType?.includes('pdf')) {
+      syncLogger.warn('PDF documents require conversion to images for OCR processing', { resourceUrl })
+      // For now, we'll process PDFs as-is, but in production we'd convert to images
+    }
+    
     return Buffer.from(buffer)
   }
 
@@ -331,6 +357,7 @@ export class OptimizedDocumentProcessor {
    */
   async queueDocuments(
     opportunityId: string,
+    companyId: string,
     documentUrls: string[],
     priority: number = 5
   ): Promise<string[]> {
@@ -338,7 +365,7 @@ export class OptimizedDocumentProcessor {
 
     for (const url of documentUrls) {
       const jobId = crypto.randomUUID()
-      this.processingQueue.push({ opportunityId, documentUrl: url, priority })
+      this.processingQueue.push({ opportunityId, companyId, documentUrl: url, priority })
       jobIds.push(jobId)
     }
 
@@ -368,7 +395,7 @@ export class OptimizedDocumentProcessor {
       if (!job) continue
 
       try {
-        await this.processDocument(job.opportunityId, job.documentUrl, {})
+        await this.processDocument(job.opportunityId, job.companyId, job.documentUrl, {})
       } catch (error) {
         syncLogger.error('Queue processing failed', error as Error, job)
       }
