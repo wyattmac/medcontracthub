@@ -211,8 +211,14 @@ Required environment variables:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anonymous key
 - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key
 - `ANTHROPIC_API_KEY`: Your Anthropic API key
+- `RESEND_API_KEY`: Your Resend API key for email functionality
 - `GOOGLE_CLIENT_ID`: Google OAuth client ID
 - `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
+
+Optional environment variables:
+- `MISTRAL_API_KEY`: Mistral API key for OCR document processing
+- `BRAVE_SEARCH_API_KEY`: Brave Search API key for web search capabilities
+- `SENTRY_DSN`: Sentry DSN for error monitoring
 
 ### 4. Set up the database
 

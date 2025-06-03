@@ -5,7 +5,7 @@ AI platform for medical distributors to win federal contracts via SAM.gov integr
 Stack: Next.js 14, TypeScript, Supabase, Tailwind CSS | Path: /home/locklearwyatt/projects/medcontracthub
 
 ## Status
-✅ Auth, SAM.gov (22k+), AI analysis, exports, emails
+✅ Auth, SAM.gov (22k+), AI analysis, exports, emails, Brave Search
 🚧 Analytics UI, Mistral OCR
 📋 Product sourcing, supplier discovery
 
@@ -76,14 +76,18 @@ mcp__context7__get-library-docs
 
 ## Environment
 ```env
+# Required
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 SAM_GOV_API_KEY=
 ANTHROPIC_API_KEY=
 RESEND_API_KEY=
-MISTRAL_API_KEY= # Optional
-SENTRY_DSN= # Optional
+
+# Optional
+MISTRAL_API_KEY=
+BRAVE_SEARCH_API_KEY=
+SENTRY_DSN=
 ```
 
 ## Key Files
