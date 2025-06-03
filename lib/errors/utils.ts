@@ -164,10 +164,10 @@ export function logError(error: unknown, parsedError?: any): void {
     console.warn('[WARNING]', JSON.stringify(errorInfo, null, 2))
   }
   
-  // Here you would send to monitoring service (e.g., Sentry, DataDog)
-  // if (process.env.NODE_ENV === 'production') {
-  //   sendToMonitoring(errorInfo)
-  // }
+  // Send to monitoring service in production
+  if (process.env.NODE_ENV === 'production') {
+    sendToMonitoring(errorInfo)
+  }
 }
 
 /**
@@ -203,6 +203,32 @@ export function withErrorHandler<T extends (...args: any[]) => Promise<any>>(
       return formatErrorResponse(error, requestId)
     }
   }) as T
+}
+
+/**
+ * Send error to monitoring service (Sentry)
+ */
+function sendToMonitoring(errorInfo: any): void {
+  try {
+    // Server-side
+    if (typeof window === 'undefined') {
+      const Sentry = require('@sentry/nextjs')
+      Sentry.captureException(errorInfo.error || new Error(errorInfo.message || 'Unknown error'), {
+        level: 'error',
+        extra: errorInfo,
+      })
+    } else if ((window as any).Sentry) {
+      // Client-side
+      const Sentry = (window as any).Sentry
+      Sentry.captureException(errorInfo.error || new Error(errorInfo.message || 'Unknown error'), {
+        level: 'error',
+        extra: errorInfo,
+      })
+    }
+  } catch (e) {
+    // Silently fail if Sentry is not available
+    console.error('[Sentry Error]', e)
+  }
 }
 
 /**

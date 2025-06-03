@@ -1,3 +1,6 @@
+// This file sets a custom webpack configuration to use your Next.js app with Sentry.
+const { withSentryConfig } = require('@sentry/nextjs')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Enable SWC minification for faster builds and smaller bundles
@@ -99,4 +102,28 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+// Sentry configuration options
+const sentryWebpackPluginOptions = {
+  // For all available options, see:
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+  
+  // Suppresses source map uploading logs during build
+  silent: true,
+  
+  // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers
+  tunnelRoute: '/monitoring',
+  
+  // Hides source maps from generated client bundles
+  hideSourceMaps: true,
+  
+  // Automatically tree-shake Sentry logger statements to reduce bundle size
+  disableLogger: true,
+  
+  // Enables automatic instrumentation of Vercel Cron Monitors
+  automaticVercelMonitors: true,
+}
+
+// Export the config with or without Sentry based on environment
+module.exports = process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+  : nextConfig

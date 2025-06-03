@@ -107,10 +107,14 @@ export async function middleware(request: NextRequest) {
       logger.error('Missing Supabase environment variables in middleware')
       // Allow public routes to proceed
       if (publicRoutes.some(route => pathname === route)) {
-        return NextResponse.next()
+        const response = NextResponse.next()
+        addSecurityHeaders(response)
+        return response
       }
       // Redirect to error page for protected routes
-      return NextResponse.redirect(new URL('/error?code=config', request.url))
+      const errorResponse = NextResponse.redirect(new URL('/error?code=config', request.url))
+      addSecurityHeaders(errorResponse)
+      return errorResponse
     }
 
     const supabase = createServerClient(
@@ -169,7 +173,9 @@ export async function middleware(request: NextRequest) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       url.searchParams.set('from', pathname)
-      return NextResponse.redirect(url)
+      const redirectResponse = NextResponse.redirect(url)
+      addSecurityHeaders(redirectResponse)
+      return redirectResponse
     }
 
     // Check if user has completed onboarding
@@ -198,7 +204,9 @@ export async function middleware(request: NextRequest) {
         const url = request.nextUrl.clone()
         url.pathname = '/onboarding'
         url.searchParams.set('from', pathname)
-        return NextResponse.redirect(url)
+        const redirectResponse = NextResponse.redirect(url)
+        addSecurityHeaders(redirectResponse)
+        return redirectResponse
       }
     }
 
@@ -220,7 +228,9 @@ export async function middleware(request: NextRequest) {
         const url = request.nextUrl.clone()
         url.pathname = from || '/dashboard'
         url.searchParams.delete('from')
-        return NextResponse.redirect(url)
+        const redirectResponse = NextResponse.redirect(url)
+        addSecurityHeaders(redirectResponse)
+        return redirectResponse
       }
     }
 
@@ -240,13 +250,18 @@ export async function middleware(request: NextRequest) {
     // Add request ID to response headers
     supabaseResponse.headers.set('x-request-id', requestId)
     
+    // Add security headers to all responses
+    addSecurityHeaders(supabaseResponse)
+    
     return supabaseResponse
   } catch (error) {
     logger.error('Middleware error', error, { requestId, pathname })
     
     // For critical errors on protected routes, redirect to error page
     if (protectedRoutes.some(route => pathname.startsWith(route))) {
-      return NextResponse.redirect(new URL('/error?code=middleware', request.url))
+      const errorResponse = NextResponse.redirect(new URL('/error?code=middleware', request.url))
+      addSecurityHeaders(errorResponse)
+      return errorResponse
     }
     
     // Allow request to proceed for public routes

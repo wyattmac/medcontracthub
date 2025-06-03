@@ -112,8 +112,57 @@ class Logger {
   }
 
   private sendToMonitoring(entry: ILogEntry): void {
-    // TODO: Integrate with monitoring service
-    // Example: Sentry, DataDog, CloudWatch, etc.
+    // Send to Sentry if available
+    if (typeof window !== 'undefined' && (window as any).Sentry) {
+      const Sentry = (window as any).Sentry
+      
+      if (entry.error) {
+        Sentry.captureException(entry.error, {
+          level: 'error',
+          tags: {
+            service: this.serviceName,
+            environment: process.env.NODE_ENV,
+          },
+          extra: entry.context,
+        })
+      } else {
+        Sentry.captureMessage(entry.message, {
+          level: 'error',
+          tags: {
+            service: this.serviceName,
+            environment: process.env.NODE_ENV,
+          },
+          extra: entry.context,
+        })
+      }
+    } else if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
+      // Server-side Sentry
+      try {
+        const Sentry = require('@sentry/nextjs')
+        if (entry.error) {
+          Sentry.captureException(entry.error, {
+            level: 'error',
+            tags: {
+              service: this.serviceName,
+              environment: process.env.NODE_ENV,
+            },
+            extra: entry.context,
+          })
+        } else {
+          Sentry.captureMessage(entry.message, {
+            level: 'error',
+            tags: {
+              service: this.serviceName,
+              environment: process.env.NODE_ENV,
+            },
+            extra: entry.context,
+          })
+        }
+      } catch (e) {
+        // Sentry not available, fallback to console
+        console.error('[Sentry not available]', entry)
+      }
+    }
   }
 
   debug(message: string, context?: ILogContext): void {
