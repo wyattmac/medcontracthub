@@ -3,6 +3,17 @@
  * These mocks are loaded before any tests run
  */
 
+// Mock Next.js cookies
+jest.mock('next/headers', () => ({
+  cookies: jest.fn(async () => ({
+    getAll: jest.fn(() => []),
+    set: jest.fn(),
+    get: jest.fn(),
+    has: jest.fn(() => false),
+    delete: jest.fn()
+  }))
+}))
+
 // Mock Supabase client
 export const mockSupabaseClient = {
   auth: {
@@ -49,7 +60,9 @@ export const mockSupabaseClient = {
 
 // Mock the Supabase server client
 jest.mock('@/lib/supabase/server', () => ({
-  createClient: jest.fn().mockResolvedValue(mockSupabaseClient)
+  createClient: jest.fn(async () => mockSupabaseClient),
+  createServiceClient: jest.fn(() => mockSupabaseClient),
+  createServerClient: jest.fn(async () => mockSupabaseClient)
 }))
 
 // Mock the API logger
@@ -120,4 +133,14 @@ jest.mock('@/lib/security/sanitization', () => ({
   sanitizeText: jest.fn((text) => text),
   sanitizeBasic: jest.fn((text) => text),
   sanitizeRich: jest.fn((text) => text)
+}))
+
+// Mock usage tracking
+jest.mock('@/lib/usage/tracker', () => ({
+  withUsageCheck: jest.fn(async (userId, feature, units, callback) => {
+    // Just execute the callback without any usage checks
+    return await callback()
+  }),
+  trackUsage: jest.fn().mockResolvedValue(true),
+  checkUsageLimit: jest.fn().mockResolvedValue({ allowed: true, remaining: 100 })
 }))

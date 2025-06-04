@@ -38,7 +38,7 @@ export const POST = routeHandler.POST(
       .from('profiles')
       .select(`
         *,
-        companies!inner(
+        companies(
           name,
           naics_codes,
           certifications,
@@ -49,19 +49,19 @@ export const POST = routeHandler.POST(
       .single()
 
     if (profileError || !profile) {
-      aiLogger.error('Company profile not found', profileError, { userId: user.id })
-      throw new NotFoundError('Company profile')
+      aiLogger.error('User profile not found', profileError, { userId: user.id })
+      throw new NotFoundError('User profile')
     }
 
     const company = profile.companies as any
     
     // Build company profile for AI analysis
     const companyProfile = {
-      naicsCodes: company.naics_codes || [],
-      capabilities: company.description ? [company.description] : [],
+      naicsCodes: company?.naics_codes || [],
+      capabilities: company?.description ? [company.description] : [],
       pastPerformance: [], // Could be expanded to include past contract history
-      certifications: company.certifications || [],
-      companySize: 'small' // Could be determined from company data
+      certifications: company?.certifications || [],
+      companySize: company ? 'small' : 'Unknown' // Could be determined from company data
     }
 
     // Check if analysis already exists and is recent (within 24 hours)

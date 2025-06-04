@@ -41,12 +41,16 @@ This document tracks the remaining tasks to reach 100% production readiness for 
 - [x] Update test utils for routeHandler pattern
 - [x] Fix authentication mocks
 - [x] Create consistent mock patterns for all API tests
+- [x] Add usage tracking mock for AI endpoints
+- [x] Update all test files to import setup mocks
+- [x] Create global mocks in __tests__/setup/mocks.ts
+- [x] Mock Next.js cookies() function
+- [x] Mock Supabase server client properly
 - [ ] Update all existing API tests to use new mocks
 - [ ] Add test helpers for common API scenarios
 - [ ] Fix Jest configuration for Next.js 14
 - [ ] Fix CSRF/auth check order in tests
-- [ ] Add usage tracking mock for AI endpoints
-- [ ] Update all test files to import setup mocks
+- [ ] Fix timeout issues in complex tests
 - **Blocks**: New test creation
 - **Time**: 4 hours
 

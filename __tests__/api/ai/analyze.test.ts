@@ -6,7 +6,7 @@
 import '../../setup/mocks' // Import global mocks first
 import { POST } from '@/app/api/ai/analyze/route'
 import { createMockNextRequest, mockUser, extractResponseJson } from '../../utils/api-test-utils'
-import { mockSupabaseClient, configureMockSupabase } from '../../mocks/supabase'
+import { mockSupabaseClient } from '../../setup/mocks'
 
 // Mock Claude AI client
 jest.mock('@/lib/ai/claude-client', () => ({
@@ -34,20 +34,22 @@ describe('/api/ai/analyze', () => {
     jest.clearAllMocks()
     
     // Default auth success
-    configureMockSupabase({
-      auth: { user: mockUser }
+    mockSupabaseClient.auth.getUser.mockResolvedValue({
+      data: { user: mockUser },
+      error: null
     })
   })
 
   describe('Authentication', () => {
     it('should require authentication', async () => {
-      configureMockSupabase({
-        auth: { user: null, error: { message: 'Not authenticated' } }
+      mockSupabaseClient.auth.getUser.mockResolvedValue({
+        data: { user: null },
+        error: { message: 'Not authenticated' }
       })
 
       const request = createMockNextRequest('https://example.com/api/ai/analyze', {
         method: 'POST',
-        body: { opportunityId: 'opp-123' }
+        body: { opportunityId: '123e4567-e89b-12d3-a456-426614174000' }
       })
 
       const response = await POST(request)
@@ -69,7 +71,7 @@ describe('/api/ai/analyze', () => {
     it('should validate opportunityId format', async () => {
       const request = createMockNextRequest('https://example.com/api/ai/analyze', {
         method: 'POST',
-        body: { opportunityId: '' } // Empty string
+        body: { opportunityId: 'not-a-uuid' } // Invalid UUID
       })
 
       const response = await POST(request)
@@ -79,7 +81,7 @@ describe('/api/ai/analyze', () => {
 
   describe('Analysis', () => {
     const mockOpportunity = {
-      id: 'opp-123',
+      id: '123e4567-e89b-12d3-a456-426614174000',
       title: 'Medical Equipment Procurement',
       agency: 'Department of Veterans Affairs',
       description: 'Purchase of medical diagnostic equipment',
@@ -97,29 +99,77 @@ describe('/api/ai/analyze', () => {
     }
 
     beforeEach(() => {
-      // Mock opportunity exists
-      const oppMock = mockSupabaseClient.from('opportunities')
-      oppMock.single.mockResolvedValue({
-        data: mockOpportunity,
-        error: null
+      // Set up the chain of mocks for opportunities query
+      const opportunitiesMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: mockOpportunity,
+          error: null
+        })
+      }
+      
+      // Set up the chain of mocks for profiles query
+      const profilesMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: {
+            id: mockUser.id,
+            company_id: 'company-123',
+            companies: mockCompany
+          },
+          error: null
+        })
+      }
+      
+      // Set up the chain of mocks for opportunity_analyses query
+      const analysesMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        order: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        then: jest.fn().mockResolvedValue({ data: [], error: null })
+      }
+      
+      // Set up the chain of mocks for insert
+      const insertMock = {
+        insert: jest.fn().mockReturnThis(),
+        then: jest.fn().mockResolvedValue({ data: null, error: null })
+      }
+      
+      // Configure mockSupabaseClient.from to return the appropriate mock based on table name
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'opportunities') return opportunitiesMock
+        if (table === 'profiles') return profilesMock
+        if (table === 'opportunity_analyses') {
+          // Return different behavior for select vs insert
+          return {
+            ...analysesMock,
+            ...insertMock
+          }
+        }
+        // Default mock for any other table
+        return {
+          select: jest.fn().mockReturnThis(),
+          insert: jest.fn().mockReturnThis(),
+          update: jest.fn().mockReturnThis(),
+          delete: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({ data: null, error: null }),
+          then: jest.fn().mockResolvedValue({ data: [], error: null })
+        }
       })
-
-      // Mock user profile with company
-      const profileMock = mockSupabaseClient.from('profiles')
-      profileMock.single.mockResolvedValue({
-        data: {
-          id: mockUser.id,
-          company_id: 'company-123',
-          companies: mockCompany
-        },
-        error: null
-      })
+      
+      // Mock RPC for audit logging
+      mockSupabaseClient.rpc.mockResolvedValue({ data: null, error: null })
     })
 
     it('should analyze opportunity successfully', async () => {
       const request = createMockNextRequest('https://example.com/api/ai/analyze', {
         method: 'POST',
-        body: { opportunityId: 'opp-123' }
+        body: { opportunityId: '123e4567-e89b-12d3-a456-426614174000' }
       })
 
       const response = await POST(request)
@@ -150,19 +200,30 @@ describe('/api/ai/analyze', () => {
     })
 
     it('should handle analysis with user profile without company', async () => {
-      // Mock user without company
-      const profileMock = mockSupabaseClient.from('profiles')
-      profileMock.single.mockResolvedValue({
-        data: {
-          id: mockUser.id,
-          company_id: null
-        },
-        error: null
+      // Override the profiles mock for this specific test
+      const profilesMockNoCompany = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: {
+            id: mockUser.id,
+            company_id: null,
+            companies: null
+          },
+          error: null
+        })
+      }
+      
+      // Update the from() implementation just for profiles in this test
+      const originalFrom = mockSupabaseClient.from
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'profiles') return profilesMockNoCompany
+        return originalFrom(table)
       })
 
       const request = createMockNextRequest('https://example.com/api/ai/analyze', {
         method: 'POST',
-        body: { opportunityId: 'opp-123' }
+        body: { opportunityId: '123e4567-e89b-12d3-a456-426614174000' }
       })
 
       const response = await POST(request)
@@ -181,23 +242,33 @@ describe('/api/ai/analyze', () => {
     })
 
     it('should handle opportunity not found', async () => {
-      // Mock opportunity not found
-      const oppMock = mockSupabaseClient.from('opportunities')
-      oppMock.single.mockResolvedValue({
-        data: null,
-        error: { message: 'Not found' }
+      // Override the opportunities mock for this specific test
+      const opportunitiesMockNotFound = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Not found' }
+        })
+      }
+      
+      // Update the from() implementation just for opportunities in this test
+      const originalFrom = mockSupabaseClient.from
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'opportunities') return opportunitiesMockNotFound
+        return originalFrom(table)
       })
 
       const request = createMockNextRequest('https://example.com/api/ai/analyze', {
         method: 'POST',
-        body: { opportunityId: 'invalid-id' }
+        body: { opportunityId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' }
       })
 
       const response = await POST(request)
       expect(response.status).toBe(404)
       
       const data = await extractResponseJson(response)
-      expect(data.error).toContain('not found')
+      expect(data.message).toBe('Opportunity not found')
     })
 
     it('should handle AI analysis error', async () => {
@@ -205,7 +276,7 @@ describe('/api/ai/analyze', () => {
 
       const request = createMockNextRequest('https://example.com/api/ai/analyze', {
         method: 'POST',
-        body: { opportunityId: 'opp-123' }
+        body: { opportunityId: '123e4567-e89b-12d3-a456-426614174000' }
       })
 
       const response = await POST(request)
@@ -222,7 +293,7 @@ describe('/api/ai/analyze', () => {
       // For now, just verify the endpoint accepts requests
       const request = createMockNextRequest('https://example.com/api/ai/analyze', {
         method: 'POST',
-        body: { opportunityId: 'opp-123' }
+        body: { opportunityId: '123e4567-e89b-12d3-a456-426614174000' }
       })
 
       const response = await POST(request)
