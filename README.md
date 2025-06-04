@@ -8,16 +8,40 @@ MedContractHub is a comprehensive federal contracting platform designed specific
 
 ## 📅 Development Progress
 
-- **Day 1**: ✅ Foundation Complete - Authentication, Database, UI Components
-- **Day 2**: ✅ SAM.gov Integration - API Client, Opportunity Search, Filtering
-- **Day 3**: ✅ Opportunity Management - AI Analysis, Reminders, Sync System
-- **Day 4**: ✅ Error Handling & Reliability - Custom Errors, Logging, Recovery
-- **Day 5**: ✅ Export & Email System - PDF/Excel Reports, Email Notifications Complete
-- **Day 6**: ✅ Performance Optimization - Database queries, bundle splitting, caching, lazy loading
-- **Day 7**: ✅ Mistral OCR & Brave Search - Document processing, supplier discovery
-- **Week 1**: ✅ Critical Fixes - Memory leaks fixed, virtual scrolling, CI/CD pipeline, tests
-- **Week 2**: ✅ Infrastructure & Scale - Redis, Bull.js queues, DB optimization, connection pooling
-- **Week 3**: ✅ Revenue Features - Stripe integration, usage metering, billing dashboard, 14-day trials
+### ✅ Week 1: Foundation & Integration
+- **Day 1**: Foundation Complete - Authentication, Database, UI Components
+- **Day 2**: SAM.gov Integration - API Client, Opportunity Search, Filtering
+- **Day 3**: Opportunity Management - AI Analysis, Reminders, Sync System
+- **Day 4**: Error Handling & Reliability - Custom Errors, Logging, Recovery
+- **Day 5**: Export & Email System - PDF/Excel Reports, Email Notifications
+- **Day 6**: Performance Optimization - Database queries, bundle splitting, caching
+- **Day 7**: Mistral OCR & Brave Search - Document processing, supplier discovery
+
+### ✅ Week 2: Production Infrastructure
+- Memory leak fixes and cleanup handlers
+- Virtual scrolling for 22k+ opportunities
+- CI/CD pipeline with GitHub Actions
+- Redis integration for caching and rate limiting
+- Bull.js job queues for background processing
+- Database optimization and connection pooling
+- Test infrastructure with critical path coverage
+
+### ✅ Week 3: Revenue & Monetization
+- Complete Stripe integration with webhooks
+- Subscription management and billing portal
+- Usage metering for AI features (OCR, analysis, exports)
+- 14-day free trial implementation
+- Billing dashboard with usage analytics
+- Email templates for subscription events
+- Pricing page with plan comparison
+- Development pipeline documentation
+
+### 🚧 Week 4: Production Polish (Next)
+- Security audit & penetration testing
+- Load testing with k6 (target 1000 users)
+- Production monitoring setup
+- Bundle optimization (target < 1.5MB)
+- Documentation and onboarding
 
 ## 🎯 Key Features
 
@@ -208,6 +232,14 @@ See [WEEK_1_CRITICAL_FIXES_COMPLETE.md](./WEEK_1_CRITICAL_FIXES_COMPLETE.md) for
 
 ## 🚀 Getting Started
 
+### Prerequisites
+
+- Node.js 18.17 or later
+- npm or yarn package manager
+- Docker (for Redis/Bull dashboard)
+- Supabase account
+- Required API keys (see `.env.example`)
+
 ### 1. Clone the repository
 
 ```bash
@@ -223,10 +255,70 @@ npm install
 
 ### 3. Set up environment variables
 
-Copy the example environment file and fill in your values:
+```bash
+# Copy the environment template
+cp .env.example .env.local
+
+# Edit with your API keys and configuration
+nano .env.local
+```
+
+### 4. Start local services
 
 ```bash
-cp .env.local.example .env.local
+# Start Redis and Bull dashboard
+docker-compose up -d
+
+# Verify services are running
+docker ps
+```
+
+### 5. Set up the database
+
+```bash
+# Generate TypeScript types from Supabase
+npm run db:types
+```
+
+### 6. Start development server
+
+```bash
+# Start the Next.js development server
+npm run dev
+
+# In another terminal, start the worker process
+npm run worker
+```
+
+Visit http://localhost:3000 to see the application.
+
+## 🔧 Development Pipeline
+
+MedContractHub uses a modern CI/CD pipeline with multiple environments:
+
+- **Local Development**: Feature branches with hot reload
+- **Staging**: Automatic deployment from `develop` branch
+- **Production**: Protected deployment from `main` branch
+
+See [PIPELINE.md](./PIPELINE.md) for complete pipeline documentation.
+
+### Quick Commands
+
+```bash
+# Development
+npm run dev          # Start development server
+npm run worker       # Start background worker
+npm run lint         # Run linting
+npm run type-check   # Check TypeScript types
+
+# Testing
+npm test            # Run unit tests
+npm run test:e2e    # Run E2E tests
+
+# Deployment
+npm run build       # Build for production
+npm run deploy:staging    # Deploy to staging
+npm run deploy:production # Deploy to production
 ```
 
 Required environment variables:
