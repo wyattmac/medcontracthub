@@ -1,8 +1,9 @@
 /**
- * Supabase Mock for Testing
- * Provides mock implementations for Supabase client
+ * Global test mocks
+ * These mocks are loaded before any tests run
  */
 
+// Mock Supabase client
 export const mockSupabaseClient = {
   auth: {
     getUser: jest.fn().mockResolvedValue({
@@ -91,51 +92,32 @@ jest.mock('@/lib/rate-limit', () => ({
   createRateLimitHeaders: jest.fn().mockReturnValue(new Headers())
 }))
 
-// Mock CSRF protection
+// Mock CSRF protection - must be done before importing any modules that use it
 jest.mock('@/lib/security/csrf', () => ({
-  csrfProtection: jest.fn().mockResolvedValue({
+  csrfProtection: jest.fn().mockImplementation(async () => ({
     success: true
+  })),
+  generateCSRFToken: jest.fn().mockReturnValue('mock-csrf-token'),
+  verifyCSRFToken: jest.fn().mockReturnValue(true),
+  verifyCSRFFromRequest: jest.fn().mockReturnValue(true)
+}))
+
+// Mock environment validation
+jest.mock('@/lib/security/env-validator', () => ({
+  validateEnvironment: jest.fn(),
+  getEnv: jest.fn().mockReturnValue({
+    NODE_ENV: 'test',
+    NEXT_PUBLIC_SUPABASE_URL: 'https://test.supabase.co',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
+    SUPABASE_SERVICE_ROLE_KEY: 'test-service-key',
+    CSRF_SECRET: 'test-csrf-secret'
   })
 }))
 
-// Export helper to configure mock responses
-export const configureMockSupabase = (config: {
-  auth?: {
-    user?: any | null
-    error?: any
-  }
-  queries?: Array<{
-    table: string
-    method: string
-    response: { data: any, error: any }
-  }>
-  rpc?: {
-    response: { data: any, error: any }
-  }
-}) => {
-  // Reset all mocks
-  jest.clearAllMocks()
-
-  // Configure auth mock
-  if (config.auth) {
-    mockSupabaseClient.auth.getUser.mockResolvedValue({
-      data: { user: config.auth.user },
-      error: config.auth.error || null
-    })
-  }
-
-  // Configure query mocks
-  if (config.queries) {
-    config.queries.forEach(query => {
-      const chainMock = mockSupabaseClient.from(query.table)
-      if (query.method && chainMock[query.method]) {
-        chainMock[query.method].mockResolvedValue(query.response)
-      }
-    })
-  }
-
-  // Configure RPC mock
-  if (config.rpc) {
-    mockSupabaseClient.rpc.mockResolvedValue(config.rpc.response)
-  }
-}
+// Mock sanitization
+jest.mock('@/lib/security/sanitization', () => ({
+  sanitizeRequestBody: jest.fn((body) => body),
+  sanitizeText: jest.fn((text) => text),
+  sanitizeBasic: jest.fn((text) => text),
+  sanitizeRich: jest.fn((text) => text)
+}))

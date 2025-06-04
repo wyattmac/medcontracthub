@@ -37,9 +37,16 @@ This document tracks the remaining tasks to reach 100% production readiness for 
 - **Time**: 4 hours
 
 #### 2.2 Fix test infrastructure
-- [ ] Fix Response.json mock errors
-- [ ] Update test utils for routeHandler pattern
-- [ ] Fix authentication mocks
+- [x] Fix Response.json mock errors (fixed headers recursion)
+- [x] Update test utils for routeHandler pattern
+- [x] Fix authentication mocks
+- [x] Create consistent mock patterns for all API tests
+- [ ] Update all existing API tests to use new mocks
+- [ ] Add test helpers for common API scenarios
+- [ ] Fix Jest configuration for Next.js 14
+- [ ] Fix CSRF/auth check order in tests
+- [ ] Add usage tracking mock for AI endpoints
+- [ ] Update all test files to import setup mocks
 - **Blocks**: New test creation
 - **Time**: 4 hours
 

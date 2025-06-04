@@ -1,5 +1,8 @@
 import '@testing-library/jest-dom'
 
+// Import global mocks before anything else
+import './__tests__/setup/mocks'
+
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
   useRouter() {
@@ -22,30 +25,6 @@ jest.mock('next/navigation', () => ({
 
 // Define global mocks before importing modules
 global.jest = require('jest')
-
-// Mock Supabase client
-const mockSupabaseClient = {
-  auth: {
-    getUser: jest.fn(),
-    signOut: jest.fn(),
-    onAuthStateChange: jest.fn(() => ({
-      data: { subscription: { unsubscribe: jest.fn() } }
-    })),
-  },
-  from: jest.fn(() => ({
-    select: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    single: jest.fn(),
-    insert: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  })),
-}
-
-// Create the mock before any modules are imported
-jest.doMock('@/lib/supabase/client', () => ({
-  createClient: jest.fn(() => mockSupabaseClient)
-}))
 
 // Mock environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
