@@ -13325,3 +13325,293 @@ Error caching recommendations: {
 }
 [2025-06-04T04:59:55.144Z] [INFO] [API] GET /api/ai/recommendations completed | requestId="req_1749013182696_c2k3n7vhp" status=200 responseTime=12448
  GET /api/ai/recommendations 200 in 12497ms
+[2025-06-04T05:04:42.775Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749013482775_dy7fqor7y" pathname="/api/reminders" method="GET"
+[2025-06-04T05:04:42.811Z] [INFO] [API] GET /api/reminders | requestId="req_1749013482811_khw8y1ecw" method="GET" path="/api/reminders" query={} headers={"user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36","content-type":null,"x-forwarded-for":"::1"}
+[2025-06-04T05:04:43.368Z] [INFO] [API] GET /api/reminders completed | requestId="req_1749013482811_khw8y1ecw" status=200 responseTime=557
+ GET /api/reminders 200 in 587ms
+[2025-06-04T05:09:43.567Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749013783567_0piq0uzjm" pathname="/api/reminders" method="GET"
+[2025-06-04T05:09:43.630Z] [INFO] [API] GET /api/reminders | requestId="req_1749013783630_2wu5mwm8t" method="GET" path="/api/reminders" query={} headers={"user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36","content-type":null,"x-forwarded-for":"::1"}
+[2025-06-04T05:09:44.269Z] [INFO] [API] GET /api/reminders completed | requestId="req_1749013783630_2wu5mwm8t" status=200 responseTime=639
+ GET /api/reminders 200 in 698ms
+[2025-06-04T15:59:46.416Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749052786415_bppo2kv71" pathname="/api/reminders" method="GET"
+[2025-06-04T15:59:46.420Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749052786420_np8tt8556" pathname="/api/ai/recommendations" method="GET"
+[2025-06-04T15:59:46.538Z] [INFO] [API] GET /api/reminders | requestId="req_1749052786538_gkk3u63pq" method="GET" path="/api/reminders" query={} headers={"user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36","content-type":null,"x-forwarded-for":"::1"}
+[2025-06-04T15:59:46.556Z] [INFO] [API] GET /api/ai/recommendations | requestId="req_1749052786556_bhlhj38fi" method="GET" path="/api/ai/recommendations" query={} headers={"user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36","content-type":null,"x-forwarded-for":"::1"}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13510:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _handleRequest (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/lib/fetch.js:115:18)
+    at async _request (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/lib/fetch.js:105:18)
+    at async eval (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/GoTrueClient.js:1392:24)
+    at async eval (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/lib/helpers.js:203:36) {
+  [cause]: Error: getaddrinfo EAI_AGAIN icxhwszgneovjzmqdjri.supabase.co
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+      at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    errno: -3001,
+    code: 'EAI_AGAIN',
+    syscall: 'getaddrinfo',
+    hostname: 'icxhwszgneovjzmqdjri.supabase.co'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13510:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _handleRequest (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/lib/fetch.js:115:18)
+    at async _request (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/lib/fetch.js:105:18)
+    at async eval (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/GoTrueClient.js:1392:24)
+    at async eval (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/lib/helpers.js:203:36) {
+  [cause]: Error: getaddrinfo EAI_AGAIN icxhwszgneovjzmqdjri.supabase.co
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+      at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    errno: -3001,
+    code: 'EAI_AGAIN',
+    syscall: 'getaddrinfo',
+    hostname: 'icxhwszgneovjzmqdjri.supabase.co'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13510:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _handleRequest (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/lib/fetch.js:115:18)
+    at async _request (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/lib/fetch.js:105:18)
+    at async eval (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/GoTrueClient.js:1392:24)
+    at async eval (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/lib/helpers.js:203:36) {
+  [cause]: Error: getaddrinfo EAI_AGAIN icxhwszgneovjzmqdjri.supabase.co
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+      at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    errno: -3001,
+    code: 'EAI_AGAIN',
+    syscall: 'getaddrinfo',
+    hostname: 'icxhwszgneovjzmqdjri.supabase.co'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13510:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _handleRequest (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/lib/fetch.js:115:18)
+    at async _request (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/lib/fetch.js:105:18)
+    at async eval (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/GoTrueClient.js:1392:24)
+    at async eval (webpack-internal:///(rsc)/./node_modules/@supabase/auth-js/dist/module/lib/helpers.js:203:36) {
+  [cause]: Error: getaddrinfo EAI_AGAIN icxhwszgneovjzmqdjri.supabase.co
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+      at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    errno: -3001,
+    code: 'EAI_AGAIN',
+    syscall: 'getaddrinfo',
+    hostname: 'icxhwszgneovjzmqdjri.supabase.co'
+  }
+}
+[2025-06-04T16:00:16.013Z] [INFO] [API] GET /api/reminders completed | requestId="req_1749052786538_gkk3u63pq" status=200 responseTime=29475
+ GET /api/reminders 200 in 29593ms
+Error caching recommendations: {
+  code: '42501',
+  details: null,
+  hint: null,
+  message: 'new row violates row-level security policy for table "opportunity_analyses"'
+}
+[2025-06-04T16:00:32.875Z] [INFO] [API] GET /api/ai/recommendations completed | requestId="req_1749052786556_bhlhj38fi" status=200 responseTime=46319
+ GET /api/ai/recommendations 200 in 46453ms
+ ⚠ ./node_modules/@opentelemetry/instrumentation-connect/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation-connect/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-connect/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation-connect/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation-connect/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/instrumentation-connect/build/src/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-connect/build/src/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/connect.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/errors/utils.ts
+./lib/providers.tsx
+
+./node_modules/@opentelemetry/instrumentation-express/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation-express/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-express/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation-express/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation-express/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/instrumentation-express/build/src/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-express/build/src/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/express.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/errors/utils.ts
+./lib/providers.tsx
+
+./node_modules/@opentelemetry/instrumentation-generic-pool/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation-generic-pool/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-generic-pool/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation-generic-pool/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation-generic-pool/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/instrumentation-generic-pool/build/src/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-generic-pool/build/src/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/genericPool.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/errors/utils.ts
+./lib/providers.tsx
+
+./node_modules/@opentelemetry/instrumentation-hapi/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation-hapi/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-hapi/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation-hapi/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation-hapi/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/instrumentation-hapi/build/src/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-hapi/build/src/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/hapi/index.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/errors/utils.ts
+./lib/providers.tsx
+
+./node_modules/@opentelemetry/instrumentation-ioredis/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation-ioredis/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-ioredis/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation-ioredis/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation-ioredis/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/instrumentation-ioredis/build/src/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-ioredis/build/src/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/redis.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/errors/utils.ts
+./lib/providers.tsx
+
+./node_modules/@opentelemetry/instrumentation-knex/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation-knex/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-knex/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation-knex/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation-knex/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/instrumentation-knex/build/src/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-knex/build/src/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/knex.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/errors/utils.ts
+./lib/providers.tsx
+
+./node_modules/@opentelemetry/instrumentation-lru-memoizer/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation-lru-memoizer/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-lru-memoizer/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation-lru-memoizer/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation-lru-memoizer/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/instrumentation-lru-memoizer/build/src/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-lru-memoizer/build/src/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/lrumemoizer.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/errors/utils.ts
+./lib/providers.tsx
+
+./node_modules/@opentelemetry/instrumentation-mongoose/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation-mongoose/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-mongoose/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation-mongoose/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation-mongoose/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/instrumentation-mongoose/build/src/mongoose.js
+./node_modules/@opentelemetry/instrumentation-mongoose/build/src/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/mongoose.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/errors/utils.ts
+./lib/providers.tsx
+
+./node_modules/@opentelemetry/instrumentation-mysql2/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation-mysql2/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-mysql2/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation-mysql2/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation-mysql2/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/instrumentation-mysql2/build/src/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-mysql2/build/src/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/mysql2.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/errors/utils.ts
+./lib/providers.tsx
+
+./node_modules/@opentelemetry/instrumentation-redis-4/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation-redis-4/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-redis-4/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation-redis-4/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation-redis-4/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/instrumentation-redis-4/build/src/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-redis-4/build/src/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/redis.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/errors/utils.ts
+./lib/providers.tsx
+
+./node_modules/@opentelemetry/instrumentation-undici/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation-undici/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation-undici/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation-undici/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation-undici/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/instrumentation-undici/build/src/undici.js
+./node_modules/@opentelemetry/instrumentation-undici/build/src/index.js
+./node_modules/@sentry/node/build/cjs/integrations/node-fetch/index.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/errors/utils.ts
+./lib/providers.tsx
+
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/otel/instrument.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/errors/utils.ts
+./lib/providers.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/otel/instrument.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/errors/utils.ts
+./lib/providers.tsx

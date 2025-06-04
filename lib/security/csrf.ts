@@ -9,12 +9,21 @@ import crypto from 'crypto'
 
 const CSRF_TOKEN_NAME = 'csrf-token'
 const CSRF_HEADER_NAME = 'x-csrf-token'
-const CSRF_SECRET = process.env.CSRF_SECRET || 'medcontracthub-csrf-secret-2024'
+
+// CSRF secret must be provided via environment variable
+const CSRF_SECRET = process.env.CSRF_SECRET
+if (!CSRF_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('CSRF_SECRET environment variable is required in production')
+}
 
 /**
  * Generate a cryptographically secure CSRF token
  */
 export function generateCSRFToken(): string {
+  if (!CSRF_SECRET) {
+    throw new Error('CSRF_SECRET environment variable is required')
+  }
+  
   const timestamp = Date.now().toString()
   const randomBytes = crypto.randomBytes(32).toString('hex')
   const payload = `${timestamp}:${randomBytes}`
@@ -33,6 +42,10 @@ export function generateCSRFToken(): string {
  * Verify CSRF token validity
  */
 export function verifyCSRFToken(token: string): boolean {
+  if (!CSRF_SECRET) {
+    throw new Error('CSRF_SECRET environment variable is required')
+  }
+  
   try {
     // Decode token
     const decoded = Buffer.from(token, 'base64').toString('utf8')
