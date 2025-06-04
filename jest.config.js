@@ -55,8 +55,8 @@ const customJestConfig = {
   // Module name mapping for absolute imports and mocks
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
-    '^.+\\.(css|less|scss|sass)$': '<rootDir>/__tests__/mocks/styleMock.js',
-    '^.+\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__tests__/mocks/fileMock.js',
+    '^.+\\.(css|less|scss|sass)$': '<rootDir>/test-utils/mocks/styleMock.js',
+    '^.+\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/test-utils/mocks/fileMock.js',
   },
   
   // Transform files with SWC for faster compilation
@@ -94,9 +94,9 @@ const customJestConfig = {
     '<rootDir>/.jest-cache/',
   ],
   
-  // Test file patterns
+  // Test file patterns - only match actual test files
   testMatch: [
-    '**/__tests__/**/*.(js|jsx|ts|tsx)',
+    '**/__tests__/**/*.(test|spec).(js|jsx|ts|tsx)',
     '**/*.(test|spec).(js|jsx|ts|tsx)',
   ],
   

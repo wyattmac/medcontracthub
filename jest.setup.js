@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
 
 // Import global mocks before anything else
-import './__tests__/setup/mocks'
+import './test-utils/setup/mocks'
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({

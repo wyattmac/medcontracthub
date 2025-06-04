@@ -4,7 +4,7 @@
  */
 
 import { GET } from '@/app/api/health/route'
-import { createMockNextRequest, extractResponseJson } from '../utils/api-test-utils'
+import { createMockNextRequest, extractResponseJson } from '@/test-utils/utils/api-test-utils'
 
 // Mock the logger to avoid console output during tests
 jest.mock('@/lib/errors/logger', () => ({
