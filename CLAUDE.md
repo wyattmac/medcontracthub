@@ -1,5 +1,8 @@
 # MedContractHub Project Rules
 
+## 🚀 Production Tasks
+**See [PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md) for current progress (87% → 100%)**
+
 ## Quick Context
 AI platform for medical distributors to win federal contracts via SAM.gov integration
 Stack: Next.js 14, TypeScript, Supabase, Tailwind CSS | Path: /home/locklearwyatt/projects/medcontracthub
