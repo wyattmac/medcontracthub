@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import type { Database } from '@/types/database.types'
+import { setUserContext, clearUserContext } from '@/lib/monitoring/sentry'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Company = Database['public']['Tables']['companies']['Row']
@@ -151,6 +152,11 @@ export function AuthProvider({ children }: IAuthProviderProps) {
           console.log('[useAuth] User found:', user.email)
           if (!abortController.signal.aborted) {
             setUser(user)
+            // Set user context in Sentry
+            setUserContext({
+              id: user.id,
+              email: user.email || undefined
+            })
           }
           // Load profile data immediately with the user ID
           console.log('[useAuth] Loading profile data...')
@@ -194,6 +200,8 @@ export function AuthProvider({ children }: IAuthProviderProps) {
           setUser(null)
           setProfile(null)
           setCompany(null)
+          // Clear user context from Sentry
+          clearUserContext()
         }
         
         if (event === 'SIGNED_OUT') {
@@ -228,6 +236,8 @@ export function AuthProvider({ children }: IAuthProviderProps) {
     console.log('[useAuth] Signing out...')
     try {
       await supabase.auth.signOut()
+      // Clear user context from Sentry
+      clearUserContext()
       console.log('[useAuth] Sign out successful')
     } catch (error) {
       console.error('[useAuth] Sign out error:', error)

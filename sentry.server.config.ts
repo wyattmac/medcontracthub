@@ -17,11 +17,11 @@ if (process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN) {
     // Configure integrations
     integrations: [
       // Automatically instrument Node.js libraries and frameworks
-      ...Sentry.autoDiscoverNodePerformanceMonitoringIntegrations(),
+      ...Sentry.getDefaultIntegrations(),
     ],
     
     // Filter transactions
-    beforeTransaction(transaction) {
+    beforeSendTransaction(transaction) {
       // Don't track health check endpoints
       if (transaction.name === 'GET /api/health') {
         return null

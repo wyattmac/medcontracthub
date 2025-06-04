@@ -21,6 +21,12 @@ import { apiLogger } from '@/lib/errors/logger'
 import { rateLimit, rateLimitConfigs, createRateLimitHeaders } from '@/lib/rate-limit'
 import { sanitizeRequestBody } from '@/lib/security/sanitization'
 import { csrfProtection } from '@/lib/security/csrf'
+import { 
+  startApiTransaction, 
+  captureException,
+  setUserContext,
+  addBreadcrumb 
+} from '@/lib/monitoring/sentry'
 
 // Validate environment on module load
 if (process.env.NODE_ENV === 'production') {
@@ -71,6 +77,22 @@ export function createRouteHandler(
   return async (request: NextRequest, { params }: { params?: any } = {}) => {
     const requestId = generateRequestId()
     const startTime = Date.now()
+    const routeName = `${method} ${request.nextUrl.pathname}`
+    
+    // Start Sentry transaction
+    const transaction = startApiTransaction(routeName)
+    
+    // Add breadcrumb for request tracking
+    addBreadcrumb(
+      `API Request: ${routeName}`,
+      'http',
+      {
+        method,
+        path: request.nextUrl.pathname,
+        query: Object.fromEntries(request.nextUrl.searchParams),
+        requestId
+      }
+    )
     
     // Log request
     apiLogger.info(`${method} ${request.nextUrl.pathname}`, {
@@ -129,6 +151,12 @@ export function createRouteHandler(
         
         context.user = user
         context.supabase = supabase
+        
+        // Set user context in Sentry
+        setUserContext({
+          id: user.id,
+          email: user.email || undefined
+        })
       } else if (options.requireAuth === false) {
         // Explicitly no auth required
         context.supabase = await createClient()
@@ -207,6 +235,9 @@ export function createRouteHandler(
         responseTime: Date.now() - startTime
       })
       
+      // Mark transaction as successful
+      transaction?.setStatus('ok')
+      
       return response
       
     } catch (error) {
@@ -216,7 +247,23 @@ export function createRouteHandler(
         responseTime: Date.now() - startTime
       })
       
+      // Mark transaction as failed and capture error
+      transaction?.setStatus('internal_error')
+      captureException(error, {
+        operation: routeName,
+        requestId,
+        metadata: {
+          method,
+          path: request.nextUrl.pathname,
+          responseTime: Date.now() - startTime,
+          query: Object.fromEntries(request.nextUrl.searchParams)
+        }
+      })
+      
       return formatErrorResponse(error, requestId)
+    } finally {
+      // Always finish the transaction
+      transaction?.finish()
     }
   }
 }

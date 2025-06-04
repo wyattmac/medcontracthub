@@ -111,56 +111,37 @@ class Logger {
     return output
   }
 
-  private sendToMonitoring(entry: ILogEntry): void {
-    // Send to Sentry if available
-    if (typeof window !== 'undefined' && (window as any).Sentry) {
-      const Sentry = (window as any).Sentry
+  private async sendToMonitoring(entry: ILogEntry): Promise<void> {
+    try {
+      // Dynamically import to avoid issues during SSR
+      const { captureException, captureMessage, addBreadcrumb } = await import('@/lib/monitoring/sentry')
+      
+      // Add breadcrumb for context
+      addBreadcrumb(entry.message, this.serviceName, entry.context)
       
       if (entry.error) {
-        Sentry.captureException(entry.error, {
-          level: 'error',
-          tags: {
-            service: this.serviceName,
-            environment: process.env.NODE_ENV,
-          },
-          extra: entry.context,
+        captureException(entry.error, {
+          operation: this.serviceName,
+          metadata: {
+            ...entry.context,
+            timestamp: entry.timestamp
+          }
         })
-      } else {
-        Sentry.captureMessage(entry.message, {
-          level: 'error',
-          tags: {
-            service: this.serviceName,
-            environment: process.env.NODE_ENV,
-          },
-          extra: entry.context,
+      } else if (entry.level === 'error') {
+        captureMessage(entry.message, 'error', {
+          service: this.serviceName,
+          ...entry.context
+        })
+      } else if (entry.level === 'warn') {
+        captureMessage(entry.message, 'warning', {
+          service: this.serviceName,
+          ...entry.context
         })
       }
-    } else if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
-      // Server-side Sentry
-      try {
-        const Sentry = require('@sentry/nextjs')
-        if (entry.error) {
-          Sentry.captureException(entry.error, {
-            level: 'error',
-            tags: {
-              service: this.serviceName,
-              environment: process.env.NODE_ENV,
-            },
-            extra: entry.context,
-          })
-        } else {
-          Sentry.captureMessage(entry.message, {
-            level: 'error',
-            tags: {
-              service: this.serviceName,
-              environment: process.env.NODE_ENV,
-            },
-            extra: entry.context,
-          })
-        }
-      } catch (e) {
-        // Sentry not available, fallback to console
-        console.error('[Sentry not available]', entry)
+    } catch (e) {
+      // Fallback if Sentry utilities fail
+      if (this.isDevelopment) {
+        console.error('[Sentry monitoring failed]', e)
       }
     }
   }
