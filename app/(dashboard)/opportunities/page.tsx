@@ -10,6 +10,7 @@ import { OpportunitiesList } from '@/components/dashboard/opportunities/opportun
 import { OpportunitiesStats } from '@/components/dashboard/opportunities/opportunities-stats'
 import { SyncStatusWidget } from '@/components/dashboard/sync/sync-status-widget'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { SectionErrorBoundary } from '@/components/ui/error-boundary'
 
 export const metadata: Metadata = {
   title: 'Contract Opportunities | MedContractHub',
@@ -40,9 +41,11 @@ export default function OpportunitiesPage({ searchParams }: IOpportunitiesPagePr
       </div>
 
       {/* Stats Overview */}
-      <Suspense fallback={<div className="h-32 bg-muted animate-pulse rounded-lg" />}>
-        <OpportunitiesStats />
-      </Suspense>
+      <SectionErrorBoundary name="Opportunities Stats">
+        <Suspense fallback={<div className="h-32 bg-muted animate-pulse rounded-lg" />}>
+          <OpportunitiesStats />
+        </Suspense>
+      </SectionErrorBoundary>
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -56,40 +59,46 @@ export default function OpportunitiesPage({ searchParams }: IOpportunitiesPagePr
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Suspense fallback={<div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-10 bg-muted animate-pulse rounded" />
-                ))}
-              </div>}>
-                <OpportunitiesFilters searchParams={searchParams} />
-              </Suspense>
+              <SectionErrorBoundary name="Opportunities Filters">
+                <Suspense fallback={<div className="space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-10 bg-muted animate-pulse rounded" />
+                  ))}
+                </div>}>
+                  <OpportunitiesFilters searchParams={searchParams} />
+                </Suspense>
+              </SectionErrorBoundary>
             </CardContent>
           </Card>
           
-          <SyncStatusWidget />
+          <SectionErrorBoundary name="Sync Status">
+            <SyncStatusWidget />
+          </SectionErrorBoundary>
         </aside>
 
         {/* Opportunities List */}
         <main className="lg:col-span-3">
-          <Suspense fallback={<div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <div className="space-y-3">
-                    <div className="h-6 bg-muted animate-pulse rounded w-3/4" />
-                    <div className="h-4 bg-muted animate-pulse rounded w-full" />
-                    <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
-                    <div className="flex space-x-2">
-                      <div className="h-8 bg-muted animate-pulse rounded w-20" />
-                      <div className="h-8 bg-muted animate-pulse rounded w-16" />
+          <SectionErrorBoundary name="Opportunities List">
+            <Suspense fallback={<div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-6">
+                    <div className="space-y-3">
+                      <div className="h-6 bg-muted animate-pulse rounded w-3/4" />
+                      <div className="h-4 bg-muted animate-pulse rounded w-full" />
+                      <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
+                      <div className="flex space-x-2">
+                        <div className="h-8 bg-muted animate-pulse rounded w-20" />
+                        <div className="h-8 bg-muted animate-pulse rounded w-16" />
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>}>
-            <OpportunitiesContainer searchParams={searchParams} />
-          </Suspense>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>}>
+              <OpportunitiesContainer searchParams={searchParams} />
+            </Suspense>
+          </SectionErrorBoundary>
         </main>
       </div>
     </div>

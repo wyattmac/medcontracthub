@@ -8,6 +8,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Database } from '@/types/database.types'
 import { SavedOpportunitiesContainer } from '@/components/dashboard/saved/saved-opportunities-container'
+import { SectionErrorBoundary } from '@/components/ui/error-boundary'
 
 export default async function SavedOpportunitiesPage() {
   const supabase = createServerComponentClient<Database>({ cookies })
@@ -31,7 +32,9 @@ export default async function SavedOpportunitiesPage() {
         </p>
       </div>
 
-      <SavedOpportunitiesContainer userId={user.id} />
+      <SectionErrorBoundary name="Saved Opportunities">
+        <SavedOpportunitiesContainer userId={user.id} />
+      </SectionErrorBoundary>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { RemindersWidget } from '@/components/dashboard/reminders/reminders-widget'
 import { CompanyRecommendationsWidget } from '@/components/dashboard/ai/company-recommendations-widget'
 import { TrendingUp, FileText, Bookmark, DollarSign } from 'lucide-react'
+import { SectionErrorBoundary } from '@/components/ui/error-boundary'
 
 export default function DashboardPage() {
   return (
@@ -9,7 +10,8 @@ export default function DashboardPage() {
       <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
       
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <SectionErrorBoundary name="Dashboard Stats">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -69,32 +71,39 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      </SectionErrorBoundary>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity */}
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>
-                Your latest actions and updates
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <p>No recent activity</p>
-                <p className="text-sm mt-2">Start by exploring opportunities</p>
-              </div>
-            </CardContent>
-          </Card>
+          <SectionErrorBoundary name="Recent Activity">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>
+                  Your latest actions and updates
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  <p>No recent activity</p>
+                  <p className="text-sm mt-2">Start by exploring opportunities</p>
+                </div>
+              </CardContent>
+            </Card>
+          </SectionErrorBoundary>
         </div>
 
         {/* Right Sidebar */}
         <div className="lg:col-span-1 space-y-6">
-          <RemindersWidget />
-          <CompanyRecommendationsWidget />
+          <SectionErrorBoundary name="Reminders">
+            <RemindersWidget />
+          </SectionErrorBoundary>
+          <SectionErrorBoundary name="Company Recommendations">
+            <CompanyRecommendationsWidget />
+          </SectionErrorBoundary>
         </div>
       </div>
     </div>

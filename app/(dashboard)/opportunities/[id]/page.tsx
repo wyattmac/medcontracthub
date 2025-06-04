@@ -8,6 +8,7 @@ import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { Database } from '@/types/database.types'
+import { SectionErrorBoundary } from '@/components/ui/error-boundary'
 
 // Lazy load the heavy detail container component
 const OpportunityDetailContainer = dynamic(
@@ -82,11 +83,13 @@ export default async function OpportunityDetailPage({ params }: IOpportunityDeta
   const companyNaicsCodes = (profile?.companies as any)?.naics_codes || []
 
   return (
-    <OpportunityDetailContainer 
-      opportunity={opportunity}
-      companyNaicsCodes={companyNaicsCodes}
-      userId={user.id}
-    />
+    <SectionErrorBoundary name="Opportunity Detail">
+      <OpportunityDetailContainer 
+        opportunity={opportunity}
+        companyNaicsCodes={companyNaicsCodes}
+        userId={user.id}
+      />
+    </SectionErrorBoundary>
   )
 }
 

@@ -7,6 +7,7 @@ import { Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart3, TrendingUp, Target, Activity } from 'lucide-react'
+import { SectionErrorBoundary } from '@/components/ui/error-boundary'
 
 // Lazy load heavy components
 const AnalyticsDashboard = dynamic(
@@ -48,7 +49,8 @@ export default function AnalyticsPage({ searchParams }: IAnalyticsPageProps) {
       </div>
 
       {/* Key Metrics Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <SectionErrorBoundary name="Analytics Metrics">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Opportunities</CardTitle>
@@ -100,10 +102,13 @@ export default function AnalyticsPage({ searchParams }: IAnalyticsPageProps) {
             </p>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      </SectionErrorBoundary>
 
       {/* Main Analytics Dashboard */}
-      <AnalyticsDashboard searchParams={searchParams} />
+      <SectionErrorBoundary name="Analytics Dashboard">
+        <AnalyticsDashboard searchParams={searchParams} />
+      </SectionErrorBoundary>
     </div>
   )
 }

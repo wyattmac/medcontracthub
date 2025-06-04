@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { ProposalsContainer } from '@/components/dashboard/proposals/proposals-container'
+import { SectionErrorBoundary } from '@/components/ui/error-boundary'
 
 export const metadata = {
   title: 'Proposals | MedContractHub',
@@ -20,9 +21,11 @@ export default function ProposalsPage() {
         </div>
       </div>
       
-      <Suspense fallback={<div>Loading proposals...</div>}>
-        <ProposalsContainer />
-      </Suspense>
+      <SectionErrorBoundary name="Proposals">
+        <Suspense fallback={<div>Loading proposals...</div>}>
+          <ProposalsContainer />
+        </Suspense>
+      </SectionErrorBoundary>
     </div>
   )
 }
