@@ -4,68 +4,151 @@
 
 This document tracks the remaining tasks to reach 100% production readiness for MedContractHub.
 
-## 🔴 Critical Blockers (High Priority)
+## 📋 Task Priorities & Dependencies
 
-- [ ] **Fix test coverage** - Currently at 6.14%, target 80%
-  - Fix failing test mocks in 14/22 test suites
-  - Add critical path tests for auth, payments, and API endpoints
-  - Ensure all new features have test coverage
+### 🔴 Priority 1: Security & Environment (IMMEDIATE)
+**Must complete first - blocks all other work**
 
-- [ ] **Add AbortController to useAuth hook**
-  - Prevent memory leaks from async operations
-  - Add cleanup for all fetch operations
-  - Test with React DevTools Profiler
+#### 1.1 Remove .env from git
+- [ ] Delete .env file from repository
+- [ ] Add .env to .gitignore  
+- [ ] Update deployment documentation
+- **Blocks**: All deployment tasks
+- **Time**: 30 minutes
 
-- [ ] **Add error boundaries to dashboard components**
-  - Wrap each dashboard section in error boundary
-  - Add fallback UI for error states
-  - Log errors to monitoring service
+#### 1.2 Fix CSRF security
+- [ ] Remove hardcoded CSRF fallback secret
+- [ ] Move to environment variable only
+- [ ] Update secrets rotation strategy
+- **Blocks**: Production deployment
+- **Time**: 1 hour
 
-- [ ] **Configure production Redis**
-  - Set REDIS_URL environment variable
-  - Configure connection pool settings
-  - Test rate limiting and caching
+### 🟠 Priority 2: Fix Failing Tests
+**Required before adding new tests**
 
-- [ ] **Create database indexes**
-  - Add indexes for frequently queried columns
-  - Optimize opportunities table queries
-  - Test query performance improvements
+#### 2.1 Migrate API routes to routeHandler
+- [ ] /api/opportunities/save
+- [ ] /api/opportunities/saved
+- [ ] /api/opportunities/search
+- [ ] /api/sync/manual
+- [ ] /api/sync/status
+- **Blocks**: Test suite fixes
+- **Time**: 4 hours
 
-- [ ] **Fix security issues**
-  - Remove hardcoded CSRF fallback secret
-  - Move to environment variable only
-  - Update secrets rotation strategy
+#### 2.2 Fix test infrastructure
+- [ ] Fix Response.json mock errors
+- [ ] Update test utils for routeHandler pattern
+- [ ] Fix authentication mocks
+- **Blocks**: New test creation
+- **Time**: 4 hours
 
-- [ ] **Remove .env from git**
-  - Delete .env file from repository
-  - Add .env to .gitignore
-  - Update deployment documentation
+### 🟡 Priority 3: Core Stability
+**Essential for production reliability**
 
-## 🟡 Production Polish (Medium Priority)
+#### 3.1 Memory leak prevention
+- [ ] Add AbortController to useAuth hook
+- [ ] Add cleanup for all async operations
+- [ ] Test with React DevTools Profiler
+- **Dependencies**: None
+- **Time**: 2 hours
 
-- [ ] **Configure database connection pooling**
-  - Set DB_MAX_CONNECTIONS (default: 25)
-  - Set DB_MIN_CONNECTIONS (default: 5)
-  - Set DB_CONNECTION_TIMEOUT (default: 60000)
+#### 3.2 Error boundaries
+- [ ] Create reusable ErrorBoundary component
+- [ ] Wrap dashboard/opportunities section
+- [ ] Wrap dashboard/analytics section
+- [ ] Wrap dashboard/proposals section
+- [ ] Add error logging to Sentry
+- **Dependencies**: Sentry setup (can add logging later)
+- **Time**: 4 hours
 
-- [ ] **Set up Sentry error monitoring**
-  - Configure SENTRY_DSN in production
-  - Set up source map uploads
-  - Test error reporting
+### 🟢 Priority 4: Performance & Scale
+**Required for production load**
 
-- [ ] **Run security audit**
-  - HIPAA compliance review
-  - Penetration testing
-  - Security best practices audit
+#### 4.1 Database optimization
+- [ ] Create indexes on opportunities.naics_code
+- [ ] Create indexes on opportunities.set_aside_type
+- [ ] Create indexes on opportunities.response_deadline
+- [ ] Create indexes on saved_opportunities.user_id
+- [ ] Test query performance improvements
+- **Dependencies**: None
+- **Time**: 2 hours
+
+#### 4.2 Redis configuration
+- [ ] Set REDIS_URL environment variable
+- [ ] Configure connection pool settings
+- [ ] Test rate limiting functionality
+- [ ] Test caching functionality
+- **Dependencies**: Environment setup complete
+- **Time**: 2 hours
+
+#### 4.3 Database pooling
+- [ ] Set DB_MAX_CONNECTIONS=25
+- [ ] Set DB_MIN_CONNECTIONS=5
+- [ ] Set DB_CONNECTION_TIMEOUT=60000
+- [ ] Test under load
+- **Dependencies**: Environment setup complete
+- **Time**: 1 hour
+
+### 🔵 Priority 5: Monitoring & Testing
+**Final production readiness**
+
+#### 5.1 Sentry monitoring
+- [ ] Configure SENTRY_DSN in production
+- [ ] Set up source map uploads
+- [ ] Test error reporting
+- [ ] Configure alert thresholds
+- **Dependencies**: Error boundaries complete
+- **Time**: 2 hours
+
+#### 5.2 Test coverage improvement
+- [ ] Fix all 14 failing test suites
+- [ ] Add auth flow tests
+- [ ] Add payment integration tests
+- [ ] Add API endpoint tests
+- [ ] Achieve 50% coverage minimum
+- **Dependencies**: Test infrastructure fixed
+- **Time**: 16 hours
+
+#### 5.3 Security audit
+- [ ] Run automated security scan
+- [ ] HIPAA compliance review
+- [ ] Penetration testing
+- [ ] Fix any discovered issues
+- **Dependencies**: All security fixes complete
+- **Time**: 8 hours
+
+## 📊 Execution Plan Summary
+
+**Total Time Estimate**: ~46 hours (5-6 days of focused work)
+
+### Recommended Execution Order:
+1. **Day 1**: Priority 1 (Security & Environment) - 1.5 hours
+2. **Day 2**: Priority 2 (Fix Failing Tests) - 8 hours  
+3. **Day 3**: Priority 3 (Core Stability) - 6 hours
+4. **Day 4**: Priority 4 (Performance & Scale) - 5 hours
+5. **Day 5-6**: Priority 5 (Monitoring & Testing) - 26 hours
+
+### Quick Wins (< 1 hour each):
+- Remove .env from git
+- Fix CSRF security
+- Database pooling config
+- Create database indexes
+
+### Major Efforts (> 4 hours):
+- Migrate API routes to routeHandler
+- Fix test infrastructure  
+- Test coverage improvement
+- Security audit
 
 ## 📊 Progress Tracking
 
-| Week | Status | Completed Tasks |
-|------|--------|----------------|
-| Week 1 | ✅ 100% | Foundation, SAM.gov integration, virtual scrolling |
-| Week 2 | ✅ 100% | Redis, Bull.js, CI/CD pipeline, database optimization |
-| Week 3 | ✅ 100% | Stripe billing, usage metering, trial flow |
-| Week 4 | 🔄 87% | Security, bundle optimization, auth fixes |
+| Priority | Status | Time | Blocking |
+|----------|--------|------|----------|
+| P1: Security & Environment | 🔴 Not Started | 1.5h | Everything |
+| P2: Fix Failing Tests | 🔴 Not Started | 8h | New tests |
+| P3: Core Stability | 🔴 Not Started | 6h | None |
+| P4: Performance & Scale | 🔴 Not Started | 5h | Deployment |
+| P5: Monitoring & Testing | 🔴 Not Started | 26h | None |
 
 ## 🎯 Completion Criteria
 
