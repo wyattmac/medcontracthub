@@ -1,0 +1,21 @@
+{
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "MultiEdit",
+    "Bash",
+    "Task",
+    "WebSearch",
+    "TodoRead",
+    "TodoWrite"
+  ],
+  "ignorePatterns": [
+    "node_modules/**",
+    ".next/**",
+    "dist/**",
+    "*.log",
+    "coverage/**",
+    ".env*"
+  ]
+}

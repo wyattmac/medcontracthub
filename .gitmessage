@@ -1,0 +1,22 @@
+# <type>(<scope>): <subject>
+
+# <body>
+
+# <footer>
+
+# Type should be one of the following:
+# - feat: A new feature
+# - fix: A bug fix
+# - docs: Documentation changes
+# - style: Code style changes (formatting, missing semicolons, etc)
+# - refactor: Code refactoring
+# - test: Adding or updating tests
+# - chore: Changes to build process or auxiliary tools
+
+# Scope is optional and can be anything specifying the place of the commit change
+
+# Subject should be a short description of the change (imperative mood)
+
+# Body should include motivation for the change and contrast with previous behavior
+
+# Footer should contain any breaking changes or issue closures

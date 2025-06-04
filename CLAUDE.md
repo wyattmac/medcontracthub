@@ -4,6 +4,12 @@
 AI platform for medical distributors to win federal contracts via SAM.gov integration
 Stack: Next.js 14, TypeScript, Supabase, Tailwind CSS | Path: /home/locklearwyatt/projects/medcontracthub
 
+## Development Workflow
+1. **Before Starting**: Always run `npm test && npm run type-check`
+2. **While Coding**: Use TodoWrite to track progress
+3. **Before Committing**: Run `npm run lint && npm run type-check`
+4. **Commit Style**: Use conventional commits (feat:, fix:, docs:, chore:)
+
 ## Status
 ✅ Auth, SAM.gov (22k+), AI analysis, exports, emails, Brave Search, Mistral OCR
 ✅ Virtual scrolling, CI/CD pipeline, Redis, Bull.js queues, DB optimization

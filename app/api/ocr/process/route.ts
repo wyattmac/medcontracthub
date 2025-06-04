@@ -11,6 +11,7 @@ import { routeHandler } from '@/lib/api/route-handler'
 import { SAMDocumentProcessor } from '@/lib/sam-gov/document-processor'
 import { DatabaseError, NotFoundError } from '@/lib/errors/types'
 import { syncLogger } from '@/lib/errors/logger'
+import { withUsageCheck } from '@/lib/usage/tracker'
 
 // Request validation schema
 const processRequestSchema = z.object({
@@ -67,11 +68,18 @@ export const POST = routeHandler.POST(
     const processor = new SAMDocumentProcessor()
 
     try {
-      // Process documents
-      const results = await processor.processOpportunityDocuments(
-        opportunityId,
-        linksToProcess,
-        process.env.SAM_GOV_API_KEY!
+      // Process documents with usage tracking
+      const results = await withUsageCheck(
+        user.id,
+        'ocr_document',
+        linksToProcess.length,
+        async () => {
+          return await processor.processOpportunityDocuments(
+            opportunityId,
+            linksToProcess,
+            process.env.SAM_GOV_API_KEY!
+          )
+        }
       )
 
       // Calculate summary statistics

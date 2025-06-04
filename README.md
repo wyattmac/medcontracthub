@@ -16,6 +16,8 @@ MedContractHub is a comprehensive federal contracting platform designed specific
 - **Day 6**: ✅ Performance Optimization - Database queries, bundle splitting, caching, lazy loading
 - **Day 7**: ✅ Mistral OCR & Brave Search - Document processing, supplier discovery
 - **Week 1**: ✅ Critical Fixes - Memory leaks fixed, virtual scrolling, CI/CD pipeline, tests
+- **Week 2**: ✅ Infrastructure & Scale - Redis, Bull.js queues, DB optimization, connection pooling
+- **Week 3**: ✅ Revenue Features - Stripe integration, usage metering, billing dashboard, 14-day trials
 
 ## 🎯 Key Features
 
@@ -59,6 +61,14 @@ MedContractHub is a comprehensive federal contracting platform designed specific
 - **Automated Sync**: Background monitoring of opportunities with smart alerting
 - **Email Automation**: Template-driven notifications with queue-based reliable delivery
 
+### **💳 Billing & Monetization (Production Ready)**
+- **Flexible Pricing Plans**: Starter ($29), Professional ($99), Enterprise ($299) with 14-day free trials
+- **Usage-Based Metering**: Track AI analyses, OCR documents, exports, and API calls
+- **Stripe Integration**: Secure payment processing with PCI compliance
+- **Subscription Management**: Self-service billing portal, plan changes, and invoice history
+- **Smart Usage Limits**: Automatic enforcement with graceful limit handling
+- **Revenue Optimization**: Usage analytics and upgrade prompts at the right time
+
 ## 🛠️ Tech Stack
 
 ### **🏗️ Core Architecture**
@@ -82,13 +92,20 @@ MedContractHub is a comprehensive federal contracting platform designed specific
 - **Performance**: Virtual scrolling for 22k+ items, optimized bundle size
 - **CI/CD**: GitHub Actions pipeline with automated testing and deployment
 - **Infrastructure**: Production-ready with staging environment support
+- **Scalability**: Redis caching, Bull.js job queues, connection pooling
+- **Database**: Query optimization with DataLoader pattern, N+1 prevention
 
 ### **🔗 Integrations & APIs**
 - **Government Data**: SAM.gov API (22,532+ opportunities)
 - **Email**: Resend API (transactional emails, templates)
+- **Payment Processing**: Stripe (subscriptions, billing portal, webhooks)
+- **Document OCR**: Mistral AI (PDF processing, $0.001/page)
+- **Search**: Brave Search API (supplier discovery)
 - **Business Tools**: Salesforce, QuickBooks, Slack, Microsoft Office
 - **Storage**: Supabase Storage, CloudFront CDN
 - **Monitoring**: Structured logging ready for DataDog/Sentry integration
+- **Caching**: Redis (rate limiting, session management)
+- **Job Queue**: Bull.js (background processing)
 
 ## 📋 Prerequisites
 

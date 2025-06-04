@@ -9,6 +9,7 @@ import { routeHandler } from '@/lib/api/route-handler'
 import { emailService } from '@/lib/email/client'
 import { ValidationError, ExternalAPIError } from '@/lib/errors/types'
 import { emailLogger } from '@/lib/errors/logger'
+import { withUsageCheck } from '@/lib/usage/tracker'
 import React from 'react'
 
 // Import email templates
@@ -119,12 +120,19 @@ export const POST = routeHandler.POST(
       // Generate email subject based on type
       const subject = generateEmailSubject(emailData)
 
-      // Send the email
-      const result = await emailService.send({
-        to: emailData.to,
-        subject,
-        react: emailTemplate,
-      })
+      // Send the email with usage tracking
+      const result = await withUsageCheck(
+        user.id,
+        'email_sent',
+        Array.isArray(emailData.to) ? emailData.to.length : 1,
+        async () => {
+          return await emailService.send({
+            to: emailData.to,
+            subject,
+            react: emailTemplate,
+          })
+        }
+      )
 
       if (!result.success) {
         throw new ExternalAPIError(

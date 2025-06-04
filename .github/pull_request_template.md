@@ -1,59 +1,45 @@
 ## Description
-<!-- Provide a brief description of the changes in this PR -->
+<!-- Brief description of what this PR does -->
 
 ## Type of Change
 - [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
 - [ ] ✨ New feature (non-breaking change which adds functionality)
 - [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] 📚 Documentation update
-- [ ] 🎨 Code style update (formatting, renaming)
-- [ ] ♻️ Refactoring (no functional changes)
-- [ ] ⚡ Performance improvement
+- [ ] 📝 Documentation update
+- [ ] 🎨 Style/UI change
+- [ ] ♻️ Code refactor
 - [ ] ✅ Test update
-- [ ] 🔧 Configuration change
-
-## Related Issues
-<!-- Link to related issues -->
-Closes #
-
-## Changes Made
-<!-- List the specific changes made in this PR -->
-- 
-- 
-- 
+- [ ] 🤖 Build/CI change
 
 ## Testing
-<!-- Describe the tests you ran to verify your changes -->
-- [ ] Unit tests pass
-- [ ] E2E tests pass (if applicable)
+- [ ] Unit tests pass locally
+- [ ] Integration tests pass
 - [ ] Manual testing completed
-- [ ] No TypeScript errors
-- [ ] No ESLint warnings
+- [ ] No console errors or warnings
 
-## Screenshots/Videos
-<!-- If applicable, add screenshots or videos to help explain your changes -->
+## Screenshots (if applicable)
+<!-- Add screenshots to help explain your changes -->
 
 ## Checklist
 - [ ] My code follows the project's style guidelines
-- [ ] I have performed a self-review of my code
-- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have performed a self-review of my own code
+- [ ] I have commented my code in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation
 - [ ] My changes generate no new warnings
 - [ ] I have added tests that prove my fix is effective or that my feature works
 - [ ] New and existing unit tests pass locally with my changes
-- [ ] Any dependent changes have been merged and published
 
-## Performance Impact
-<!-- Describe any performance implications of your changes -->
-- [ ] No performance impact
-- [ ] Performance improved
-- [ ] Performance degraded (explain why this is acceptable)
+## Deployment Notes
+- [ ] This PR requires database migrations
+- [ ] This PR requires new environment variables
+- [ ] This PR requires dependency updates
+- [ ] This PR requires Redis/cache clearing
 
-## Security Considerations
-<!-- Have you introduced any security concerns? How have you mitigated them? -->
-- [ ] No security impact
-- [ ] Security improved
-- [ ] Potential security concerns addressed (explain)
+## Related Issues
+<!-- Link any related issues here -->
+Closes #
 
-## Additional Notes
-<!-- Any additional information that reviewers should know -->
+## Claude Code Assistance
+- [ ] Claude helped write implementation
+- [ ] Claude helped write tests
+- [ ] Claude reviewed the code

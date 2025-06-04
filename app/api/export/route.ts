@@ -10,6 +10,7 @@ import { DatabaseError, ValidationError } from '@/lib/errors/types'
 import { apiLogger } from '@/lib/errors/logger'
 import { generatePDFReport } from '@/lib/export/pdf-generator'
 import { generateExcelExport } from '@/lib/export/excel-generator'
+import { withUsageCheck } from '@/lib/usage/tracker'
 
 // Request body validation
 const exportRequestSchema = z.object({
@@ -63,20 +64,35 @@ export const POST = routeHandler.POST(
           throw new ValidationError('Invalid export format')
       }
 
-      // Generate export based on type
-      if (type === 'pdf') {
-        const result = await generatePDFReport(exportData, format, options)
-        buffer = result.buffer
-        filename = result.filename
-        mimeType = 'application/pdf'
-      } else if (type === 'excel') {
-        const result = await generateExcelExport(exportData, format, options)
-        buffer = result.buffer
-        filename = result.filename
-        mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      } else {
-        throw new ValidationError('Invalid export type')
-      }
+      // Generate export based on type with usage tracking
+      const exportResult = await withUsageCheck(
+        user.id,
+        'export_data',
+        1,
+        async () => {
+          if (type === 'pdf') {
+            const result = await generatePDFReport(exportData, format, options)
+            return {
+              buffer: result.buffer,
+              filename: result.filename,
+              mimeType: 'application/pdf'
+            }
+          } else if (type === 'excel') {
+            const result = await generateExcelExport(exportData, format, options)
+            return {
+              buffer: result.buffer,
+              filename: result.filename,
+              mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }
+          } else {
+            throw new ValidationError('Invalid export type')
+          }
+        }
+      )
+      
+      buffer = exportResult.buffer
+      filename = exportResult.filename
+      mimeType = exportResult.mimeType
 
       // Log successful export
       await supabase.rpc('log_audit', {

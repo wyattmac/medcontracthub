@@ -9,6 +9,7 @@ import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
 import { analyzeOpportunity } from '@/lib/ai/claude-client'
 import { DatabaseError, NotFoundError, ValidationError } from '@/lib/errors/types'
 import { aiLogger } from '@/lib/errors/logger'
+import { withUsageCheck } from '@/lib/usage/tracker'
 
 // Request body validation
 const analyzeRequestSchema = z.object({
@@ -82,13 +83,20 @@ export const POST = routeHandler.POST(
       })
     }
 
-    // Generate new AI analysis with timeout
-    const analysis = await Promise.race([
-      analyzeOpportunity(opportunity, companyProfile),
-      new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('AI analysis timeout - please try again')), 45000)
-      )
-    ])
+    // Generate new AI analysis with timeout and usage tracking
+    const analysis = await withUsageCheck(
+      user.id,
+      'ai_analysis',
+      1,
+      async () => {
+        return await Promise.race([
+          analyzeOpportunity(opportunity, companyProfile),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('AI analysis timeout - please try again')), 45000)
+          )
+        ])
+      }
+    )
 
     // Cache the analysis
     const { error: insertError } = await supabase
