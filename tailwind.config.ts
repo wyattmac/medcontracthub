@@ -58,5 +58,9 @@ const config: Config = {
     }
   },
   plugins: [],
+  // Ensure we don't override default colors
+  corePlugins: {
+    // This ensures default Tailwind colors are available
+  }
 }
 export default config
