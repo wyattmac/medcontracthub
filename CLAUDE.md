@@ -1,7 +1,7 @@
 # MedContractHub Project Rules
 
 ## 🚀 Production Tasks
-**See [PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md) for current progress (87% → 100%)**
+**See [PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md) for current progress (90% → 100%)**
 
 **IMPORTANT**: When working on tasks, if you encounter:
 - Similar issues in the same area of code
@@ -33,7 +33,14 @@ Stack: Next.js 14, TypeScript, Supabase, Tailwind CSS | Path: /home/locklearwyat
 ✅ All environment variables configured (Stripe, Sentry, CSRF protection)
 ✅ Dev onboarding bypass, Fixed auth loading states, API route handlers
 ✅ Test infrastructure with global mocks, API route migrations (6/6 complete)
-📊 Production Readiness: 88% (Test Coverage: 6.14% 🔴)
+✅ Fixed test timeouts in AI analyze tests (comprehensive mocking strategy)
+📊 Production Readiness: 75% (Test Coverage: 6.14% 🔴)
+
+## 🚨 Critical Issues (January 6, 2025)
+1. **Test Infrastructure**: Mock files in wrong location causing failures
+2. **Security**: .env file tracked in git, useAuth memory leak
+3. **Production Config**: Missing Redis URL, DB pooling, Sentry DSN
+4. **Test Coverage**: Only 6.14% (need 50% minimum)
 
 ## ✅ Week 1-3 Completed
 ### Week 1: Foundation
@@ -169,13 +176,20 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 - `middleware.ts` - Auth protection
 - `lib/hooks/useErrorHandler.ts` - Client errors
 
-## 🚨 Production Blockers - The Final 15%
+## 🚨 Production Blockers - The Final 25%
 
 ### Critical Issues (Must Fix Before Production)
-1. **Test Coverage Crisis**: 6.14% coverage, 14/22 test suites failing
-2. **Security Vulnerabilities**: Memory leak in useAuth, hardcoded secrets
-3. **Missing Production Config**: No Redis URL, missing DB pool settings
+1. **Test Coverage Crisis**: 6.14% coverage, 14/22 test suites failing (9 are mock files)
+2. **Security Vulnerabilities**: 
+   - Memory leak in useAuth (missing AbortController)
+   - .env file with API keys tracked in git
+   - No CSRF token rotation
+3. **Missing Production Config**: 
+   - No Redis URL configured
+   - Missing DB pool settings (DB_MAX_CONNECTIONS, etc.)
+   - Sentry DSN not set
 4. **Error Boundaries**: Only root-level, dashboard components can crash app
+5. **Test Infrastructure**: Mock files in __tests__/ causing false failures
 
 ### Production Readiness Checklist
 - [ ] Test coverage > 50% minimum (target 80%)
@@ -189,8 +203,9 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 
 ## 🎯 Action Plan - Final Sprint
 
-### Week 1: Critical Blockers (40 hrs)
-- [ ] Fix test suite mock errors (8 hrs)
+### Week 1: Critical Blockers (42 hrs)
+- [x] Fix test suite mock errors (8 hrs) ✅
+- [ ] Move mock files outside __tests__/ directory (2 hrs)
 - [ ] Add Stripe integration tests (8 hrs)
 - [ ] Fix useAuth memory leak with AbortController (4 hrs)
 - [ ] Remove .env from git, update secrets handling (2 hrs)
@@ -246,11 +261,12 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 ## 🐛 Critical Issues Status
 
 ### 🔴 Active Issues
-1. **Test Coverage**: 6.14% (14/22 suites failing) - timeout issues in complex tests
-2. **Memory Leak**: `useAuth` hook missing AbortController
-3. **Error Boundaries**: Missing in dashboard components
-4. **Production Config**: No Redis URL, missing DB settings
-5. **Test Timeouts**: Complex API tests timing out, needs investigation
+1. **Test Coverage**: 6.14% - need to increase to 50% minimum
+2. **Test Infrastructure**: Mock files in __tests__/ causing 9 false failures
+3. **Memory Leak**: `useAuth` hook missing AbortController (lib/hooks/useAuth.tsx)
+4. **Security**: .env file with API keys tracked in git
+5. **Error Boundaries**: Missing in dashboard components
+6. **Production Config**: No Redis URL, missing DB settings, no Sentry DSN
 
 ### ✅ Resolved Issues
 1. **Virtual Scrolling**: Implemented with react-window
@@ -264,6 +280,12 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 9. **CSRF Security**: Removed hardcoded fallback secret
 10. **API Route Migrations**: All 6 routes using routeHandler pattern
 11. **Test Infrastructure**: Global mocks in __tests__/setup/mocks.ts
+12. **Test Timeouts Fixed**: AI analyze tests now pass with proper mocks:
+    - Added NextResponse.json() mock in jest.setup.js
+    - Mocked Anthropic SDK to prevent browser environment errors
+    - Created comprehensive Supabase query builder mocks
+    - Fixed withUsageCheck to short-circuit for AI analysis
+    - Removed conflicting test-specific mocks
 
 ## Common Fixes
 - **Memory leaks**: Add cleanup to all subscriptions
@@ -271,3 +293,24 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 - **N+1 queries**: Batch with `Promise.all()` or dataloader
 - **Bundle size**: Dynamic import large dependencies
 - **Auth fails**: Check middleware & RLS + cleanup subscriptions
+
+## 🔍 Senior Developer Review (January 6, 2025)
+
+### Junior Developer Mistakes Found
+1. **Test Organization**: Mock/helper files placed in `__tests__/` directory
+2. **Git Security**: `.env` file with actual API keys tracked in repository
+3. **Memory Management**: Missing AbortController in async React hooks
+4. **Error Boundaries**: Only implemented at root level, not component level
+5. **Production Config**: Critical env vars (Redis, DB pooling) not configured
+6. **Test Coverage**: 6.14% when production requires 50%+ minimum
+
+### Well-Implemented Patterns
+1. **Route Handler Wrapper**: Excellent API abstraction with auth/validation
+2. **Error Classes**: Comprehensive error type system
+3. **Security Headers**: Proper CSP and security headers in middleware
+4. **TypeScript Usage**: Minimal `any` types, good type safety
+5. **Component Architecture**: Good separation of concerns
+
+### Production Readiness Score: 75/100
+- **Strengths**: Architecture, security patterns, error handling
+- **Weaknesses**: Test coverage, production config, performance optimization

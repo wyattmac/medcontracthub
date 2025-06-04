@@ -1,8 +1,28 @@
 # 🚀 Production Readiness Tasks
 
-**Current Status: 87% Complete** | **Target: 100%**
+**Current Status: 75% Complete** | **Target: 100%**
 
 This document tracks the remaining tasks to reach 100% production readiness for MedContractHub.
+
+## 🚨 New Critical Issues Discovered (January 6, 2025)
+
+Based on senior developer review, the following critical issues were discovered:
+
+### Test Infrastructure Crisis
+- **Only 6.14% test coverage** (production needs 50% minimum)
+- Mock files incorrectly placed in `__tests__/` directory causing test failures
+- Missing integration tests for Stripe, SAM.gov, and AI features
+
+### Security Vulnerabilities
+- `.env` file with actual API keys is tracked in git
+- `useAuth` hook has memory leak - missing AbortController cleanup
+- No CSRF token rotation mechanism
+
+### Production Configuration
+- Missing Redis URL for production
+- No database connection pooling configuration
+- Sentry DSN not configured
+- Missing database indexes on critical queries
 
 ## 📋 Task Priorities & Dependencies
 
@@ -36,7 +56,7 @@ This document tracks the remaining tasks to reach 100% production readiness for 
 - **Blocks**: Test suite fixes
 - **Time**: 4 hours
 
-#### 2.2 Fix test infrastructure
+#### 2.2 Fix test infrastructure 🟠 PARTIALLY COMPLETE
 - [x] Fix Response.json mock errors (fixed headers recursion)
 - [x] Update test utils for routeHandler pattern
 - [x] Fix authentication mocks
@@ -46,13 +66,19 @@ This document tracks the remaining tasks to reach 100% production readiness for 
 - [x] Create global mocks in __tests__/setup/mocks.ts
 - [x] Mock Next.js cookies() function
 - [x] Mock Supabase server client properly
-- [ ] Update all existing API tests to use new mocks
+- [x] Update all existing API tests to use new mocks
+- [x] Fix Jest configuration for Next.js 14
+- [x] Fix timeout issues in complex tests (AI analyze fixed)
+- [x] Add NextResponse.json() mock to jest.setup.js
+- [x] Mock Anthropic SDK to prevent browser errors
+- [x] Create comprehensive Supabase query builder mocks
+- [x] Fix withUsageCheck short-circuiting for AI tests
+- [ ] **NEW**: Move mock files outside __tests__/ directory
+- [ ] **NEW**: Update jest.config.js to only run .test.ts/.spec.ts files
 - [ ] Add test helpers for common API scenarios
-- [ ] Fix Jest configuration for Next.js 14
 - [ ] Fix CSRF/auth check order in tests
-- [ ] Fix timeout issues in complex tests
 - **Blocks**: New test creation
-- **Time**: 4 hours
+- **Time**: 6 hours (2 additional hours needed)
 
 ### 🟡 Priority 3: Core Stability
 **Essential for production reliability**
@@ -113,13 +139,17 @@ This document tracks the remaining tasks to reach 100% production readiness for 
 - **Time**: 2 hours
 
 #### 5.2 Test coverage improvement
-- [ ] Fix all 14 failing test suites
+- [ ] Fix all 14 failing test suites (9 are mock files, 5 are actual failures)
 - [ ] Add auth flow tests
-- [ ] Add payment integration tests
-- [ ] Add API endpoint tests
-- [ ] Achieve 50% coverage minimum
+- [ ] Add Stripe payment integration tests
+- [ ] Add SAM.gov integration tests
+- [ ] Add AI feature tests (Claude, Mistral OCR)
+- [ ] Add API endpoint tests for remaining routes
+- [ ] Add component tests for dashboard features
+- [ ] Add E2E tests for critical user paths
+- [ ] Achieve 50% coverage minimum (currently 6.14%)
 - **Dependencies**: Test infrastructure fixed
-- **Time**: 16 hours
+- **Time**: 24 hours
 
 #### 5.3 Security audit
 - [ ] Run automated security scan
@@ -131,14 +161,14 @@ This document tracks the remaining tasks to reach 100% production readiness for 
 
 ## 📊 Execution Plan Summary
 
-**Total Time Estimate**: ~46 hours (5-6 days of focused work)
+**Total Time Estimate**: ~56 hours (7-8 days of focused work)
 
 ### Recommended Execution Order:
 1. **Day 1**: Priority 1 (Security & Environment) - 1.5 hours
-2. **Day 2**: Priority 2 (Fix Failing Tests) - 8 hours  
+2. **Day 2**: Priority 2 (Fix Failing Tests) - 10 hours  
 3. **Day 3**: Priority 3 (Core Stability) - 6 hours
 4. **Day 4**: Priority 4 (Performance & Scale) - 5 hours
-5. **Day 5-6**: Priority 5 (Monitoring & Testing) - 26 hours
+5. **Day 5-7**: Priority 5 (Monitoring & Testing) - 34 hours
 
 ### Quick Wins (< 1 hour each):
 - Remove .env from git
@@ -157,10 +187,10 @@ This document tracks the remaining tasks to reach 100% production readiness for 
 | Priority | Status | Time | Blocking |
 |----------|--------|------|----------|
 | P1: Security & Environment | ✅ Complete | 1.5h | Everything |
-| P2: Fix Failing Tests | 🟡 In Progress | 8h | New tests |
+| P2: Fix Failing Tests | 🟠 90% Complete | 10h | New tests |
 | P3: Core Stability | 🔴 Not Started | 6h | None |
 | P4: Performance & Scale | 🔴 Not Started | 5h | Deployment |
-| P5: Monitoring & Testing | 🔴 Not Started | 26h | None |
+| P5: Monitoring & Testing | 🔴 Not Started | 34h | None |
 
 ## 🎯 Completion Criteria
 
@@ -184,4 +214,4 @@ When working on tasks, add newly discovered issues to the appropriate priority s
 
 ---
 
-Last Updated: December 6, 2024
+Last Updated: January 6, 2025

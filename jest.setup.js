@@ -23,6 +23,52 @@ jest.mock('next/navigation', () => ({
   },
 }))
 
+// Mock NextResponse for API routes
+jest.mock('next/server', () => {
+  const actualNextServer = jest.requireActual('next/server')
+  return {
+    ...actualNextServer,
+    NextResponse: {
+      ...actualNextServer.NextResponse,
+      json: jest.fn((body, init) => {
+        const status = init?.status || 200
+        const headers = new Map()
+        
+        // Add default headers
+        headers.set('content-type', 'application/json')
+        
+        // Add any provided headers
+        if (init?.headers) {
+          Object.entries(init.headers).forEach(([key, value]) => {
+            headers.set(key.toLowerCase(), value)
+          })
+        }
+        
+        return {
+          status,
+          headers: {
+            get: (key) => headers.get(key.toLowerCase()),
+            set: (key, value) => headers.set(key.toLowerCase(), value),
+            has: (key) => headers.has(key.toLowerCase()),
+            forEach: (callback) => headers.forEach((value, key) => callback(value, key))
+          },
+          ok: status >= 200 && status < 300,
+          json: () => Promise.resolve(body),
+          text: () => Promise.resolve(JSON.stringify(body)),
+        }
+      }),
+      redirect: jest.fn((url, status = 302) => ({
+        status,
+        headers: new Map([['location', url]]),
+      })),
+      error: jest.fn(() => ({
+        status: 500,
+        statusText: 'Internal Server Error',
+      })),
+    },
+  }
+})
+
 // Define global mocks before importing modules
 global.jest = require('jest')
 
