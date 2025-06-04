@@ -15,7 +15,7 @@ interface IAuthContext {
   company: Company | null
   loading: boolean
   signOut: () => Promise<void>
-  refreshProfile: (userId?: string) => Promise<void>
+  refreshProfile: (userId?: string, signal?: AbortSignal) => Promise<void>
 }
 
 const AuthContext = createContext<IAuthContext | undefined>(undefined)
@@ -32,10 +32,9 @@ export function AuthProvider({ children }: IAuthProviderProps) {
   const router = useRouter()
   const supabase = createClient()
   const mountedRef = useRef(true)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Remove this effect - we'll handle cleanup in the main effect
-
-  const refreshProfile = useCallback(async (userId?: string) => {
+  const refreshProfile = useCallback(async (userId?: string, signal?: AbortSignal) => {
     console.log('[useAuth] Refreshing profile...', { userId, currentUserId: user?.id })
     
     const targetUserId = userId || user?.id
@@ -46,6 +45,12 @@ export function AuthProvider({ children }: IAuthProviderProps) {
     }
 
     try {
+      // Check if aborted before making requests
+      if (signal?.aborted) {
+        console.log('[useAuth] Profile refresh aborted before start')
+        return
+      }
+
       console.log('[useAuth] Fetching profile for user:', targetUserId)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -53,7 +58,11 @@ export function AuthProvider({ children }: IAuthProviderProps) {
         .eq('id', targetUserId as any)
         .single()
 
-      // Don't check mounted status here - let the profile load complete
+      // Check if aborted after profile fetch
+      if (signal?.aborted) {
+        console.log('[useAuth] Profile refresh aborted after profile fetch')
+        return
+      }
 
       if (profileError || !profileData) {
         console.error('[useAuth] Profile fetch error:', profileError)
@@ -62,8 +71,8 @@ export function AuthProvider({ children }: IAuthProviderProps) {
 
       console.log('[useAuth] Profile loaded:', (profileData as any).id)
       
-      // Only update state if still mounted
-      if (mountedRef.current) {
+      // Only update state if still mounted and not aborted
+      if (mountedRef.current && !signal?.aborted) {
         setProfile(profileData as any) // Type assertion for database schema compatibility
       }
 
@@ -75,7 +84,11 @@ export function AuthProvider({ children }: IAuthProviderProps) {
           .eq('id', (profileData as any).company_id)
           .single()
 
-        // Don't check mounted status here - let the company load complete
+        // Check if aborted after company fetch
+        if (signal?.aborted) {
+          console.log('[useAuth] Profile refresh aborted after company fetch')
+          return
+        }
 
         if (companyError || !companyData) {
           console.error('[useAuth] Company fetch error:', companyError)
@@ -84,51 +97,81 @@ export function AuthProvider({ children }: IAuthProviderProps) {
 
         console.log('[useAuth] Company loaded:', (companyData as any).name)
         
-        // Only update state if still mounted
-        if (mountedRef.current) {
+        // Only update state if still mounted and not aborted
+        if (mountedRef.current && !signal?.aborted) {
           setCompany(companyData as any) // Type assertion for database schema compatibility
         }
       }
       
       console.log('[useAuth] Profile refresh complete')
-    } catch (error) {
-      console.error('[useAuth] Unexpected error in refreshProfile:', error)
+    } catch (error: any) {
+      // Don't log abort errors
+      if (error?.name !== 'AbortError') {
+        console.error('[useAuth] Unexpected error in refreshProfile:', error)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, supabase])
 
   useEffect(() => {
+    // Create new AbortController for this effect
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
     const getUser = async () => {
       console.log('[useAuth] Starting initial user load...')
       
       try {
+        // Check if aborted before starting
+        if (abortController.signal.aborted) {
+          console.log('[useAuth] Initial load aborted before start')
+          return
+        }
+
         console.log('[useAuth] Calling supabase.auth.getUser()')
         const { data: { user }, error } = await supabase.auth.getUser()
         
+        // Check if aborted after getting user
+        if (abortController.signal.aborted) {
+          console.log('[useAuth] Initial load aborted after getUser')
+          return
+        }
+
         console.log('[useAuth] getUser result:', { user: user?.email, error })
         
         if (error) {
           console.error('[useAuth] Initial auth error:', error)
-          setLoading(false)
+          if (!abortController.signal.aborted) {
+            setLoading(false)
+          }
           return
         }
         
         if (user) {
           console.log('[useAuth] User found:', user.email)
-          setUser(user)
+          if (!abortController.signal.aborted) {
+            setUser(user)
+          }
           // Load profile data immediately with the user ID
           console.log('[useAuth] Loading profile data...')
-          await refreshProfile(user.id)
+          await refreshProfile(user.id, abortController.signal)
           console.log('[useAuth] Profile load complete')
         } else {
           console.log('[useAuth] No user found')
+          if (!abortController.signal.aborted) {
+            setLoading(false)
+          }
+        }
+      } catch (error: any) {
+        // Don't log abort errors
+        if (error?.name !== 'AbortError') {
+          console.error('[useAuth] Unexpected error getting user:', error)
+        }
+      } finally {
+        if (!abortController.signal.aborted) {
+          console.log('[useAuth] Setting loading to false')
           setLoading(false)
         }
-      } catch (error) {
-        console.error('[useAuth] Unexpected error getting user:', error)
-      } finally {
-        console.log('[useAuth] Setting loading to false')
-        setLoading(false)
       }
     }
 
@@ -137,7 +180,8 @@ export function AuthProvider({ children }: IAuthProviderProps) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: any, session: any) => {
-        if (!mountedRef.current) return // Check if still mounted
+        // Check if component is still mounted and not aborted
+        if (!mountedRef.current || abortController.signal.aborted) return
         
         console.log('[useAuth] Auth state changed:', event)
         
@@ -161,16 +205,21 @@ export function AuthProvider({ children }: IAuthProviderProps) {
 
     return () => {
       console.log('[useAuth] Cleaning up auth subscription')
+      // Abort any in-flight requests
+      abortController.abort()
+      abortControllerRef.current = null
       subscription.unsubscribe()
       // Only set mountedRef to false on actual unmount
       mountedRef.current = false
     }
-  }, [supabase, router]) // Removed refreshProfile dependency
+  }, [supabase, router, refreshProfile])
 
   // Separate effect to handle profile refresh when user changes
   useEffect(() => {
     if (user && mountedRef.current) {
-      refreshProfile()
+      // Use the abort controller from the main effect if available
+      const signal = abortControllerRef.current?.signal
+      refreshProfile(undefined, signal)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, refreshProfile])

@@ -194,6 +194,62 @@ describe('useAuth Hook', () => {
       expect(unsubscribeMock).toHaveBeenCalled()
     })
 
+    it('should abort in-flight requests on unmount', async () => {
+      const mockUser = {
+        id: 'user-123',
+        email: 'test@example.com'
+      }
+      
+      // Create a promise that we can control
+      let resolveProfile: any
+      const profilePromise = new Promise((resolve) => {
+        resolveProfile = resolve
+      })
+      
+      mockSupabaseClient.auth.getUser.mockResolvedValue({ 
+        data: { user: mockUser }, 
+        error: null 
+      })
+      
+      // Mock profile fetch that returns our controlled promise
+      mockSupabaseClient.from.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockReturnValue(profilePromise)
+          })
+        })
+      })
+      
+      const unsubscribeMock = jest.fn()
+      mockSupabaseClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: unsubscribeMock } }
+      })
+
+      const { unmount, result } = renderHook(() => useAuth(), { wrapper })
+
+      // Wait for user to be set
+      await waitFor(() => {
+        expect(result.current.user).toEqual(mockUser)
+      })
+
+      // Unmount before profile loads
+      unmount()
+
+      // Resolve the profile promise after unmount
+      resolveProfile({
+        data: { id: 'user-123', company_id: 'company-123' },
+        error: null
+      })
+
+      // Give time for any state updates that shouldn't happen
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 100))
+      })
+
+      // Profile should not have been set since we unmounted
+      expect(result.current.profile).toBeNull()
+    })
+
     it('should not update state after unmount', async () => {
       const mockUser = {
         id: 'user-123',
