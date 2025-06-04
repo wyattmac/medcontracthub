@@ -7,6 +7,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { apiLogger } from '@/lib/errors/logger'
 import { formatErrorResponse } from '@/lib/errors/utils'
+import { runStartupHealthChecks } from '@/lib/startup/health-check'
+import { checkRedisHealth } from '@/lib/redis/client'
+import { getConnectionPool } from '@/lib/db/connection-pool'
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now()
@@ -15,9 +18,31 @@ export async function GET(request: NextRequest) {
   try {
     apiLogger.info('Health check started', { requestId })
     
-    // Initialize checks object
+    // Check for detailed health check request
+    const isDetailed = request.nextUrl.searchParams.get('detailed') === 'true'
+    
+    // For detailed checks, run comprehensive health checks
+    if (isDetailed) {
+      const detailedHealth = await runStartupHealthChecks()
+      
+      return NextResponse.json({
+        ...detailedHealth,
+        requestId,
+        responseTime: `${Date.now() - startTime}ms`
+      }, {
+        status: detailedHealth.status === 'healthy' ? 200 : 503,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'X-Request-Id': requestId
+        }
+      })
+    }
+    
+    // Initialize checks object for basic health check
     const checks = {
       database: 'unknown',
+      redis: 'unknown',
+      connectionPool: 'unknown',
       environment: {
         supabase: false,
         samApi: false,
@@ -63,9 +88,30 @@ export async function GET(request: NextRequest) {
       checks.database = 'error'
       apiLogger.error('Database health check error', dbError, { requestId })
     }
+    
+    // Check Redis connectivity
+    try {
+      const redisHealthy = await checkRedisHealth()
+      checks.redis = redisHealthy ? 'healthy' : 'error'
+    } catch (redisError) {
+      checks.redis = 'error'
+      apiLogger.warn('Redis health check failed', { error: redisError, requestId })
+    }
+    
+    // Check connection pool stats
+    try {
+      const pool = getConnectionPool()
+      const poolStats = pool.getStats()
+      checks.connectionPool = poolStats.total > 0 ? 'healthy' : 'error'
+    } catch (poolError) {
+      checks.connectionPool = 'error'
+      apiLogger.warn('Connection pool check failed', { error: poolError, requestId })
+    }
 
     // Calculate overall health status
     const isHealthy = checks.database === 'healthy' && 
+                     checks.redis === 'healthy' &&
+                     checks.connectionPool === 'healthy' &&
                      Object.values(checks.environment).some(v => v === true)
     
     const responseTime = Date.now() - startTime

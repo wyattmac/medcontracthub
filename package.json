@@ -40,7 +40,10 @@
     "redis:start": "redis-server",
     "redis:stop": "redis-cli shutdown",
     "bypass-onboarding": "tsx scripts/bypass-onboarding.ts",
-    "dev-setup": "tsx scripts/dev-setup-user.ts"
+    "dev-setup": "tsx scripts/dev-setup-user.ts",
+    "validate:env:production": "tsx scripts/validate-production-env.ts",
+    "db:migrate": "bash scripts/apply-db-indexes.sh",
+    "health:check": "curl -s http://localhost:3000/api/health?detailed=true | jq ."
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
