@@ -159,6 +159,18 @@ Each task should be marked complete only when:
 3. Documentation is updated
 4. Code is reviewed and merged
 
+## 📝 Adding New Issues
+
+When working on tasks, add newly discovered issues to the appropriate priority section:
+
+**Example**: While fixing test infrastructure, you might discover:
+- Other API routes still using old patterns
+- Mock utilities that need updating
+- Test files with outdated imports
+- Missing test coverage in related areas
+
+→ Add these to the task list immediately to ensure comprehensive fixes.
+
 ---
 
 Last Updated: December 6, 2024

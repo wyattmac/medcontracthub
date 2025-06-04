@@ -3,13 +3,26 @@
 ## 🚀 Production Tasks
 **See [PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md) for current progress (87% → 100%)**
 
+**IMPORTANT**: When working on tasks, if you encounter:
+- Similar issues in the same area of code
+- Patterns of problems that weren't initially documented
+- Related issues that could cause future problems
+- Dependencies or side effects not captured in the original task
+
+→ **Proactively add them to PRODUCTION_TASKS.md and the todo list**
+
+This ensures we fix entire problem areas, not just individual symptoms.
+
 ## Quick Context
 AI platform for medical distributors to win federal contracts via SAM.gov integration
 Stack: Next.js 14, TypeScript, Supabase, Tailwind CSS | Path: /home/locklearwyatt/projects/medcontracthub
 
 ## Development Workflow
 1. **Before Starting**: Always run `npm test && npm run type-check`
-2. **While Coding**: Use TodoWrite to track progress
+2. **While Coding**: 
+   - Use TodoWrite to track progress
+   - Add discovered issues to PRODUCTION_TASKS.md
+   - Look for patterns - if fixing one thing, check for similar issues
 3. **Before Committing**: Run `npm run lint && npm run type-check`
 4. **Commit Style**: Use conventional commits (feat:, fix:, docs:, chore:)
 
