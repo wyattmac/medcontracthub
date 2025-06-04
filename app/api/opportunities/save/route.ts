@@ -3,36 +3,38 @@
  * POST /api/opportunities/save
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { Database } from '@/types/database.types'
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { routeHandler } from '@/lib/api/route-handler'
+import { 
+  NotFoundError,
+  ValidationError,
+  DatabaseError
+} from '@/lib/errors/types'
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = createServerComponentClient<Database>({ cookies })
-    
-    // Check authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+// Request body validation schema
+const saveOpportunitySchema = z.object({
+  opportunityId: z.string().min(1, 'Opportunity ID is required'),
+  action: z.enum(['save', 'unsave'], {
+    errorMap: () => ({ message: 'Invalid action. Must be "save" or "unsave"' })
+  }),
+  notes: z.string().nullable().optional(),
+  tags: z.array(z.string()).optional().default([]),
+  isPursuing: z.boolean().optional().default(false),
+  reminderDate: z.string().datetime().nullable().optional()
+})
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const { opportunityId, action, notes = null, tags = [], isPursuing = false, reminderDate = null } = await request.json()
-
-    if (!opportunityId || !action) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
+export const POST = routeHandler.POST(
+  async ({ user, supabase, sanitizedBody }) => {
+    // Parse and validate request body
+    const { 
+      opportunityId, 
+      action, 
+      notes = null, 
+      tags = [], 
+      isPursuing = false, 
+      reminderDate = null 
+    } = sanitizedBody
 
     // Verify opportunity exists
     const { data: opportunity, error: opportunityError } = await supabase
@@ -42,10 +44,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (opportunityError || !opportunity) {
-      return NextResponse.json(
-        { error: 'Opportunity not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Opportunity')
     }
 
     if (action === 'save') {
@@ -62,20 +61,16 @@ export async function POST(request: NextRequest) {
         const { error: updateError } = await supabase
           .from('saved_opportunities')
           .update({
-            notes: notes || null,
-            tags: tags || [],
-            is_pursuing: isPursuing || false,
-            reminder_date: reminderDate || null,
+            notes,
+            tags,
+            is_pursuing: isPursuing,
+            reminder_date: reminderDate,
             updated_at: new Date().toISOString()
           })
           .eq('id', existing.id)
 
         if (updateError) {
-          console.error('Error updating saved opportunity:', updateError)
-          return NextResponse.json(
-            { error: 'Failed to update saved opportunity' },
-            { status: 500 }
-          )
+          throw new DatabaseError('Failed to update saved opportunity', updateError)
         }
       } else {
         // Create new saved opportunity
@@ -84,18 +79,14 @@ export async function POST(request: NextRequest) {
           .insert({
             user_id: user.id,
             opportunity_id: opportunityId,
-            notes: notes || null,
-            tags: tags || [],
-            is_pursuing: isPursuing || false,
-            reminder_date: reminderDate || null
+            notes,
+            tags,
+            is_pursuing: isPursuing,
+            reminder_date: reminderDate
           })
 
         if (insertError) {
-          console.error('Error saving opportunity:', insertError)
-          return NextResponse.json(
-            { error: 'Failed to save opportunity' },
-            { status: 500 }
-          )
+          throw new DatabaseError('Failed to save opportunity', insertError)
         }
       }
 
@@ -104,7 +95,7 @@ export async function POST(request: NextRequest) {
         p_action: 'save_opportunity',
         p_entity_type: 'opportunities',
         p_entity_id: opportunityId,
-        p_changes: { action: 'save', notes: !!notes, tags: tags?.length || 0 }
+        p_changes: { action: 'save', notes: !!notes, tags: tags.length }
       })
 
       return NextResponse.json({ 
@@ -112,7 +103,8 @@ export async function POST(request: NextRequest) {
         message: 'Opportunity saved successfully'
       })
 
-    } else if (action === 'unsave') {
+    } else {
+      // action === 'unsave'
       // Remove saved opportunity
       const { error: deleteError } = await supabase
         .from('saved_opportunities')
@@ -121,11 +113,7 @@ export async function POST(request: NextRequest) {
         .eq('opportunity_id', opportunityId)
 
       if (deleteError) {
-        console.error('Error unsaving opportunity:', deleteError)
-        return NextResponse.json(
-          { error: 'Failed to unsave opportunity' },
-          { status: 500 }
-        )
+        throw new DatabaseError('Failed to unsave opportunity', deleteError)
       }
 
       // Log the action
@@ -140,23 +128,17 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Opportunity unsaved successfully'
       })
-
-    } else {
-      return NextResponse.json(
-        { error: 'Invalid action' },
-        { status: 400 }
-      )
     }
-
-  } catch (error) {
-    console.error('Save opportunity error:', error)
-    
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+  },
+  {
+    requireAuth: true,
+    validateBody: saveOpportunitySchema,
+    rateLimit: 'api',
+    sanitization: {
+      body: {
+        notes: 'rich',
+        tags: 'basic'
+      }
+    }
   }
-}
+)

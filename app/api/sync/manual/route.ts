@@ -3,31 +3,22 @@
  * POST /api/sync/manual
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { Database } from '@/types/database.types'
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { routeHandler } from '@/lib/api/route-handler'
 import { samApiClient } from '@/lib/sam-gov'
 import { syncOpportunitiesToDatabase } from '@/lib/sam-gov/utils'
+import { DatabaseError } from '@/lib/errors/types'
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = createServerComponentClient<Database>({ cookies })
-    
-    // Check authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+// Request body validation schema
+const manualSyncSchema = z.object({
+  limit: z.number().min(1).max(100).optional().default(50),
+  naicsFilter: z.string().optional()
+})
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const { limit = 50, naicsFilter } = await request.json()
+export const POST = routeHandler.POST(
+  async ({ user, supabase, sanitizedBody }) => {
+    const { limit, naicsFilter } = sanitizedBody
 
     console.log(`Manual sync triggered by user ${user.id}`, { limit, naicsFilter })
 
@@ -117,33 +108,10 @@ export async function POST(request: NextRequest) {
         errors: syncResult.errors
       }
     })
-
-  } catch (error) {
-    console.error('Manual sync error:', error)
-
-    // Log sync failure
-    try {
-      const supabase = createServerComponentClient<Database>({ cookies })
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      await supabase.rpc('log_audit', {
-        p_action: 'manual_sync_failed',
-        p_entity_type: 'opportunities',
-        p_changes: {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          triggered_by: user?.id
-        }
-      })
-    } catch (logError) {
-      console.error('Failed to log manual sync error:', logError)
-    }
-
-    return NextResponse.json(
-      { 
-        error: 'Manual sync failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+  },
+  {
+    requireAuth: true,
+    validateBody: manualSyncSchema,
+    rateLimit: 'sync'
   }
-}
+)

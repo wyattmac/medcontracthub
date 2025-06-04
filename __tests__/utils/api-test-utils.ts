@@ -147,21 +147,38 @@ export const createMockNextRequest = (
     })
   }
 
+  // Create headers with lowercase keys
+  const headersMap = new Map()
+  Object.entries(options.headers || {}).forEach(([key, value]) => {
+    headersMap.set(key.toLowerCase(), value)
+  })
+  
+  // Create a mock Headers object
+  const mockHeaders = {
+    get: (key: string) => headersMap.get(key.toLowerCase()) || null,
+    set: (key: string, value: string) => headersMap.set(key.toLowerCase(), value),
+    has: (key: string) => headersMap.has(key.toLowerCase()),
+    delete: (key: string) => headersMap.delete(key.toLowerCase()),
+    forEach: (callback: (value: string, key: string) => void) => {
+      headersMap.forEach((value, key) => callback(value, key))
+    }
+  }
+  
   const mockRequest = {
     url: fullUrl.toString(),
     method: options.method || 'GET',
-    headers: new Map(Object.entries(options.headers || {})),
+    headers: mockHeaders,
     nextUrl: fullUrl,
     ip: '127.0.0.1',
     json: jest.fn().mockResolvedValue(options.body || {}),
     text: jest.fn().mockResolvedValue(JSON.stringify(options.body || {})),
-    formData: jest.fn().mockResolvedValue(new FormData())
+    formData: jest.fn().mockResolvedValue(new FormData()),
+    cookies: {
+      get: jest.fn().mockReturnValue(null),
+      getAll: jest.fn().mockReturnValue([]),
+      has: jest.fn().mockReturnValue(false)
+    }
   } as any
-
-  // Add headers.get method
-  mockRequest.headers.get = function(key: string) {
-    return this.get(key.toLowerCase()) || null
-  }
 
   return mockRequest as NextRequest
 }

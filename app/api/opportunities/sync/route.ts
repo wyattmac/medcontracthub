@@ -1,54 +1,42 @@
 /**
  * API Route: Sync opportunities from SAM.gov
  * POST /api/opportunities/sync
+ * GET /api/opportunities/sync
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { routeHandler } from '@/lib/api/route-handler'
 import { samApiClient } from '@/lib/sam-gov'
 import { syncOpportunitiesToDatabase } from '@/lib/sam-gov/utils'
-import { Database } from '@/types/database.types'
+import { 
+  NotFoundError,
+  ValidationError,
+  RateLimitError,
+  DatabaseError 
+} from '@/lib/errors/types'
 
-interface ISyncRequest {
-  naicsCodes?: string[]
-  limit?: number
-  forceRefresh?: boolean
-}
+// Request body validation schema
+const syncRequestSchema = z.object({
+  naicsCodes: z.array(z.string()).optional(),
+  limit: z.number().min(1).max(1000).optional().default(100),
+  forceRefresh: z.boolean().optional().default(false)
+})
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = createServerComponentClient<Database>({ cookies })
-    
-    // Check authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+export const POST = routeHandler.POST(
+  async ({ user, supabase, sanitizedBody }) => {
+    const { naicsCodes, limit, forceRefresh } = sanitizedBody
 
     // Check if user has admin role or if this is their first sync
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role, company_id')
       .eq('id', user.id)
       .single()
 
-    if (!profile) {
-      return NextResponse.json(
-        { error: 'Profile not found' },
-        { status: 404 }
-      )
+    if (profileError || !profile) {
+      throw new NotFoundError('Profile')
     }
-
-    const body: ISyncRequest = await request.json()
-    const { naicsCodes, limit = 100, forceRefresh = false } = body
 
     // If no NAICS codes provided, get them from user's company
     let targetNaicsCodes = naicsCodes
@@ -63,10 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!targetNaicsCodes || targetNaicsCodes.length === 0) {
-      return NextResponse.json(
-        { error: 'No NAICS codes available for sync' },
-        { status: 400 }
-      )
+      throw new ValidationError('No NAICS codes available for sync')
     }
 
     // Check rate limiting (basic implementation)
@@ -81,10 +66,7 @@ export async function POST(request: NextRequest) {
         .limit(1)
 
       if (recentSync && recentSync.length > 0) {
-        return NextResponse.json(
-          { error: 'Sync already performed in the last hour' },
-          { status: 429 }
-        )
+        throw new RateLimitError('Sync already performed in the last hour', 3600)
       }
     }
 
@@ -129,39 +111,18 @@ export async function POST(request: NextRequest) {
       ...syncResult,
       total: searchResults.opportunities.length
     })
-
-  } catch (error) {
-    console.error('Opportunity sync error:', error)
-    
-    return NextResponse.json(
-      { 
-        error: 'Internal server error', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
-      },
-      { status: 500 }
-    )
+  },
+  {
+    requireAuth: true,
+    validateBody: syncRequestSchema,
+    rateLimit: 'sync'
   }
-}
+)
 
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = createServerComponentClient<Database>({ cookies })
-    
-    // Check authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
+export const GET = routeHandler.GET(
+  async ({ user, supabase }) => {
     // Get sync history for this user
-    const { data: syncHistory } = await supabase
+    const { data: syncHistory, error } = await supabase
       .from('audit_logs')
       .select('created_at, changes')
       .eq('user_id', user.id)
@@ -169,16 +130,16 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(10)
 
+    if (error) {
+      throw new DatabaseError('Failed to fetch sync history', error)
+    }
+
     return NextResponse.json({
       history: syncHistory || []
     })
-
-  } catch (error) {
-    console.error('Sync history error:', error)
-    
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+  },
+  {
+    requireAuth: true,
+    rateLimit: 'api'
   }
-}
+)

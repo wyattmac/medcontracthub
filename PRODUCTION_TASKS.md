@@ -26,12 +26,13 @@ This document tracks the remaining tasks to reach 100% production readiness for 
 ### 🟠 Priority 2: Fix Failing Tests
 **Required before adding new tests**
 
-#### 2.1 Migrate API routes to routeHandler
-- [ ] /api/opportunities/save
-- [ ] /api/opportunities/saved
-- [ ] /api/opportunities/search
-- [ ] /api/sync/manual
-- [ ] /api/sync/status
+#### 2.1 Migrate API routes to routeHandler ✅
+- [x] /api/opportunities/save
+- [x] /api/opportunities/saved
+- [x] /api/opportunities/search (already migrated)
+- [x] /api/opportunities/sync
+- [x] /api/sync/manual
+- [x] /api/sync/status
 - **Blocks**: Test suite fixes
 - **Time**: 4 hours
 
@@ -145,7 +146,7 @@ This document tracks the remaining tasks to reach 100% production readiness for 
 | Priority | Status | Time | Blocking |
 |----------|--------|------|----------|
 | P1: Security & Environment | ✅ Complete | 1.5h | Everything |
-| P2: Fix Failing Tests | 🔴 Not Started | 8h | New tests |
+| P2: Fix Failing Tests | 🟡 In Progress | 8h | New tests |
 | P3: Core Stability | 🔴 Not Started | 6h | None |
 | P4: Performance & Scale | 🔴 Not Started | 5h | Deployment |
 | P5: Monitoring & Testing | 🔴 Not Started | 26h | None |

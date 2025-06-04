@@ -3,29 +3,22 @@
  * GET /api/opportunities/saved
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { Database } from '@/types/database.types'
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { routeHandler } from '@/lib/api/route-handler'
 import { calculateOpportunityMatch } from '@/lib/sam-gov/utils'
+import { DatabaseError } from '@/lib/errors/types'
 
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = createServerComponentClient<Database>({ cookies })
-    
-    // Check authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+// Query parameter validation schema
+const savedOpportunitiesQuerySchema = z.object({
+  is_pursuing: z.enum(['true', 'false']).optional(),
+  has_reminder: z.enum(['true', 'false']).optional(),
+  tags: z.string().optional(),
+  sort_by: z.enum(['deadline', 'saved_date', 'match_score']).optional().default('deadline')
+})
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
+export const GET = routeHandler.GET(
+  async ({ user, supabase, request }) => {
     const { searchParams } = new URL(request.url)
     
     // Parse query parameters
@@ -39,7 +32,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's company NAICS codes for match scoring
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select(`
         company_id,
@@ -47,6 +40,10 @@ export async function GET(request: NextRequest) {
       `)
       .eq('id', user.id)
       .single()
+
+    if (profileError) {
+      throw new DatabaseError('Failed to fetch user profile', profileError)
+    }
 
     const companyNaicsCodes = (profile?.companies as any)?.naics_codes || []
 
@@ -110,14 +107,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Execute query
-    const { data: savedOpportunities, error, count } = await query
+    const { data: savedOpportunities, error } = await query
 
     if (error) {
-      console.error('Database query error:', error)
-      return NextResponse.json(
-        { error: 'Query failed' },
-        { status: 500 }
-      )
+      throw new DatabaseError('Failed to fetch saved opportunities', error)
     }
 
     // Process and enhance data
@@ -178,16 +171,10 @@ export async function GET(request: NextRequest) {
         }).length
       }
     })
-
-  } catch (error) {
-    console.error('Get saved opportunities error:', error)
-    
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+  },
+  {
+    requireAuth: true,
+    validateQuery: savedOpportunitiesQuerySchema,
+    rateLimit: 'api'
   }
-}
+)
