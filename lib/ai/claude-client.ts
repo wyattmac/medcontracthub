@@ -172,13 +172,13 @@ RECENT ACTIVITY:
 - Viewed opportunities: ${recentActivity.viewedOpportunities.length} different contracts
 
 SAVED OPPORTUNITIES SUMMARY:
-${savedOpportunities.map(opp => `
-- ${opp.opportunity.title} (${opp.opportunity.agency})
-  NAICS: ${opp.opportunity.naics_code}
-  Value: $${opp.opportunity.estimated_value_min || 'TBD'} - $${opp.opportunity.estimated_value_max || 'TBD'}
-  Deadline: ${opp.opportunity.response_deadline}
+${savedOpportunities.length > 0 ? savedOpportunities.map(opp => `
+- ${opp.opportunities?.title || 'Unknown'} (${opp.opportunities?.agency || 'Unknown'})
+  NAICS: ${opp.opportunities?.naics_code || 'N/A'}
+  Value: $${opp.opportunities?.estimated_value_min || 'TBD'} - $${opp.opportunities?.estimated_value_max || 'TBD'}
+  Deadline: ${opp.opportunities?.response_deadline || 'N/A'}
   Pursuing: ${opp.is_pursuing ? 'Yes' : 'No'}
-`).join('')}
+`).join('') : 'No saved opportunities yet'}
 
 Please provide strategic recommendations in JSON format:
 {

@@ -38,4 +38,4 @@ next-env.d.ts
 
 # puppeteer
 .puppeteer_cache/
-.puppeteer-chrome/
+.puppeteer-chrome/.jest-cache/

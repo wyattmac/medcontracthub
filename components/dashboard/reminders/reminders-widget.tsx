@@ -102,9 +102,9 @@ export function RemindersWidget() {
 
 function ReminderItem({ reminder, type }: { reminder: any, type: 'reminder' | 'deadline' }) {
   const isReminderType = type === 'reminder'
-  const date = new Date(isReminderType ? reminder.reminder_date : reminder.opportunity.response_deadline)
-  const title = isReminderType ? reminder.opportunity.title : reminder.title
-  const opportunityId = isReminderType ? reminder.opportunity.id : reminder.id
+  const date = new Date(isReminderType ? reminder.reminder_date : reminder.response_deadline)
+  const title = isReminderType ? reminder.opportunities?.title : reminder.title
+  const opportunityId = isReminderType ? reminder.opportunities?.id : reminder.id
   
   const getTimeInfo = () => {
     if (isToday(date)) {

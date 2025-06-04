@@ -334,6 +334,3 @@ export class CostOptimizer {
 
 // Export singleton instance
 export const costOptimizer = new CostOptimizer()
-
-// Export for testing
-export { CostOptimizer }

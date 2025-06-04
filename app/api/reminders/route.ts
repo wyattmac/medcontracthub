@@ -3,28 +3,11 @@
  * GET /api/reminders
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { Database } from '@/types/database.types'
+import { NextResponse } from 'next/server'
+import { routeHandler } from '@/lib/api/route-handler'
 
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = createServerComponentClient<Database>({ cookies })
-    
-    // Check authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
+export const GET = routeHandler.GET(
+  async ({ user, supabase }) => {
     const now = new Date()
     const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
@@ -135,16 +118,6 @@ export async function GET(request: NextRequest) {
         totalUpcoming: (upcomingReminders?.length || 0) + filteredExpiringOpportunities.length
       }
     })
-
-  } catch (error) {
-    console.error('Get reminders error:', error)
-    
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
-  }
-}
+  },
+  { requireAuth: true }
+)

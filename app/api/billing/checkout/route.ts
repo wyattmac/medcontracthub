@@ -13,7 +13,9 @@ const checkoutSchema = z.object({
 })
 
 export const POST = routeHandler.POST(
-  async ({ user, supabase }, { planId }) => {
+  async ({ user, supabase, sanitizedBody }) => {
+    const { planId } = sanitizedBody
+    
     // Get user email
     const { data: profile } = await supabase
       .from('profiles')

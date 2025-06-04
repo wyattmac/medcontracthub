@@ -20,6 +20,7 @@
     "test:changed": "jest -o",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "bypass-onboarding": "ts-node scripts/bypass-onboarding.ts",
     "test:e2e:debug": "playwright test --debug",
     "test:all": "npm run test:unit && npm run test:e2e",
     "db:reset": "npx supabase db reset",
@@ -37,7 +38,9 @@
     "worker": "tsx scripts/start-worker.ts",
     "worker:dev": "tsx --watch scripts/start-worker.ts",
     "redis:start": "redis-server",
-    "redis:stop": "redis-cli shutdown"
+    "redis:stop": "redis-cli shutdown",
+    "bypass-onboarding": "tsx scripts/bypass-onboarding.ts",
+    "dev-setup": "tsx scripts/dev-setup-user.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",

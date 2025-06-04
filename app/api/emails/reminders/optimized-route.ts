@@ -109,8 +109,7 @@ export const PUT = routeHandler.PUT(
                 deadlineTime: format(deadline, 'h:mm a zzz'),
                 daysRemaining,
                 opportunityUrl: `${process.env.NEXT_PUBLIC_APP_URL}/opportunities/${reminder.opportunity_id}`,
-                recipientName: reminder.user_name || reminder.user_email.split('@')[0],
-                companyName: reminder.company_name,
+                companyName: reminder.company_name || reminder.user_name || reminder.user_email.split('@')[0],
                 estimatedValue: reminder.estimated_value,
               })
 

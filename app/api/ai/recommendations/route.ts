@@ -3,29 +3,12 @@
  * GET /api/ai/recommendations
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { Database } from '@/types/database.types'
+import { NextResponse } from 'next/server'
+import { routeHandler } from '@/lib/api/route-handler'
 import { generateCompanyRecommendations } from '@/lib/ai/claude-client'
 
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = createServerComponentClient<Database>({ cookies })
-    
-    // Check authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
+export const GET = routeHandler.GET(
+  async ({ user, supabase }) => {
     // Get user's company profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -119,15 +102,15 @@ export async function GET(request: NextRequest) {
     const { data: cachedRecommendations } = await supabase
       .from('opportunity_analyses')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('company_id', profile.company_id)
       .eq('analysis_type', 'company_recommendations')
-      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+      .gte('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
       .limit(1)
 
     if (cachedRecommendations && cachedRecommendations.length > 0) {
       return NextResponse.json({
-        recommendations: cachedRecommendations[0].analysis_result,
+        recommendations: cachedRecommendations[0].analysis_data,
         cached: true,
         generatedAt: cachedRecommendations[0].created_at,
         basedOn: {
@@ -149,26 +132,16 @@ export async function GET(request: NextRequest) {
       .from('opportunity_analyses')
       .insert({
         opportunity_id: null, // This is company-wide recommendations
-        user_id: user.id,
-        analysis_result: recommendations,
-        analysis_type: 'company_recommendations'
+        company_id: profile.company_id,
+        analysis_data: recommendations,
+        analysis_type: 'company_recommendations',
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
       })
 
     if (insertError) {
       console.error('Error caching recommendations:', insertError)
       // Continue anyway
     }
-
-    // Log the recommendation generation
-    await supabase.rpc('log_audit', {
-      p_action: 'ai_recommendations_generated',
-      p_entity_type: 'company',
-      p_changes: { 
-        saved_opportunities_count: savedOpportunities?.length || 0,
-        high_priority_count: recommendations.highPriorityOpportunities.length,
-        recommendations_count: recommendations.actionableRecommendations.length
-      }
-    })
 
     return NextResponse.json({
       recommendations,
@@ -179,16 +152,9 @@ export async function GET(request: NextRequest) {
         recentActivity: recentActivitySummary
       }
     })
-
-  } catch (error) {
-    console.error('Recommendations generation error:', error)
-    
-    return NextResponse.json(
-      { 
-        error: 'Recommendations generation failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+  },
+  { 
+    requireAuth: true,
+    rateLimit: 'ai'
   }
-}
+)

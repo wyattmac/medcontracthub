@@ -1,10 +1,13 @@
 // Based on Context7 research: Supabase SSR authentication setup for Next.js
 // Reference: /supabase/supabase - nextjs ssr authentication setup
 
-import { createBrowserClient } from '@supabase/ssr'
+import { createBrowserClient as createSupabaseBrowserClient } from '@supabase/ssr'
 import type { Database } from '@/types/database.types'
 import { ConfigurationError } from '@/lib/errors/types'
 import { logger } from '@/lib/errors/logger'
+
+// Re-export for backward compatibility
+export { createSupabaseBrowserClient as createBrowserClient }
 
 // Validate environment variables at module load
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -23,7 +26,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export function createClient() {
   try {
-    const client = createBrowserClient<Database>(
+    const client = createSupabaseBrowserClient<Database>(
       supabaseUrl!,
       supabaseAnonKey!,
       {

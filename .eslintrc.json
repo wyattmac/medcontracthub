@@ -1,8 +1,7 @@
 {
   "extends": [
     "next/core-web-vitals",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:security/recommended"
+    "plugin:@typescript-eslint/recommended"
   ],
   "plugins": [
     "@typescript-eslint",

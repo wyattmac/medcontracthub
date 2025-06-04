@@ -123,3 +123,6 @@ export function createServiceClient() {
     )
   }
 }
+
+// Export alias for backward compatibility
+export { createClient as createServerClient }
