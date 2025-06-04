@@ -14,7 +14,7 @@ Stack: Next.js 14, TypeScript, Supabase, Tailwind CSS | Path: /home/locklearwyat
 ✅ Auth, SAM.gov (22k+), AI analysis, exports, emails, Brave Search, Mistral OCR
 ✅ Virtual scrolling, CI/CD pipeline, Redis, Bull.js queues, DB optimization
 ✅ Stripe integration, Usage metering, Billing dashboard, 14-day trials
-📊 Production Readiness: 90%
+📊 Production Readiness: 85% (Test Coverage: 6.14% 🔴)
 
 ## ✅ Week 1-3 Completed
 ### Week 1: Foundation
@@ -125,11 +125,22 @@ SUPABASE_SERVICE_ROLE_KEY=
 SAM_GOV_API_KEY=
 ANTHROPIC_API_KEY=
 RESEND_API_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+CSRF_SECRET= # NEVER use default value
+
+# Production (Required for prod)
+REDIS_URL=
+REDIS_PASSWORD=
+SENTRY_DSN=
+DB_MAX_CONNECTIONS=25
+DB_MIN_CONNECTIONS=5
+DB_CONNECTION_TIMEOUT=60000
 
 # Optional
 MISTRAL_API_KEY=
 BRAVE_SEARCH_API_KEY=
-SENTRY_DSN=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 ```
 
 ## Key Files
@@ -138,33 +149,51 @@ SENTRY_DSN=
 - `middleware.ts` - Auth protection
 - `lib/hooks/useErrorHandler.ts` - Client errors
 
-## 🎯 30-Day Action Plan
+## 🚨 Production Blockers - The Final 15%
 
-### Week 1: Critical Fixes (IMMEDIATE)
-- [ ] Fix memory leaks in useAuth hook (4 hrs)
-- [ ] Implement react-window for opportunities list (8 hrs)
-- [ ] Write auth & payment critical path tests (8 hrs)
-- [ ] Activate Sentry monitoring properly (2 hrs)
-- [ ] Fix N+1 queries in opportunities endpoint (4 hrs)
+### Critical Issues (Must Fix Before Production)
+1. **Test Coverage Crisis**: 6.14% coverage, 14/22 test suites failing
+2. **Security Vulnerabilities**: Memory leak in useAuth, hardcoded secrets
+3. **Missing Production Config**: No Redis URL, missing DB pool settings
+4. **Error Boundaries**: Only root-level, dashboard components can crash app
 
-### Week 2: Infrastructure & Scale
-- [ ] Set up GitHub Actions CI/CD pipeline (8 hrs)
-- [ ] Create staging environment on Vercel (4 hrs)
-- [ ] Implement Redis for rate limiting (8 hrs)
-- [ ] Add Bull.js job queue for OCR processing (8 hrs)
-- [ ] Database query optimization & batching (8 hrs)
+### Production Readiness Checklist
+- [ ] Test coverage > 50% minimum (target 80%)
+- [ ] Fix all failing test suites
+- [ ] Remove hardcoded secrets (CSRF, API keys)
+- [ ] Configure production Redis
+- [ ] Add error boundaries to dashboard
+- [ ] Complete Sentry monitoring setup
+- [ ] Add database indexes
+- [ ] Implement health check endpoints
 
-### Week 3: Revenue Features
-- [ ] Complete Stripe integration + webhooks (16 hrs)
-- [ ] Build usage metering for AI features (8 hrs)
-- [ ] Implement 14-day trial flow (8 hrs)
-- [ ] Create billing & subscription dashboard (8 hrs)
+## 🎯 Action Plan - Final Sprint
 
-### Week 4: Production Polish
-- [ ] Security audit & penetration testing (16 hrs)
-- [ ] Load testing with k6 (target 1000 users) (8 hrs)
-- [ ] Implement backup strategy (8 hrs)
-- [ ] Bundle optimization (target < 1.5MB) (8 hrs)
+### Week 1: Critical Blockers (40 hrs)
+- [ ] Fix test suite mock errors (8 hrs)
+- [ ] Add Stripe integration tests (8 hrs)
+- [ ] Fix useAuth memory leak with AbortController (4 hrs)
+- [ ] Remove .env from git, update secrets handling (2 hrs)
+- [ ] Add error boundaries to dashboard sections (4 hrs)
+- [ ] Implement critical path E2E tests (8 hrs)
+- [ ] Configure Sentry DSN properly (2 hrs)
+- [ ] Add missing database indexes (4 hrs)
+
+### Week 2: Production Configuration (32 hrs)
+- [ ] Set up production Redis configuration (4 hrs)
+- [ ] Configure DB connection pooling env vars (4 hrs)
+- [ ] Implement distributed rate limiting (8 hrs)
+- [ ] Add performance monitoring (8 hrs)
+- [ ] Create health check endpoints (4 hrs)
+- [ ] Update Vercel.json with limits (2 hrs)
+- [ ] Fix TypeScript errors in build (2 hrs)
+
+### Week 3: Test Coverage & Monitoring (40 hrs)
+- [ ] Increase test coverage to 50% (24 hrs)
+- [ ] Add integration tests for API routes (8 hrs)
+- [ ] Implement k6 load testing (8 hrs)
+- [ ] Create operational dashboards (4 hrs)
+- [ ] Document runbooks and procedures (4 hrs)
 
 ## 👥 Hiring Priorities (IMMEDIATE)
 
@@ -194,12 +223,21 @@ SENTRY_DSN=
 - **Test Coverage**: > 80%
 - **Uptime**: 99.9%
 
-## 🐛 Known Critical Issues
-1. **Memory Leak**: `useAuth` hook missing cleanup
-2. **N+1 Queries**: Opportunities endpoint (22k queries!)
-3. **Bundle Size**: 2.8MB initial load
-4. **No Virtual Scrolling**: Browser crash risk
-5. **Missing Tests**: 0% coverage = no safety net
+## 🐛 Critical Issues Status
+
+### 🔴 Active Issues
+1. **Test Coverage**: 6.14% (14/22 suites failing)
+2. **Memory Leak**: `useAuth` hook missing AbortController
+3. **Security**: Hardcoded CSRF secret, .env in git
+4. **Error Boundaries**: Missing in dashboard components
+5. **Production Config**: No Redis URL, missing DB settings
+
+### ✅ Resolved Issues
+1. **Virtual Scrolling**: Implemented with react-window
+2. **N+1 Queries**: Fixed with proper joins
+3. **Database Optimization**: Connection pooling added
+4. **CI/CD Pipeline**: GitHub Actions configured
+5. **Stripe Integration**: Completed with webhooks
 
 ## Common Fixes
 - **Memory leaks**: Add cleanup to all subscriptions
