@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  # Redis Cache for rate limiting and session management
+  redis:
+    image: redis:7-alpine
+    container_name: medcontracthub-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Bull Dashboard for monitoring job queues (optional)
+  bull-board:
+    image: deadly0/bull-board
+    container_name: medcontracthub-bull-board
+    ports:
+      - "3001:3000"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
