@@ -12,7 +12,10 @@ import {
   UseQueryOptions,
   UseMutationOptions
 } from '@tanstack/react-query'
-import { samApiClient, SAMApiError } from './client'
+import { getSAMApiClient, SAMApiError } from './client'
+
+// Create a lazy-loaded client instance
+const getClient = () => getClient()
 import { 
   ISAMOpportunity, 
   IOpportunityFilters, 
@@ -49,7 +52,7 @@ export function useOpportunities(
 ) {
   return useQuery<IOpportunitySearchResult, SAMApiError>({
     queryKey: samQueryKeys.opportunitiesList(filters),
-    queryFn: () => samApiClient.searchOpportunities(filters),
+    queryFn: () => getClient().searchOpportunities(filters),
     enabled: options.enabled ?? true,
     staleTime: options.staleTime ?? 5 * 60 * 1000, // 5 minutes
     gcTime: options.cacheTime ?? 10 * 60 * 1000, // 10 minutes
@@ -75,7 +78,7 @@ export function useOpportunityDetail(
   return useQuery<ISAMOpportunity | null, SAMApiError>({
     queryKey: samQueryKeys.opportunityDetail(noticeId),
     queryFn: async () => {
-      const response = await samApiClient.getOpportunityById(noticeId)
+      const response = await getClient().getOpportunityById(noticeId)
       return response.opportunitiesData?.[0] || null
     },
     enabled: (options.enabled ?? true) && !!noticeId,
@@ -99,7 +102,7 @@ export function useOpportunitiesByNAICS(
 ) {
   return useQuery<IOpportunitySearchResult, SAMApiError>({
     queryKey: samQueryKeys.opportunitiesByNAICS(naicsCodes),
-    queryFn: () => samApiClient.getOpportunitiesByNAICS(naicsCodes),
+    queryFn: () => getClient().getOpportunitiesByNAICS(naicsCodes),
     enabled: (options.enabled ?? true) && naicsCodes.length > 0,
     staleTime: options.staleTime ?? 10 * 60 * 1000, // 10 minutes
     gcTime: options.cacheTime ?? 20 * 60 * 1000, // 20 minutes
@@ -118,7 +121,7 @@ export function useOpportunitiesByNAICS(
 export function useSAMHealthCheck(options: UseOpportunitiesOptions = {}) {
   return useQuery<boolean, SAMApiError>({
     queryKey: samQueryKeys.healthCheck(),
-    queryFn: () => samApiClient.healthCheck(),
+    queryFn: () => getClient().healthCheck(),
     enabled: options.enabled ?? true,
     staleTime: options.staleTime ?? 2 * 60 * 1000, // 2 minutes
     gcTime: options.cacheTime ?? 5 * 60 * 1000, // 5 minutes
@@ -160,7 +163,7 @@ export function usePrefetchOpportunityDetail() {
       await queryClient.prefetchQuery({
         queryKey: samQueryKeys.opportunityDetail(noticeId),
         queryFn: async () => {
-          const response = await samApiClient.getOpportunityById(noticeId)
+          const response = await getClient().getOpportunityById(noticeId)
           return response.opportunitiesData?.[0] || null
         },
         staleTime: 15 * 60 * 1000 // 15 minutes
@@ -222,7 +225,7 @@ export function usePrefetchOpportunities() {
   const prefetchOpportunities = async (filters: IOpportunityFilters) => {
     await queryClient.prefetchQuery({
       queryKey: samQueryKeys.opportunitiesList(filters),
-      queryFn: () => samApiClient.searchOpportunities(filters),
+      queryFn: () => getClient().searchOpportunities(filters),
       staleTime: 5 * 60 * 1000 // 5 minutes
     })
   }

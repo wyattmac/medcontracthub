@@ -5,6 +5,9 @@
 
 'use client'
 
+// Force dynamic rendering for client components using context
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/hooks/useAuth'

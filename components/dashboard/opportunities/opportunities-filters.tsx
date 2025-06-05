@@ -94,8 +94,8 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
   
   const [filters, setFilters] = useState({
     q: searchParams?.q || '',
-    naics: searchParams?.naics || '',
-    state: searchParams?.state || '',
+    naics: searchParams?.naics || 'all',
+    state: searchParams?.state || 'all',
     status: searchParams?.status || 'active',
     deadline_from: searchParams?.deadline_from || '',
     deadline_to: searchParams?.deadline_to || ''
@@ -105,7 +105,7 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
 
   useEffect(() => {
     const hasFilters = Object.entries(filters).some(([key, value]) => 
-      key !== 'status' && value.length > 0
+      key !== 'status' && value.length > 0 && value !== 'all'
     ) || filters.status !== 'active'
     
     setHasActiveFilters(hasFilters)
@@ -115,7 +115,7 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
     const params = new URLSearchParams()
     
     Object.entries(newFilters).forEach(([key, value]) => {
-      if (value && (key !== 'status' || value !== 'active')) {
+      if (value && value !== 'all' && (key !== 'status' || value !== 'active')) {
         params.set(key, value)
       }
     })
@@ -141,8 +141,8 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
   const clearFilters = () => {
     const clearedFilters = {
       q: '',
-      naics: '',
-      state: '',
+      naics: 'all',
+      state: 'all',
       status: 'active',
       deadline_from: '',
       deadline_to: ''
@@ -194,7 +194,7 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
             <SelectValue placeholder="Select industry..." />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Industries</SelectItem>
+            <SelectItem value="all">All Industries</SelectItem>
             {MEDICAL_NAICS_CODES.map((naics) => (
               <SelectItem key={naics.code} value={naics.code}>
                 {naics.code} - {naics.label}
@@ -215,7 +215,7 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
             <SelectValue placeholder="Select state..." />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All States</SelectItem>
+            <SelectItem value="all">All States</SelectItem>
             {US_STATES.map((state) => (
               <SelectItem key={state} value={state}>
                 {state}

@@ -7,9 +7,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { routeHandler } from '@/lib/api/route-handler'
-import { SAMApiClient } from '@/lib/sam-gov'
-
-const samApiClient = new SAMApiClient()
+import { getSAMApiClient } from '@/lib/sam-gov'
 import { syncOpportunitiesToDatabase } from '@/lib/sam-gov/utils'
 import { 
   NotFoundError,
@@ -73,7 +71,7 @@ export const POST = routeHandler.POST(
     }
 
     // Fetch opportunities from SAM.gov
-    const searchResults = await samApiClient.getOpportunitiesByNAICS(
+    const searchResults = await getSAMApiClient().getOpportunitiesByNAICS(
       targetNaicsCodes,
       limit
     )

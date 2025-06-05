@@ -85,6 +85,9 @@ export async function checkRedisHealth(): Promise<boolean> {
   }
 }
 
+// Alias for backward compatibility
+export { checkRedisHealth as isRedisAvailable }
+
 // Utility functions for common operations
 export const redis = {
   // Get client

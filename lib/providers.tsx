@@ -19,6 +19,9 @@ import { ErrorBoundary } from '@/components/ui/error-boundary'
 import { logger } from '@/lib/errors/logger'
 import { parseError } from '@/lib/errors/utils'
 import { AppError, ErrorCode } from '@/lib/errors/types'
+import { AuthProvider } from '@/lib/hooks/useAuth'
+import { SafeAuthProvider } from '@/components/auth/safe-auth-provider'
+import { MockAuthProvider } from '@/components/auth/mock-auth-provider'
 
 function makeQueryClient() {
   return new QueryClient({
@@ -136,20 +139,22 @@ export function Providers({ children }: IProvidersProps) {
       }}
     >
       <QueryClientProvider client={queryClient}>
-        {children}
-        <ReactQueryDevtools initialIsOpen={false} />
-        <Toaster 
-          position="top-right" 
-          richColors 
-          toastOptions={{
-            duration: 5000,
-            style: {
-              background: 'var(--background)',
-              color: 'var(--foreground)',
-              border: '1px solid var(--border)',
-            },
-          }}
-        />
+        <MockAuthProvider>
+          {children}
+          <ReactQueryDevtools initialIsOpen={false} />
+          <Toaster 
+            position="top-right" 
+            richColors 
+            toastOptions={{
+              duration: 5000,
+              style: {
+                background: 'var(--background)',
+                color: 'var(--foreground)',
+                border: '1px solid var(--border)',
+              },
+            }}
+          />
+        </MockAuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   )

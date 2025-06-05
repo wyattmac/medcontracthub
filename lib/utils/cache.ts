@@ -221,6 +221,9 @@ export const apiCache = new MemoryCache(500)
 export const analysisCache = new MemoryCache(100)
 export const searchCache = new MemoryCache(200)
 
+// Default cache instance
+export const cache = apiCache
+
 // Clean up on process exit
 if (typeof process !== 'undefined') {
   process.on('exit', () => {

@@ -1,25 +1,46 @@
-# Development Dockerfile - Hot reload enabled
-FROM node:20-alpine AS dev
-
-# Install dependencies for building native modules
-RUN apk add --no-cache libc6-compat python3 make g++
+# Development Dockerfile with hot-reload support
+FROM node:20-alpine
 
 WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache \
+    libc6-compat \
+    python3 \
+    make \
+    g++ \
+    git \
+    curl \
+    dumb-init
+
+# Set memory options for Node.js to handle large Next.js builds
+ENV NODE_OPTIONS="--max-old-space-size=8192"
+
+# Set npm timeout for large dependency installations
+RUN npm config set timeout 600000
+
+# Disable Next.js telemetry
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (including devDependencies)
-RUN npm ci
+# Install dependencies
+RUN npm ci && npm cache clean --force
 
-# Copy project files
-COPY . .
+# Create nextjs user (but don't switch to it in dev for convenience)
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-# Create .env.local from example if it doesn't exist
-RUN if [ ! -f .env.local ]; then cp .env.example .env.local 2>/dev/null || true; fi
-
-# Expose port
+# Expose the port the app runs on
 EXPOSE 3000
 
-# Development command with hot reload
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the development server
 CMD ["npm", "run", "dev"]

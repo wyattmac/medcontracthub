@@ -138,6 +138,9 @@ export class ExternalAPIError extends AppError {
   }
 }
 
+// Alias for backward compatibility
+export { ExternalAPIError as ExternalServiceError }
+
 export class RateLimitError extends AppError {
   constructor(message: string = 'Rate limit exceeded', retryAfter?: number) {
     super(

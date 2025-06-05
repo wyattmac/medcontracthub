@@ -14,6 +14,7 @@ import { RefreshCw, AlertCircle, Grid, List } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { BulkExportButton } from './bulk-export-button'
+import { QuotaIndicator } from './quota-indicator'
 
 interface IOpportunitiesContainerProps {
   searchParams?: {
@@ -45,17 +46,63 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
     offset
   }
 
-  // Use a custom query to call our API endpoint
+  // Use a custom query to call our API endpoint with enhanced error handling
   const {
     data: searchResult,
     isLoading,
     isError,
     error,
     refetch,
-    isFetching
+    isFetching,
+    failureCount,
+    failureReason
   } = useQuery({
     queryKey: ['opportunities', filters],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
+      // Check if we're in mock mode
+      const isMockMode = typeof window !== 'undefined' && localStorage.getItem('mock-auth-session')
+      
+      if (isMockMode) {
+        // Return mock opportunities data for development
+        await new Promise(resolve => setTimeout(resolve, 800)) // Simulate API delay
+        
+        const mockOpportunities = Array.from({ length: filters.limit }, (_, i) => ({
+          id: `mock-opp-${filters.offset + i + 1}`,
+          title: `Medical Equipment Supply Contract ${filters.offset + i + 1}`,
+          description: `Supply of medical equipment and supplies for government facilities. This is a mock opportunity for development testing.`,
+          notice_id: `MOCK-${Date.now()}-${i}`,
+          department: 'Department of Veterans Affairs',
+          sub_tier: 'Veterans Health Administration',
+          office_address: {
+            city: 'Washington',
+            state: 'DC',
+            zip_code: '20420'
+          },
+          primary_naics_code: '339112',
+          response_deadline: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+          posted_date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+          type: 'Combined Synopsis/Solicitation',
+          base_type: 'Combined Synopsis/Solicitation',
+          set_aside_description: Math.random() > 0.5 ? 'Small Business Set-Aside' : null,
+          classification_code: '6515',
+          active: 'Yes',
+          award_amount: Math.floor(Math.random() * 5000000) + 100000,
+          matchScore: Math.floor(Math.random() * 40) + 60,
+          isSaved: Math.random() > 0.8
+        }))
+        
+        return {
+          opportunities: mockOpportunities,
+          totalCount: 847, // Mock total count
+          hasMore: (filters.offset + filters.limit) < 847,
+          quotaStatus: {
+            remaining: 756,
+            total: 1000,
+            warningThreshold: 200
+          }
+        }
+      }
+
       const params = new URLSearchParams()
       
       if (filters.searchQuery) params.set('q', filters.searchQuery)
@@ -66,14 +113,71 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
       params.set('limit', filters.limit.toString())
       params.set('offset', filters.offset.toString())
       
-      const response = await fetch(`/api/opportunities/search?${params.toString()}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch opportunities')
+      // Create timeout controller
+      const timeoutId = setTimeout(() => {
+        if (!signal?.aborted) {
+          throw new Error('Request timeout: The server is taking too long to respond')
+        }
+      }, 30000) // 30 second timeout
+
+      try {
+        const response = await fetch(`/api/opportunities/search?${params.toString()}`, {
+          signal,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        
+        clearTimeout(timeoutId)
+        
+        if (!response.ok) {
+          if (response.status === 408 || response.status === 504) {
+            throw new Error('Server timeout: Please try again in a moment')
+          } else if (response.status === 429) {
+            throw new Error('Too many requests: Please wait a moment before trying again')
+          } else if (response.status === 503) {
+            throw new Error('Service temporarily unavailable: SAM.gov API may be down')
+          } else if (response.status >= 500) {
+            throw new Error('Server error: Please try again later')
+          } else if (response.status === 404) {
+            throw new Error('API endpoint not found: Please refresh the page')
+          } else {
+            throw new Error(`Request failed: ${response.status} ${response.statusText}`)
+          }
+        }
+
+        const data = await response.json()
+        return data
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId)
+        
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Request was cancelled')
+        } else if (fetchError.message?.includes('Failed to fetch')) {
+          throw new Error('Network error: Check your internet connection')
+        } else {
+          throw fetchError
+        }
       }
-      return response.json()
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000 // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on client errors (4xx) except timeouts
+      if (error?.message?.includes('Request timeout') || 
+          error?.message?.includes('Server timeout') ||
+          error?.message?.includes('Network error') ||
+          error?.message?.includes('temporarily unavailable')) {
+        return failureCount < 3
+      }
+      if (error?.message?.includes('Too many requests')) {
+        return failureCount < 2
+      }
+      return failureCount < 1
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   })
 
   const handleRefresh = () => {
@@ -91,6 +195,7 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
   const opportunities = searchResult?.opportunities || []
   const totalCount = searchResult?.totalCount || 0
   const hasMore = searchResult?.hasMore || false
+  const quotaStatus = searchResult?.quotaStatus
 
   // Auto-enable virtualization for large datasets
   const shouldUseVirtualization = useMemo(() => {
@@ -123,6 +228,8 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
 
   return (
     <div className="space-y-6">
+      {/* API Quota Status */}
+      <QuotaIndicator quotaStatus={quotaStatus} />
       {/* Header with results count and controls */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">

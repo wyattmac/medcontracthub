@@ -20,17 +20,20 @@ RUN npm ci
 # Copy source files
 COPY . .
 
-# Build the application with optimizations
+# Build the application with memory and timeout optimizations
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
+ENV NODE_OPTIONS="--max-old-space-size=8192"
+# Increase npm timeout for large builds
+RUN npm config set timeout 600000
 RUN npm run build
 
 # Production image, copy all the files and run next
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init for proper signal handling and wget for health checks
+RUN apk add --no-cache dumb-init wget
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs

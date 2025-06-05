@@ -19,14 +19,18 @@ RUN npm ci
 # Copy source files
 COPY . .
 
-# Build the application
+# Build the application with memory optimization
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
+ENV NODE_OPTIONS="--max-old-space-size=8192"
 RUN npm run build
 
 # Production image, copy all the files and run next
 FROM node:20-alpine AS runner
 WORKDIR /app
+
+# Install wget for health checks
+RUN apk add --no-cache wget
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs

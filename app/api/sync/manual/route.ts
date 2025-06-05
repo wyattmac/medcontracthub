@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { routeHandler } from '@/lib/api/route-handler'
-import { samApiClient } from '@/lib/sam-gov'
+import { getSAMApiClient } from '@/lib/sam-gov'
 import { syncOpportunitiesToDatabase } from '@/lib/sam-gov/utils'
 import { DatabaseError } from '@/lib/errors/types'
 
@@ -30,7 +30,7 @@ export const POST = routeHandler.POST(
     })
 
     // Use the default SAM.gov API client
-    const samClient = samApiClient
+    const samClient = getSAMApiClient()
 
     // Build search parameters for recent active opportunities
     const samParams: any = {

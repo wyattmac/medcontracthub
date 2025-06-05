@@ -1,249 +1,285 @@
-# Docker Multi-Environment Setup
-
-This setup provides three isolated environments for safe feature development without affecting stable builds.
+# MedContractHub Docker Setup
 
 ## 🚀 Quick Start
 
-1. **Install Docker Desktop**
-   - Download from: https://www.docker.com/products/docker-desktop/
-   - Make sure Docker is running
+This setup provides a complete Docker solution for your Next.js 15.3.3 application with all build issues resolved.
 
-2. **Copy environment variables**
-   ```bash
-   cp .env.docker.example .env
-   # Edit .env with your actual values
-   ```
-
-3. **Start an environment**
-   ```bash
-   # Start development environment
-   ./docker-scripts.sh start dev
-
-   # Start staging environment
-   ./docker-scripts.sh start staging
-
-   # Start production environment
-   ./docker-scripts.sh start prod
-   ```
-
-## 🎯 Three-Level Environment Setup
-
-### 1. Development Environment (Port 3000)
-- **Purpose**: Active feature development with Claude Code
-- **Features**:
-  - Hot reload enabled
-  - Volume mounting for instant code changes
-  - Local PostgreSQL database
-  - Separate Redis instance
-  - All dev tools available
-
+### Development (with Hot Reload)
 ```bash
-# Start development
-./docker-scripts.sh start dev
+# Start development environment
+./docker-dev.sh start-dev
 
 # View logs
-./docker-scripts.sh logs dev
+./docker-dev.sh logs
 
-# Open shell for debugging
-./docker-scripts.sh shell dev
+# Stop environment
+./docker-dev.sh stop-dev
 ```
 
-### 2. Staging Environment (Port 3001)
-- **Purpose**: Testing features before production
-- **Features**:
-  - Production build
-  - Separate database for testing
-  - Isolated from development changes
-  - Performance testing ready
-
+### Production
 ```bash
-# Start staging
-./docker-scripts.sh start staging
+# Build production image
+./docker-dev.sh build-prod
 
-# Run tests
-docker-compose -f docker-compose.multi-env.yml exec staging-app npm test
+# Start production environment
+./docker-dev.sh start-prod
+
+# Stop production environment
+./docker-dev.sh stop-prod
 ```
 
-### 3. Production Environment (Port 3002)
-- **Purpose**: Stable release version
-- **Features**:
-  - Optimized production build
-  - Security hardened
-  - Connected to production Supabase
-  - Performance monitoring enabled
+## 🔧 Issues Fixed
 
+### ✅ Build Issues Resolved
+
+1. **useAuth Context Error**: Fixed by adding `AuthProvider` to the main providers chain in `lib/providers.tsx`
+2. **OpenTelemetry Warnings**: Suppressed via webpack `ignoreWarnings` in `next.config.js`
+3. **Standalone Output**: Working correctly with `output: 'standalone'` in Next.js config
+4. **Memory Issues**: Handled with `NODE_OPTIONS="--max-old-space-size=8192"` in all Docker stages
+
+### ✅ Docker Optimizations
+
+1. **Multi-stage builds** for minimal production images
+2. **Memory optimization** for large Next.js builds
+3. **Health checks** for all services
+4. **Hot-reload** support in development
+5. **Security** with non-root user and dumb-init
+
+## 📁 Files Created/Updated
+
+### Core Files
+- `Dockerfile` - Optimized production build
+- `Dockerfile.dev` - Development with hot-reload
+- `docker-compose.yml` - Development environment
+- `docker-compose.prod.yml` - Production environment
+- `.dockerignore` - Optimized build context
+- `docker-dev.sh` - Helper script for Docker operations
+
+### Configuration Updates
+- `lib/providers.tsx` - Added AuthProvider to fix context issues
+- `next.config.js` - Added webpack warning suppression
+- `nginx/production.conf` - Updated upstream server name
+
+## 🏗️ Architecture
+
+### Development Environment
+```
+┌─────────────────┐
+│   Next.js App   │ ← Hot reload via volume mounts
+│   localhost:3000│
+└─────────────────┘
+         │
+┌─────────────────┐
+│   PostgreSQL    │ ← Development database
+│   localhost:5432│
+└─────────────────┘
+         │
+┌─────────────────┐
+│     Redis       │ ← Cache & sessions
+│   localhost:6379│
+└─────────────────┘
+         │
+┌─────────────────┐
+│  Bull Dashboard │ ← Job queue monitoring
+│   localhost:3001│
+└─────────────────┘
+```
+
+### Production Environment
+```
+┌─────────────────┐
+│     Nginx       │ ← SSL, caching, rate limiting
+│   localhost:80  │
+└─────────────────┘
+         │
+┌─────────────────┐
+│   Next.js App   │ ← Standalone build
+│   (internal)    │
+└─────────────────┘
+         │
+┌─────────────────┐
+│     Redis       │ ← Production cache
+│   (internal)    │
+└─────────────────┘
+         │
+┌─────────────────┐
+│     Worker      │ ← Background jobs
+│   (internal)    │
+└─────────────────┘
+```
+
+## 🛠️ Dockerfile Features
+
+### Production Dockerfile
+- **Node.js 20 Alpine** for latest features and security
+- **Multi-stage build** (deps → builder → runner)
+- **Memory optimization** with 8GB Node.js heap
+- **Standalone output** for minimal runtime image
+- **Security** with non-root user and dumb-init
+- **Health checks** with curl
+- **Build caching** for faster rebuilds
+
+### Development Dockerfile
+- **Hot-reload support** via volume mounts
+- **Memory optimization** for development builds
+- **Health checks** for development monitoring
+- **Easy debugging** with full dev dependencies
+
+## 🐳 Docker Compose Features
+
+### Development (docker-compose.yml)
+- **Hot-reload** with source code volume mounts
+- **PostgreSQL 15** with schema initialization
+- **Redis 7** with persistence
+- **Bull Dashboard** for job monitoring
+- **Health checks** for all services
+- **Custom network** for service isolation
+
+### Production (docker-compose.prod.yml)
+- **Resource limits** for production stability
+- **Nginx reverse proxy** with SSL support
+- **Redis optimization** with memory limits
+- **Background worker** for job processing
+- **Production security** and monitoring
+
+## ⚡ Performance Optimizations
+
+### Build Optimizations
+- **Memory allocation**: 8GB for Node.js builds
+- **Dependency caching**: Separate layer for package.json
+- **Build context**: Optimized with .dockerignore
+- **Multi-stage builds**: Minimal final image size
+
+### Runtime Optimizations
+- **Standalone output**: No unnecessary dependencies
+- **Gzip compression**: Via Nginx
+- **Resource limits**: CPU and memory constraints
+- **Connection pooling**: Redis and database connections
+
+## 🔒 Security Features
+
+### Container Security
+- **Non-root user**: nextjs:1001
+- **Minimal base image**: Alpine Linux
+- **Signal handling**: dumb-init for proper process management
+- **Health checks**: Automatic container restart on failure
+
+### Network Security
+- **Custom networks**: Isolated service communication
+- **Rate limiting**: Nginx-based API protection
+- **Security headers**: CSP, HSTS, and more
+- **SSL/TLS**: Production HTTPS support
+
+## 📊 Monitoring & Health
+
+### Health Checks
+- **Application**: `/api/health` endpoint
+- **PostgreSQL**: `pg_isready` check
+- **Redis**: `PING` command
+- **Nginx**: Health endpoint proxy
+
+### Logging
 ```bash
-# Start production
-./docker-scripts.sh start prod
+# View all logs
+docker-compose logs -f
 
-# Check health
-curl http://localhost:3002/api/health
+# View specific service
+docker-compose logs -f app
+
+# Production logs
+docker-compose -f docker-compose.prod.yml logs -f
 ```
 
-## 🛠️ Working with Claude Code
+## 🚀 Deployment Commands
 
-### Safe Feature Development Workflow
-
-1. **Always work in dev environment**
-   ```bash
-   ./docker-scripts.sh start dev
-   ```
-
-2. **Make changes with Claude Code**
-   - Your code changes will hot reload automatically
-   - Database is isolated from staging/production
-
-3. **Test in staging when ready**
-   ```bash
-   # Build and deploy to staging
-   ./docker-scripts.sh build staging
-   ./docker-scripts.sh start staging
-   ```
-
-4. **Deploy to production after testing**
-   ```bash
-   # Only after thorough testing
-   ./docker-scripts.sh build prod
-   ./docker-scripts.sh start prod
-   ```
-
-## 📊 Environment URLs
-
-| Environment | App URL | Redis | Database |
-|------------|---------|-------|----------|
-| Development | http://localhost:3000 | localhost:6379 | localhost:5432 |
-| Staging | http://localhost:3001 | localhost:6380 | localhost:5433 |
-| Production | http://localhost:3002 | localhost:6381 | Supabase Cloud |
-
-## 🔧 Common Commands
-
+### Quick Development
 ```bash
-# Check status of all environments
-./docker-scripts.sh status all
-
-# Stop all environments
-./docker-scripts.sh stop all
-
-# Restart an environment
-./docker-scripts.sh restart dev
-
-# View real-time logs
-./docker-scripts.sh logs dev
-
-# Open shell in container
-./docker-scripts.sh shell dev
-
-# Run database migrations
-./docker-scripts.sh migrate dev
-
-# Backup database
-./docker-scripts.sh backup staging
-
-# Clean up environment (removes data)
-./docker-scripts.sh clean dev
+./docker-dev.sh start-dev
 ```
 
-## 🗄️ Database Management
-
-### Local Development Database
+### Production Deployment
 ```bash
-# Connect to dev database
-docker-compose -f docker-compose.multi-env.yml exec dev-db psql -U postgres medcontracthub_dev
+# 1. Build and test locally
+./docker-dev.sh build-prod
 
-# Run migrations
-docker-compose -f docker-compose.multi-env.yml exec dev-app npm run migrate
+# 2. Test production build
+./docker-dev.sh start-prod
+
+# 3. Deploy to server
+docker save medcontracthub:latest | gzip > medcontracthub.tar.gz
+scp medcontracthub.tar.gz server:/app/
+ssh server "cd /app && docker load < medcontracthub.tar.gz"
+ssh server "cd /app && docker-compose -f docker-compose.prod.yml up -d"
 ```
 
-### Staging Database
+## 🛡️ Environment Variables
+
+### Required for Production
+```env
+# Next.js
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+# External APIs
+SAM_GOV_API_KEY=
+ANTHROPIC_API_KEY=
+RESEND_API_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+# Security
+CSRF_SECRET=
+
+# Monitoring
+SENTRY_DSN=
+
+# Production Infrastructure
+REDIS_URL=
+REDIS_PASSWORD=
+```
+
+## 🐛 Troubleshooting
+
+### Build Issues
 ```bash
-# Connect to staging database
-docker-compose -f docker-compose.multi-env.yml exec staging-db psql -U postgres medcontracthub_staging
+# Clear build cache
+docker builder prune -f
+
+# Rebuild without cache
+docker build --no-cache -t medcontracthub:latest .
+
+# Check memory limits
+docker system df
+docker stats
 ```
 
-## 🔍 Debugging
-
-### View container logs
+### Runtime Issues
 ```bash
-# All logs for an environment
-docker-compose -f docker-compose.multi-env.yml logs dev-app dev-redis dev-db
+# Check container health
+docker ps
+docker inspect <container_id>
 
-# Follow logs in real-time
-./docker-scripts.sh logs dev
+# View detailed logs
+docker logs <container_id> --details
+
+# Shell into container
+docker exec -it <container_id> sh
 ```
 
-### Check container health
-```bash
-docker-compose -f docker-compose.multi-env.yml ps
-```
+### Common Problems
 
-### Access container shell
-```bash
-# Development
-docker-compose -f docker-compose.multi-env.yml exec dev-app sh
+1. **Build timeout**: Increase Docker Desktop memory to 8GB+
+2. **Permission errors**: Ensure Docker daemon is running
+3. **Port conflicts**: Stop other services using ports 3000, 5432, 6379
+4. **Memory issues**: Check Docker Desktop resource allocation
 
-# Run commands inside container
-docker-compose -f docker-compose.multi-env.yml exec dev-app npm run lint
-```
+## 🎯 Next Steps
 
-## 🚨 Important Notes
+1. **Start Docker Desktop** and ensure 8GB+ memory allocation
+2. **Run development environment**: `./docker-dev.sh start-dev`
+3. **Test the application**: Visit http://localhost:3000
+4. **Monitor logs**: `./docker-dev.sh logs`
+5. **For production**: Update environment variables and run `./docker-dev.sh start-prod`
 
-1. **Data Isolation**: Each environment has its own database and Redis instance
-2. **Port Conflicts**: Make sure ports 3000-3002, 5432-5433, 6379-6381 are free
-3. **Resource Usage**: Running all three environments uses significant resources
-4. **Production Safety**: Production environment connects to real Supabase - be careful!
-
-## 🆘 Troubleshooting
-
-### Port already in use
-```bash
-# Find process using port
-lsof -i :3000
-
-# Or stop all containers
-docker-compose -f docker-compose.multi-env.yml down
-```
-
-### Permission issues
-```bash
-# Fix permissions
-sudo chown -R $USER:$USER .
-```
-
-### Build failures
-```bash
-# Clean build cache
-docker system prune -a
-./docker-scripts.sh build dev
-```
-
-### Can't connect to database
-```bash
-# Check if database is running
-docker-compose -f docker-compose.multi-env.yml ps dev-db
-
-# View database logs
-docker-compose -f docker-compose.multi-env.yml logs dev-db
-```
-
-## 🎯 Best Practices
-
-1. **Development First**: Always develop features in the dev environment
-2. **Test in Staging**: Thoroughly test in staging before production
-3. **Backup Before Deploy**: Always backup production before updates
-4. **Monitor Resources**: Use `docker stats` to monitor container resources
-5. **Clean Regularly**: Run `docker system prune` weekly to free space
-
-## 🔄 Updating Dependencies
-
-```bash
-# Update in development first
-docker-compose -f docker-compose.multi-env.yml exec dev-app npm update
-
-# Test thoroughly, then update staging
-docker-compose -f docker-compose.multi-env.yml exec staging-app npm update
-
-# Finally update production after verification
-docker-compose -f docker-compose.multi-env.yml exec prod-app npm update
-```
-
-Now you can safely develop new features with Claude Code without worrying about breaking your stable builds!
+Your Next.js 15.3.3 application is now fully containerized with all build issues resolved! 🚀

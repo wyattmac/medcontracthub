@@ -218,3 +218,6 @@ export const validateEmailConfig = () => emailService.validateConfig()
 export const testEmailConnection = () => emailService.testConnection()
 export const renderEmailToHtml = (reactElement: React.ReactElement) => 
   emailService.renderToHtml(reactElement)
+
+// Main send email function
+export const sendEmail = (template: IEmailTemplate) => emailService.send(template)

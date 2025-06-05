@@ -87,6 +87,9 @@ export const env = new Proxy({} as Env, {
   }
 })
 
+// Alias for backward compatibility
+export { getEnv as validateEnvironment }
+
 // Validate on module load in development
 if (process.env.NODE_ENV === 'development') {
   getEnv()

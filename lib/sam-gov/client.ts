@@ -11,6 +11,8 @@ import {
   IOpportunityFilters,
   IOpportunitySearchResult
 } from './types'
+import { getSAMQuotaManager, executeWithPriority, CallPriority } from './quota-manager'
+import { apiCache } from '@/lib/utils/cache'
 
 export class SAMApiClient {
   private config: ISAMApiConfig
@@ -30,9 +32,13 @@ export class SAMApiClient {
   }
 
   /**
-   * Fetch opportunities from SAM.gov API
+   * Fetch opportunities from SAM.gov API with quota management
    */
-  async getOpportunities(params: ISAMOpportunitiesParams = {}): Promise<ISAMOpportunitiesResponse> {
+  async getOpportunities(
+    params: ISAMOpportunitiesParams = {}, 
+    userId?: string,
+    priority: CallPriority = CallPriority.MEDIUM
+  ): Promise<ISAMOpportunitiesResponse> {
     const searchParams = new URLSearchParams()
     
     // Set default parameters
@@ -59,7 +65,27 @@ export class SAMApiClient {
     })
 
     const url = `${this.config.baseUrl}/opportunities/v2/search?${searchParams.toString()}`
+    
+    // Check cache first to avoid API calls
+    const cacheKey = `sam_opportunities:${searchParams.toString()}`
+    const cached = apiCache.get<ISAMOpportunitiesResponse>(cacheKey)
+    if (cached) {
+      return cached
+    }
 
+    // Execute with quota management
+    return executeWithPriority(
+      priority,
+      'search',
+      userId,
+      async () => {
+        return this.executeApiCall(url, cacheKey)
+      },
+      { params: Object.fromEntries(searchParams) }
+    )
+  }
+
+  private async executeApiCall(url: string, cacheKey: string): Promise<ISAMOpportunitiesResponse> {
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), this.config.timeout)
@@ -94,6 +120,10 @@ export class SAMApiClient {
           setTimeout(() => reject(new Error('JSON parsing timeout')), 15000)
         )
       ])
+      
+      // Cache successful responses for 10 minutes
+      apiCache.set(cacheKey, data, 600)
+      
       return data
 
     } catch (error) {
@@ -113,9 +143,13 @@ export class SAMApiClient {
   }
 
   /**
-   * Search opportunities with simplified filters
+   * Search opportunities with simplified filters and quota management
    */
-  async searchOpportunities(filters: IOpportunityFilters): Promise<IOpportunitySearchResult> {
+  async searchOpportunities(
+    filters: IOpportunityFilters, 
+    userId?: string,
+    priority: CallPriority = CallPriority.HIGH
+  ): Promise<IOpportunitySearchResult> {
     const params: ISAMOpportunitiesParams = {
       limit: filters.limit || 25,
       offset: filters.offset || 0
@@ -150,7 +184,7 @@ export class SAMApiClient {
       params.active = filters.active ? 'true' : 'false'
     }
 
-    const response = await this.getOpportunities(params)
+    const response = await this.getOpportunities(params, userId, priority)
 
     return {
       opportunities: response.opportunitiesData || [],
@@ -163,17 +197,26 @@ export class SAMApiClient {
   /**
    * Get a specific opportunity by notice ID
    */
-  async getOpportunityById(noticeId: string): Promise<ISAMOpportunitiesResponse> {
+  async getOpportunityById(
+    noticeId: string, 
+    userId?: string,
+    priority: CallPriority = CallPriority.CRITICAL
+  ): Promise<ISAMOpportunitiesResponse> {
     return this.getOpportunities({ 
       noticeId,
       includeSections: 'opportunityDescription,pointOfContact,additionalInfoText,awardInformation'
-    })
+    }, userId, priority)
   }
 
   /**
    * Get opportunities for specific NAICS codes (useful for matching company capabilities)
    */
-  async getOpportunitiesByNAICS(naicsCodes: string[], limit = 50): Promise<IOpportunitySearchResult> {
+  async getOpportunitiesByNAICS(
+    naicsCodes: string[], 
+    limit = 50, 
+    userId?: string,
+    priority: CallPriority = CallPriority.MEDIUM
+  ): Promise<IOpportunitySearchResult> {
     // SAM.gov API doesn't support multiple NAICS codes in a single request
     // So we'll make multiple requests and combine results
     const allOpportunities = []
@@ -185,7 +228,7 @@ export class SAMApiClient {
           naicsCode,
           active: true,
           limit: Math.ceil(limit / naicsCodes.length)
-        })
+        }, userId, priority)
         
         allOpportunities.push(...result.opportunities)
         totalCount += result.totalCount
@@ -212,7 +255,7 @@ export class SAMApiClient {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      await this.getOpportunities({ limit: 1 })
+      await this.getOpportunities({ limit: 1 }, undefined, CallPriority.CRITICAL)
       return true
     } catch (error) {
       console.error('SAM API health check failed:', error)

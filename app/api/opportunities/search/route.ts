@@ -10,6 +10,7 @@ import { getOpportunitiesFromDatabase, calculateOpportunityMatch } from '@/lib/s
 import { DatabaseError, NotFoundError } from '@/lib/errors/types'
 import { dbLogger } from '@/lib/errors/logger'
 import { searchCache, createCacheKey } from '@/lib/utils/cache'
+import { getSAMQuotaManager } from '@/lib/sam-gov/quota-manager'
 
 // Query validation schema
 const searchQuerySchema = z.object({
@@ -31,14 +32,18 @@ export const GET = routeHandler.GET(
     const queryData = Object.fromEntries(searchParams)
     const validatedQuery = searchQuerySchema.parse(queryData)
     
-    // Build filters
+    // Build filters - convert 'all' values back to undefined
     const filters = {
-      searchQuery: validatedQuery.q,
-      naicsCodes: validatedQuery.naics?.split(',').filter(Boolean),
-      state: validatedQuery.state,
+      searchQuery: validatedQuery.q || undefined,
+      naicsCodes: validatedQuery.naics && validatedQuery.naics !== 'all' 
+        ? validatedQuery.naics.split(',').filter(Boolean) 
+        : undefined,
+      state: validatedQuery.state && validatedQuery.state !== 'all' 
+        ? validatedQuery.state 
+        : undefined,
       status: validatedQuery.status,
-      responseDeadlineFrom: validatedQuery.deadline_from,
-      responseDeadlineTo: validatedQuery.deadline_to,
+      responseDeadlineFrom: validatedQuery.deadline_from || undefined,
+      responseDeadlineTo: validatedQuery.deadline_to || undefined,
       limit: validatedQuery.limit,
       offset: validatedQuery.offset
     }
@@ -75,25 +80,36 @@ export const GET = routeHandler.GET(
       companyNaicsCodes
     }
 
+    // Check SAM.gov quota status
+    const quotaManager = getSAMQuotaManager()
+    const quotaStatus = await quotaManager.getQuotaStatus()
+    
     // Create cache key for this search
     const cacheKey = createCacheKey('search', {
       ...enhancedFilters,
       userId: user.id
     })
-
-    // Check cache first
+    
+    // Check cache first - more aggressive caching when quota is low
+    const shouldExtendCache = quotaStatus.daily.remaining < 200
     const cachedResult = searchCache.getWithStats<{
       opportunities: any[]
       count: number
     }>(cacheKey)
 
     if (cachedResult) {
-      dbLogger.debug('Cache hit for search', { cacheKey })
+      dbLogger.debug('Cache hit for search', { 
+        cacheKey, 
+        quotaRemaining: quotaStatus.daily.remaining 
+      })
       return NextResponse.json({
         opportunities: cachedResult.opportunities,
-        total: cachedResult.count,
-        page: Math.floor(validatedQuery.offset / validatedQuery.limit) + 1,
-        pageSize: validatedQuery.limit
+        totalCount: cachedResult.count,
+        hasMore: (enhancedFilters.offset + enhancedFilters.limit) < cachedResult.count,
+        quotaStatus: {
+          remaining: quotaStatus.daily.remaining,
+          total: quotaStatus.daily.used + quotaStatus.daily.remaining
+        }
       })
     }
 
@@ -117,11 +133,12 @@ export const GET = routeHandler.GET(
       }
     })
 
-    // Cache the results for 5 minutes
+    // Cache the results - extend TTL when quota is low
+    const cacheTTL = shouldExtendCache ? 1800 : 300 // 30 minutes vs 5 minutes
     searchCache.set(cacheKey, {
       opportunities: enhancedOpportunities,
       count: count || 0
-    }, 300) // 5 minutes TTL
+    }, cacheTTL)
 
     // Log search activity
     if (filters.searchQuery || filters.naicsCodes) {
@@ -144,6 +161,11 @@ export const GET = routeHandler.GET(
       filters: {
         ...filters,
         naicsCodes: filters.naicsCodes || []
+      },
+      quotaStatus: {
+        remaining: quotaStatus.daily.remaining,
+        total: quotaStatus.daily.used + quotaStatus.daily.remaining,
+        warningThreshold: 200
       }
     })
   },

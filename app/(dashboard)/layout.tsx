@@ -1,6 +1,10 @@
 'use client'
 
+// Force dynamic rendering for dashboard layout
+export const dynamic = 'force-dynamic'
+
 import { useState } from 'react'
+import { AuthGuard } from '@/components/auth/auth-guard'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -35,6 +39,7 @@ export default function DashboardLayout({
   const pathname = usePathname()
 
   return (
+    <AuthGuard>
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
@@ -181,5 +186,6 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+    </AuthGuard>
   )
 }

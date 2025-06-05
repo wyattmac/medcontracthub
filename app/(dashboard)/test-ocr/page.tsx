@@ -1,6 +1,9 @@
 import { Metadata } from 'next'
 import { createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+
+// Force dynamic rendering to prevent build errors
+export const dynamic = 'force-dynamic'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProcessDocumentsButton } from '@/components/dashboard/opportunities/process-documents-button'
 import { FileText } from 'lucide-react'

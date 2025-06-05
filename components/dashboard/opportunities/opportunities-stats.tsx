@@ -7,43 +7,175 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { 
   Target, 
   Calendar, 
   DollarSign, 
   TrendingUp,
   Clock,
-  Building2
+  Building2,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react'
 
-// Mock stats API call - in real implementation, this would call your API
-async function fetchOpportunityStats() {
-  // This would be replaced with actual API call
-  return {
-    totalActive: 1247,
-    newThisWeek: 84,
-    expiringThisWeek: 23,
-    totalValue: 2400000000,
-    averageValue: 1920000,
-    highMatchCount: 156,
-    mediumMatchCount: 342,
-    lowMatchCount: 749
+// Real API call for opportunity stats
+async function fetchOpportunityStats({ signal }: { signal?: AbortSignal }) {
+  // Check if we're in mock mode
+  const isMockMode = typeof window !== 'undefined' && localStorage.getItem('mock-auth-session')
+  
+  if (isMockMode) {
+    // Return mock data for development
+    await new Promise(resolve => setTimeout(resolve, 500)) // Simulate API delay
+    return {
+      totalActive: 1247,
+      newThisWeek: 84,
+      expiringThisWeek: 23,
+      totalValue: 2400000000,
+      averageValue: 1920000,
+      highMatchCount: 156,
+      mediumMatchCount: 342,
+      lowMatchCount: 749
+    }
+  }
+
+  // Create timeout controller for real API calls
+  const timeoutId = setTimeout(() => {
+    if (!signal?.aborted) {
+      throw new Error('Request timeout: Stats are taking too long to load')
+    }
+  }, 15000) // 15 second timeout for stats
+
+  try {
+    const response = await fetch('/api/analytics', {
+      signal,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    
+    clearTimeout(timeoutId)
+    
+    if (!response.ok) {
+      if (response.status === 408 || response.status === 504) {
+        throw new Error('Stats timeout: Please try refreshing the page')
+      } else if (response.status === 429) {
+        throw new Error('Too many requests: Please wait a moment')
+      } else if (response.status === 503) {
+        throw new Error('Analytics temporarily unavailable')
+      } else if (response.status >= 500) {
+        throw new Error('Server error: Stats temporarily unavailable')
+      } else if (response.status === 404) {
+        throw new Error('Analytics endpoint not found')
+      } else {
+        throw new Error(`Failed to load stats: ${response.status}`)
+      }
+    }
+
+    const data = await response.json()
+    return data
+  } catch (fetchError: any) {
+    clearTimeout(timeoutId)
+    
+    if (fetchError.name === 'AbortError') {
+      throw new Error('Request was cancelled')
+    } else if (fetchError.message?.includes('Failed to fetch')) {
+      throw new Error('Network error: Check your connection')
+    } else {
+      throw fetchError
+    }
   }
 }
 
 export function OpportunitiesStats() {
-  const { data: stats, isLoading } = useQuery({
+  const { 
+    data: stats, 
+    isLoading, 
+    isError, 
+    error, 
+    refetch, 
+    isFetching,
+    failureCount 
+  } = useQuery({
     queryKey: ['opportunity-stats'],
     queryFn: fetchOpportunityStats,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: (failureCount, error) => {
+      // Retry on timeouts and network errors
+      if (error?.message?.includes('timeout') || 
+          error?.message?.includes('Network error') ||
+          error?.message?.includes('temporarily unavailable')) {
+        return failureCount < 3
+      }
+      if (error?.message?.includes('Too many requests')) {
+        return failureCount < 2
+      }
+      return failureCount < 1
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 8000),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   })
+
+  const handleRefresh = () => {
+    refetch()
+  }
 
   if (isLoading) {
     return <StatsCardsSkeleton />
   }
 
+  if (isError) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load statistics: {error?.message || 'Unknown error occurred'}
+              {failureCount > 0 && (
+                <span className="block mt-1 text-xs">
+                  Retry attempt {failureCount}/3
+                </span>
+              )}
+            </AlertDescription>
+          </Alert>
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline" 
+            size="sm"
+            className="mt-4"
+            disabled={isFetching}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
   if (!stats) {
-    return null
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-muted-foreground">
+            No statistics available
+            <Button 
+              onClick={handleRefresh} 
+              variant="outline" 
+              size="sm"
+              className="mt-4 block mx-auto"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Load Stats
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   const formatCurrency = (amount: number) => {

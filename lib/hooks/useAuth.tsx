@@ -130,7 +130,20 @@ export function AuthProvider({ children }: IAuthProviderProps) {
         }
 
         console.log('[useAuth] Calling supabase.auth.getUser()')
-        const { data: { user }, error } = await supabase.auth.getUser()
+        
+        // First try to get session instead of user directly
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.log('[useAuth] Session error (normal if not logged in):', sessionError.message)
+          if (!abortController.signal.aborted) {
+            setLoading(false)
+          }
+          return
+        }
+        
+        const user = session?.user
+        const error = null
         
         // Check if aborted after getting user
         if (abortController.signal.aborted) {
@@ -140,13 +153,8 @@ export function AuthProvider({ children }: IAuthProviderProps) {
 
         console.log('[useAuth] getUser result:', { user: user?.email, error })
         
-        if (error) {
-          console.error('[useAuth] Initial auth error:', error)
-          if (!abortController.signal.aborted) {
-            setLoading(false)
-          }
-          return
-        }
+        // No need to check error since we're using session
+        // Error handling is done above
         
         if (user) {
           console.log('[useAuth] User found:', user.email)
