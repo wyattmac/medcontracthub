@@ -59,8 +59,8 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
   } = useQuery({
     queryKey: ['opportunities', filters],
     queryFn: async ({ signal }) => {
-      // Check if we're in mock mode
-      const isMockMode = typeof window !== 'undefined' && localStorage.getItem('mock-auth-session')
+      // Force real data - skip mock mode check for development
+      const isMockMode = false // typeof window !== 'undefined' && localStorage.getItem('mock-auth-session')
       
       if (isMockMode) {
         // Return mock opportunities data for development

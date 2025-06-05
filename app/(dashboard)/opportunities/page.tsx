@@ -6,6 +6,9 @@ import { OpportunitiesStats } from '@/components/dashboard/opportunities/opportu
 import { SectionErrorBoundary } from '@/components/ui/error-boundary'
 import { TrendingUp, Zap, Database, RefreshCw } from 'lucide-react'
 
+// Force dynamic rendering since this page shows user-specific data
+export const dynamic = 'force-dynamic'
+
 interface OpportunitiesPageProps {
   searchParams?: {
     q?: string
@@ -18,7 +21,8 @@ interface OpportunitiesPageProps {
   }
 }
 
-export default function OpportunitiesPage({ searchParams }: OpportunitiesPageProps) {
+export default async function OpportunitiesPage({ searchParams }: OpportunitiesPageProps) {
+  const params = await searchParams
   return (
     <div className="space-y-8">
       {/* Enhanced Page Header */}
@@ -65,13 +69,13 @@ export default function OpportunitiesPage({ searchParams }: OpportunitiesPagePro
 
       {/* Enhanced Filters */}
       <SectionErrorBoundary name="Filters">
-        <OpportunitiesFilters searchParams={searchParams} />
+        <OpportunitiesFilters searchParams={params} />
       </SectionErrorBoundary>
 
       {/* Live Opportunities Container */}
       <SectionErrorBoundary name="Opportunities List">
         <Suspense fallback={<OpportunitiesLoadingSkeleton />}>
-          <OpportunitiesContainer searchParams={searchParams} />
+          <OpportunitiesContainer searchParams={params} />
         </Suspense>
       </SectionErrorBoundary>
 

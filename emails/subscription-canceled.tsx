@@ -61,7 +61,7 @@ export const SubscriptionCanceled: React.FC<SubscriptionCanceledProps> = ({
           <Section style={buttonSection}>
             <Button
               style={button}
-              href={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/billing`}
+              href={`${process.env.NEXT_PUBLIC_APP_URL}/settings/billing`}
             >
               Reactivate Subscription
             </Button>

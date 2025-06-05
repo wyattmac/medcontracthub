@@ -216,7 +216,7 @@ export function ProcessDocumentsButton({
                 <Button
                   onClick={() => {
                     // Navigate to requirements view
-                    window.location.href = `/dashboard/opportunities/${opportunityId}/requirements`
+                    window.location.href = `/opportunities/${opportunityId}/requirements`
                   }}
                 >
                   View Requirements

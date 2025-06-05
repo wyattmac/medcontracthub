@@ -158,7 +158,7 @@ const OpportunityCard = memo(({ opportunity }: { opportunity: OpportunityWithMat
             </div>
             
             <Link 
-              href={`/dashboard/opportunities/${opportunity.id}`}
+              href={`/opportunities/${opportunity.id}`}
               className="group"
             >
               <h3 className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors line-clamp-2">
@@ -282,7 +282,7 @@ const OpportunityCard = memo(({ opportunity }: { opportunity: OpportunityWithMat
             variant={opportunity.status === 'active' ? 'default' : 'secondary'}
             className="text-xs"
           >
-            {opportunity.status.charAt(0).toUpperCase() + opportunity.status.slice(1)}
+            {opportunity.status ? opportunity.status.charAt(0).toUpperCase() + opportunity.status.slice(1) : 'Unknown'}
           </Badge>
         </div>
       </CardContent>

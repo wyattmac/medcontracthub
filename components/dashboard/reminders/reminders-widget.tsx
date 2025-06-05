@@ -89,7 +89,7 @@ export function RemindersWidget() {
         {/* View All Link */}
         <div className="pt-3 border-t">
           <Button variant="ghost" size="sm" className="w-full" asChild>
-            <Link href="/dashboard/saved">
+            <Link href="/saved">
               View All Saved Opportunities
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
@@ -129,7 +129,7 @@ function ReminderItem({ reminder, type }: { reminder: any, type: 'reminder' | 'd
   
   return (
     <Link 
-      href={`/dashboard/opportunities/${opportunityId}`}
+      href={`/opportunities/${opportunityId}`}
       className="block hover:bg-gray-50 rounded-lg p-3 -m-3 transition-colors"
     >
       <div className="flex items-start gap-3">

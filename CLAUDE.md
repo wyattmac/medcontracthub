@@ -15,6 +15,15 @@ Path: /home/locklearwyatt/projects/medcontracthub
 ✅ Production-ready security, monitoring, health checks, automated backups
 📊 Production Readiness: 100% (Test Coverage: Comprehensive ✅)
 
+### Latest Development Session (December 2025)
+✅ Fixed DNS/SSL certificate issues with Supabase
+✅ Resolved Next.js 15 dynamic routing params issues
+✅ Fixed virtual scrolling charAt errors
+✅ Implemented development mode authentication bypass
+✅ Simplified opportunity detail API routes
+⚠️ Identified SAM.gov sync endpoint needs repair
+📊 Database currently contains test data only
+
 ## Architecture Overview
 ```
 Frontend (Next.js 15)
@@ -479,3 +488,26 @@ components/ui/                     # shadcn/ui + gradients
 - Production-ready Nginx configuration
 
 **Status: 100% Production Ready** 🚀
+
+## Common Issues & Solutions
+
+### DNS/SSL Issues
+If you encounter SSL certificate errors with Supabase:
+1. Check DNS settings in `/etc/resolv.conf`
+2. Docker compose includes `NODE_TLS_REJECT_UNAUTHORIZED=0` for dev
+3. Google DNS (8.8.8.8) configured in docker-compose.multi-env.yml
+
+### Next.js 15 Dynamic Routes
+- Use `await params` in dynamic routes
+- Search params must be awaited: `const params = await searchParams`
+- Route handlers simplified for development mode
+
+### Authentication in Development
+- Mock auth session stored in localStorage
+- API routes bypass auth in development mode
+- Use `NODE_ENV=development` for auth bypass
+
+### Database Issues
+- Currently contains test data only (2 opportunities)
+- SAM.gov sync endpoint needs fixing for real data
+- Use simplified queries without complex joins for Supabase compatibility

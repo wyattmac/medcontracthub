@@ -97,7 +97,7 @@ function OpportunityCard({ opportunity }: { opportunity: OpportunityWithMatch })
             </div>
             
             <Link 
-              href={`/dashboard/opportunities/${opportunity.id}`}
+              href={`/opportunities/${opportunity.id}`}
               className="group"
             >
               <h3 className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors line-clamp-2">

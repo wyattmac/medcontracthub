@@ -96,7 +96,7 @@ export function ProposalDetailContainer({ proposalId }: ProposalDetailContainerP
     onSuccess: () => {
       toast.success('Proposal deleted successfully')
       queryClient.invalidateQueries({ queryKey: ['proposals'] })
-      router.push('/dashboard/proposals')
+      router.push('/proposals')
     },
     onError: (error) => {
       toast.error(`Failed to delete proposal: ${error.message}`)
@@ -128,7 +128,7 @@ export function ProposalDetailContainer({ proposalId }: ProposalDetailContainerP
               Error loading proposal: {error instanceof Error ? error.message : 'Unknown error'}
             </p>
             <Button 
-              onClick={() => router.push('/dashboard/proposals')} 
+              onClick={() => router.push('/proposals')} 
               variant="outline" 
               className="mt-4"
             >
@@ -147,7 +147,7 @@ export function ProposalDetailContainer({ proposalId }: ProposalDetailContainerP
           <div className="text-center">
             <p className="text-gray-600 dark:text-gray-400">Proposal not found</p>
             <Button 
-              onClick={() => router.push('/dashboard/proposals')} 
+              onClick={() => router.push('/proposals')} 
               variant="outline" 
               className="mt-4"
             >

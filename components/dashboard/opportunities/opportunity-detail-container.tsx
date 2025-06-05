@@ -451,7 +451,7 @@ export function OpportunityDetailContainer({
               )}
               
               <Button className="w-full" asChild>
-                <a href={`/dashboard/proposals/new?opportunity_id=${opportunity.id}`}>
+                <a href={`/proposals/new?opportunity_id=${opportunity.id}`}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Proposal
                 </a>

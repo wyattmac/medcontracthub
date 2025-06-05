@@ -20,16 +20,16 @@ export default function SimpleDashboardLayout({
               <Link href="/dashboard" className="text-gray-700 hover:text-blue-600">
                 Dashboard
               </Link>
-              <Link href="/dashboard/opportunities" className="text-gray-700 hover:text-blue-600">
+              <Link href="/opportunities" className="text-gray-700 hover:text-blue-600">
                 Opportunities
               </Link>
-              <Link href="/dashboard/saved" className="text-gray-700 hover:text-blue-600">
+              <Link href="/saved" className="text-gray-700 hover:text-blue-600">
                 Saved
               </Link>
-              <Link href="/dashboard/proposals" className="text-gray-700 hover:text-blue-600">
+              <Link href="/proposals" className="text-gray-700 hover:text-blue-600">
                 Proposals
               </Link>
-              <Link href="/dashboard/analytics" className="text-gray-700 hover:text-blue-600">
+              <Link href="/analytics" className="text-gray-700 hover:text-blue-600">
                 Analytics
               </Link>
             </nav>

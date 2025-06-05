@@ -105,7 +105,7 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <Link 
-              href={`/dashboard/proposals/${proposal.id}`}
+              href={`/proposals/${proposal.id}`}
               className="block hover:text-blue-600 dark:hover:text-blue-400"
             >
               <h3 className="font-semibold text-lg leading-6 truncate">
@@ -131,12 +131,12 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/proposals/${proposal.id}`}>
+                  <Link href={`/proposals/${proposal.id}`}>
                     View Details
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/proposals/${proposal.id}/edit`}>
+                  <Link href={`/proposals/${proposal.id}/edit`}>
                     Edit Proposal
                   </Link>
                 </DropdownMenuItem>

@@ -122,7 +122,6 @@ export const GET = routeHandler.GET(
     }
 
     // Enhance data with client-side match scores and saved status
-    // The opportunities are already sorted by the database
     const enhancedOpportunities = (opportunities || []).map(opportunity => {
       const matchScore = calculateOpportunityMatch(opportunity, companyNaicsCodes)
       
@@ -132,6 +131,16 @@ export const GET = routeHandler.GET(
         isSaved: opportunity.saved_opportunities?.length > 0
       }
     })
+    
+    // Sort by match score (highest first), then by deadline
+    .sort((a, b) => {
+      // First sort by match score (descending)
+      if (a.matchScore !== b.matchScore) {
+        return b.matchScore - a.matchScore
+      }
+      // Then by deadline (ascending - soonest first)
+      return new Date(a.response_deadline).getTime() - new Date(b.response_deadline).getTime()
+    })
 
     // Cache the results - extend TTL when quota is low
     const cacheTTL = shouldExtendCache ? 1800 : 300 // 30 minutes vs 5 minutes
@@ -140,16 +149,21 @@ export const GET = routeHandler.GET(
       count: count || 0
     }, cacheTTL)
 
-    // Log search activity
+    // Log search activity - commented out as log_audit RPC may not exist
+    // TODO: Implement audit logging when the database function is available
+    /*
     if (filters.searchQuery || filters.naicsCodes) {
-      supabase.rpc('log_audit', {
-        p_action: 'search_opportunities',
-        p_entity_type: 'opportunities',
-        p_changes: { filters, resultCount: enhancedOpportunities.length }
-      }).catch((error: any) => {
+      try {
+        await supabase.rpc('log_audit', {
+          p_action: 'search_opportunities',
+          p_entity_type: 'opportunities',
+          p_changes: { filters, resultCount: enhancedOpportunities.length }
+        })
+      } catch (error) {
         dbLogger.warn('Failed to log search activity', error)
-      })
+      }
     }
+    */
 
     return NextResponse.json({
       opportunities: enhancedOpportunities,

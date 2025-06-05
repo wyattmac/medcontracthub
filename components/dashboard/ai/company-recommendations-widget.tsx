@@ -175,7 +175,7 @@ export function CompanyRecommendationsWidget() {
                     </div>
                     {opp.opportunityId && (
                       <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/opportunities/${opp.opportunityId}`}>
+                        <Link href={`/opportunities/${opp.opportunityId}`}>
                           <ArrowRight className="h-4 w-4" />
                         </Link>
                       </Button>
@@ -268,7 +268,7 @@ export function CompanyRecommendationsWidget() {
         {/* View All Link */}
         <div className="pt-3 border-t">
           <Button variant="ghost" size="sm" className="w-full" asChild>
-            <Link href="/dashboard/recommendations">
+            <Link href="/recommendations">
               View Detailed Analysis
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>

@@ -251,29 +251,12 @@ export async function getOpportunitiesFromDatabase(filters: {
     query = query.lte('response_deadline', filters.responseDeadlineTo)
   }
   
-  // Optimize sorting by calculating match score in the database
-  // This avoids sorting in memory on the server
-  if (filters.companyNaicsCodes && filters.companyNaicsCodes.length > 0) {
-    // Create a CASE statement for match scoring
-    const naicsMatchCase = filters.companyNaicsCodes
-      .map((code, index) => `WHEN naics_code = '${code}' THEN ${100 - index}`)
-      .join(' ')
-    
-    const naicsPrefixCase = filters.companyNaicsCodes
-      .map((code, index) => `WHEN LEFT(naics_code, 3) = '${code.substring(0, 3)}' THEN ${70 - index}`)
-      .join(' ')
-    
-    const naicsSectorCase = filters.companyNaicsCodes
-      .map((code, index) => `WHEN LEFT(naics_code, 2) = '${code.substring(0, 2)}' THEN ${40 - index}`)
-      .join(' ')
-    
-    // Order by match score (calculated in DB) then by deadline
-    query = query.order(`CASE ${naicsMatchCase} ${naicsPrefixCase} ${naicsSectorCase} ELSE 0 END`, { ascending: false })
-    query = query.order('response_deadline', { ascending: true })
-  } else {
-    // If no company NAICS codes, just order by deadline
-    query = query.order('response_deadline', { ascending: true })
-  }
+  // Simplify ordering - Supabase doesn't support complex CASE statements in ORDER BY
+  // Sort by response deadline first (most urgent first)
+  query = query.order('response_deadline', { ascending: true })
+  
+  // If we have company NAICS codes, we'll calculate match scores on the client side
+  // This is more reliable than complex SQL ordering
   
   // Apply pagination after sorting
   if (filters.offset) {

@@ -64,7 +64,7 @@ export const SubscriptionUpdated: React.FC<SubscriptionUpdatedProps> = ({
           <Section style={buttonSection}>
             <Button
               style={button}
-              href={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/billing`}
+              href={`${process.env.NEXT_PUBLIC_APP_URL}/settings/billing`}
             >
               Manage Subscription
             </Button>

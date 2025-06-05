@@ -56,7 +56,7 @@ export function CreateProposalContainer({ opportunityId }: CreateProposalContain
       queryClient.invalidateQueries({ queryKey: ['proposals'] })
       
       // Redirect to the new proposal
-      router.push(`/dashboard/proposals/${data.proposal.id}`)
+      router.push(`/proposals/${data.proposal.id}`)
     },
   })
 
