@@ -83,6 +83,20 @@ MedContractHub is now 100% production ready with all critical tasks completed.
 - ✅ Automated testing on PRs
 - ✅ Environment isolation
 
+## 🤖 Claude Code Development Workflow
+
+### Todo List Usage
+1. **Start Session**: Run `TodoRead` to check existing tasks
+2. **Add Tasks**: Use `TodoWrite` to add new tasks as discovered
+3. **Track Progress**: Update status (pending → in_progress → completed)
+4. **Priority Levels**: Use high/medium/low for task prioritization
+
+### Best Practices
+- Always use TodoRead at session start
+- Update task status immediately when starting/completing
+- Add subtasks when breaking down complex features
+- Keep task descriptions clear and actionable
+
 ## 🚀 Production Deployment Guide
 
 ### Using Docker (Recommended)
@@ -164,6 +178,7 @@ REDIS_PASSWORD=your-redis-password
 - ✅ Comprehensive documentation
 - ✅ Docker environments
 - ✅ MCP server integration
+- ✅ Todo list integration with Claude Code
 
 ## 🏆 Production Readiness Checklist
 

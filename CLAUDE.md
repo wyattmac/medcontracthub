@@ -27,6 +27,33 @@ Stack: Next.js 15, TypeScript, Supabase, Tailwind CSS, Docker | Path: /home/lock
 3. **Before Committing**: `npm run lint && npm run type-check`
 4. **Commit Style**: Use conventional commits (feat:, fix:, docs:, chore:)
 
+## Todo List Management
+
+Claude Code has built-in todo list functionality. Use it to track tasks:
+
+### Commands
+- **TodoRead**: View current todo list (no parameters needed)
+- **TodoWrite**: Update todo list with array of tasks
+
+### Todo Structure
+```json
+{
+  "content": "Task description",
+  "status": "pending" | "in_progress" | "completed",
+  "priority": "high" | "medium" | "low",
+  "id": "unique-task-id"
+}
+```
+
+### Best Practices
+1. Always check TodoRead at start of session
+2. Update status as you work (pending → in_progress → completed)
+3. Add new tasks as discovered
+4. Use high priority for blockers
+5. Keep descriptions concise but clear
+
+**Note**: The todo list is session-based and managed by Claude Code internally.
+
 ## Critical Rules
 1. **TypeScript strict** - `as any` only for DB compatibility
 2. **Custom errors only** - Use `@/lib/errors/types`
@@ -114,6 +141,7 @@ DB_MAX_CONNECTIONS=25
 - `lib/errors/types.ts` - Error classes
 - `middleware.ts` - Auth protection
 - `app/(dashboard)/dashboard/page.tsx` - Modern gradient dashboard
+- **Todo List**: Managed internally by Claude Code (use TodoRead/TodoWrite)
 
 ## Docker Environments
 - **Development** (port 3000): Hot reload, isolated DB
