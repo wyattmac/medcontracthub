@@ -30,7 +30,7 @@ export const POST = routeHandler.POST(
     const fileName = `ocr_${user.id}_${timestamp}_${sanitizedName}`
 
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('documents')
       .upload(fileName, file, {
         contentType: file.type,

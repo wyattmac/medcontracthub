@@ -113,7 +113,7 @@ export const POST = routeHandler.POST(
 
 // GET endpoint to check processing status
 export const GET = routeHandler.GET(
-  async ({ request, user, supabase }) => {
+  async ({ request, supabase }) => {
     const { searchParams } = new URL(request.url)
     const opportunityId = searchParams.get('opportunityId')
     const days = parseInt(searchParams.get('days') || '30')

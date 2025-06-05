@@ -24,7 +24,7 @@ export default function DashboardPage() {
             Dashboard
           </h1>
           <p className="text-lg text-muted-foreground mt-2">
-            Welcome back! Here's your contract opportunities overview
+            Welcome back! Here&apos;s your contract opportunities overview
           </p>
         </div>
       </div>

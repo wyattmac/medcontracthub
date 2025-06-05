@@ -236,7 +236,7 @@ function generateEmailSubject(emailData: z.infer<typeof emailRequestSchema>): st
 
 // GET endpoint for email preview (development only)
 export const GET = routeHandler.GET(
-  async ({ request, user }) => {
+  async ({ request }) => {
     if (process.env.NODE_ENV !== 'development') {
       throw new ValidationError('Email preview only available in development')
     }

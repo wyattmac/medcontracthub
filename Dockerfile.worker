@@ -1,0 +1,34 @@
+# Worker Dockerfile - For background job processing
+FROM node:20-alpine
+
+RUN apk add --no-cache libc6-compat
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy worker scripts
+COPY scripts/start-worker.ts ./scripts/
+COPY lib/queue ./lib/queue
+COPY lib/errors ./lib/errors
+COPY lib/ai ./lib/ai
+COPY lib/email ./lib/email
+COPY lib/sam-gov ./lib/sam-gov
+COPY lib/supabase ./lib/supabase
+COPY lib/monitoring ./lib/monitoring
+COPY lib/redis ./lib/redis
+COPY tsconfig.json ./
+
+# Compile TypeScript
+RUN npm install -g typescript
+RUN tsc
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S worker -u 1001
+
+USER worker
+
+CMD ["node", "scripts/start-worker.js"]

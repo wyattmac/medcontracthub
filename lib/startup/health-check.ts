@@ -5,7 +5,7 @@
 
 import { getConnectionPool } from '@/lib/db/connection-pool'
 import { checkRedisHealth, getRedisClient } from '@/lib/redis/client'
-import { checkProductionReadiness, getProductionConfig, logProductionConfig } from '@/lib/config/production'
+import { checkProductionReadiness, logProductionConfig } from '@/lib/config/production'
 import { logger } from '@/lib/errors/logger'
 
 export interface IHealthCheckResult {
@@ -74,8 +74,8 @@ export async function runStartupHealthChecks(): Promise<IStartupHealthCheck> {
   const dbStart = Date.now()
   try {
     const pool = getConnectionPool()
-    const testResult = await pool.withConnection(async (client) => {
-      const { data, error } = await client
+    await pool.withConnection(async (client) => {
+      const { error } = await client
         .from('opportunities')
         .select('count')
         .limit(1)

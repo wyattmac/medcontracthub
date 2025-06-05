@@ -118,16 +118,16 @@ export function trackEvent(
 export function startApiTransaction(
   name: string,
   operation: string = 'http.server'
-): Sentry.Transaction | null {
+): any | null {
   if (!isSentryEnabled()) return null
 
-  return Sentry.startTransaction({
+  return Sentry.startSpan({
     name,
     op: operation,
     data: {
       timestamp: new Date().toISOString()
     }
-  })
+  }, () => {})
 }
 
 /**
@@ -141,24 +141,12 @@ export function measureDatabaseQuery<T>(
     return queryFn()
   }
 
-  const transaction = Sentry.getCurrentHub().getScope()?.getTransaction()
-  const span = transaction?.startChild({
-    op: 'db.query',
-    description: queryName,
+  return Sentry.startSpan({
+    name: queryName,
+    op: 'db.query'
+  }, async () => {
+    return await queryFn()
   })
-
-  return queryFn()
-    .then(result => {
-      span?.setStatus('ok')
-      return result
-    })
-    .catch(error => {
-      span?.setStatus('internal_error')
-      throw error
-    })
-    .finally(() => {
-      span?.finish()
-    })
 }
 
 /**
@@ -173,24 +161,12 @@ export function measureExternalApi<T>(
     return apiFn()
   }
 
-  const transaction = Sentry.getCurrentHub().getScope()?.getTransaction()
-  const span = transaction?.startChild({
-    op: 'http.client',
-    description: `${apiName}: ${endpoint}`,
+  return Sentry.startSpan({
+    name: `${apiName}: ${endpoint}`,
+    op: 'http.client'
+  }, async () => {
+    return await apiFn()
   })
-
-  return apiFn()
-    .then(result => {
-      span?.setStatus('ok')
-      return result
-    })
-    .catch(error => {
-      span?.setStatus('internal_error')
-      throw error
-    })
-    .finally(() => {
-      span?.finish()
-    })
 }
 
 /**

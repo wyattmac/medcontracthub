@@ -2,8 +2,13 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle2, TrendingUp, Shield, Zap, BarChart3, Users } from 'lucide-react'
+import { redirect } from 'next/navigation'
 
 export default function LandingPage() {
+  // Developer bypass - redirect to dashboard in development
+  if (process.env.NODE_ENV === 'development') {
+    redirect('/dashboard')
+  }
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}

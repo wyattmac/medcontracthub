@@ -8,7 +8,6 @@ import { z } from 'zod'
 import { routeHandler } from '@/lib/api/route-handler'
 import { 
   NotFoundError,
-  ValidationError,
   DatabaseError
 } from '@/lib/errors/types'
 

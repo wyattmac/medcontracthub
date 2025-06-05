@@ -5,17 +5,16 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { createBrowserClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { useErrorHandler } from '@/lib/hooks/useErrorHandler'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { formatPrice, getPlanDisplayName, planLimits } from '@/lib/stripe/client'
-import { Loader2, CreditCard, FileText, BarChart3, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { formatPrice, getPlanDisplayName } from '@/lib/stripe/client'
+import { Loader2, CreditCard, FileText, BarChart3, AlertCircle } from 'lucide-react'
 
 interface Subscription {
   id: string
@@ -61,9 +60,9 @@ export default function BillingPage() {
     if (user) {
       fetchBillingData()
     }
-  }, [user])
+  }, [user, fetchBillingData])
 
-  const fetchBillingData = async () => {
+  const fetchBillingData = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch('/api/billing/subscription', {
@@ -85,7 +84,7 @@ export default function BillingPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [handleError])
 
   const handleManageSubscription = async () => {
     try {

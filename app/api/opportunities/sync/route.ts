@@ -7,7 +7,9 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { routeHandler } from '@/lib/api/route-handler'
-import { samApiClient } from '@/lib/sam-gov'
+import { SAMApiClient } from '@/lib/sam-gov'
+
+const samApiClient = new SAMApiClient()
 import { syncOpportunitiesToDatabase } from '@/lib/sam-gov/utils'
 import { 
   NotFoundError,

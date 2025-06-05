@@ -8,7 +8,7 @@ import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
 import { generateAndSetCSRFToken } from '@/lib/security/csrf'
 
 export const GET = routeHandler.GET(
-  async ({ request }: IRouteContext) => {
+  async () => {
     // Generate new CSRF token
     const { token, headers } = generateAndSetCSRFToken()
     
@@ -33,7 +33,7 @@ export const GET = routeHandler.GET(
 )
 
 export const HEAD = routeHandler.GET(
-  async ({ request }: IRouteContext) => {
+  async () => {
     // Generate token but only return headers
     const { headers } = generateAndSetCSRFToken()
     

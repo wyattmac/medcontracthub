@@ -1,0 +1,197 @@
+version: '3.8'
+
+services:
+  # ===========================================
+  # DEVELOPMENT ENVIRONMENT (Feature Development)
+  # ===========================================
+  dev-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: medcontract-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=${DATABASE_URL_DEV}
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL_DEV}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY_DEV}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY_DEV}
+      - SAM_GOV_API_KEY=${SAM_GOV_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY_DEV}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET_DEV}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - REDIS_URL=redis://dev-redis:6379
+      - CSRF_SECRET=${CSRF_SECRET_DEV}
+      - SENTRY_DSN=${SENTRY_DSN}
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - dev-redis
+      - dev-db
+    networks:
+      - dev-network
+
+  dev-redis:
+    image: redis:7-alpine
+    container_name: medcontract-dev-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - dev-redis-data:/data
+    networks:
+      - dev-network
+
+  dev-db:
+    image: postgres:15-alpine
+    container_name: medcontract-dev-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=medcontracthub_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - dev-db-data:/var/lib/postgresql/data
+      - ./supabase/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - dev-network
+
+  # ===========================================
+  # STAGING ENVIRONMENT (Testing & QA)
+  # ===========================================
+  staging-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.staging
+    container_name: medcontract-staging
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL_STAGING}
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL_STAGING}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY_STAGING}
+      - SAM_GOV_API_KEY=${SAM_GOV_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY_STAGING}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET_STAGING}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - REDIS_URL=redis://staging-redis:6379
+      - CSRF_SECRET=${CSRF_SECRET_STAGING}
+      - SENTRY_DSN=${SENTRY_DSN}
+    depends_on:
+      - staging-redis
+      - staging-db
+    networks:
+      - staging-network
+
+  staging-redis:
+    image: redis:7-alpine
+    container_name: medcontract-staging-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - staging-redis-data:/data
+    networks:
+      - staging-network
+
+  staging-db:
+    image: postgres:15-alpine
+    container_name: medcontract-staging-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=medcontracthub_staging
+    ports:
+      - "5433:5432"
+    volumes:
+      - staging-db-data:/var/lib/postgresql/data
+      - ./supabase/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - staging-network
+
+  # ===========================================
+  # PRODUCTION ENVIRONMENT (Stable Release)
+  # ===========================================
+  prod-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: medcontract-prod
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SAM_GOV_API_KEY=${SAM_GOV_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - REDIS_URL=redis://prod-redis:6379
+      - CSRF_SECRET=${CSRF_SECRET}
+      - SENTRY_DSN=${SENTRY_DSN}
+    depends_on:
+      - prod-redis
+    networks:
+      - prod-network
+
+  prod-redis:
+    image: redis:7-alpine
+    container_name: medcontract-prod-redis
+    ports:
+      - "6381:6379"
+    volumes:
+      - prod-redis-data:/data
+    networks:
+      - prod-network
+
+  # ===========================================
+  # SHARED SERVICES
+  # ===========================================
+  # Bull.js Queue Worker (shared across environments)
+  queue-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: medcontract-queue-worker
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - REDIS_URL=${REDIS_URL:-redis://dev-redis:6379}
+    depends_on:
+      - dev-redis
+    networks:
+      - dev-network
+      - staging-network
+      - prod-network
+
+volumes:
+  # Development volumes
+  dev-redis-data:
+  dev-db-data:
+  
+  # Staging volumes
+  staging-redis-data:
+  staging-db-data:
+  
+  # Production volumes
+  prod-redis-data:
+
+networks:
+  dev-network:
+    driver: bridge
+  staging-network:
+    driver: bridge
+  prod-network:
+    driver: bridge

@@ -13,6 +13,13 @@ export async function login(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   
+  // Developer bypass - skip authentication in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Login Action] Development mode - bypassing authentication')
+    redirect('/dashboard')
+    return
+  }
+  
   // Early validation
   if (!email || !password) {
     console.error('[Login Action] Missing email or password')
@@ -41,19 +48,19 @@ export async function login(formData: FormData) {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('company_id')
-      .eq('id', data.user.id as any) // Type assertion for database compatibility
+      .eq('id', data.user.id)
       .single()
     
     revalidatePath('/', 'layout')
     
     // Redirect to onboarding if profile doesn't have a company_id
-    if (!profile || profileError || !(profile as any)?.company_id) {
+    if (!profile || profileError || !profile?.company_id) {
       console.log('[Login Action] User needs to complete onboarding')
       redirect('/onboarding')
     }
     
     redirect('/dashboard')
-  } catch (error: any) {
+  } catch (error) {
     // Handle Next.js redirect (not an actual error)
     if (error?.digest?.includes('NEXT_REDIRECT')) {
       throw error
@@ -94,7 +101,7 @@ export async function signup(formData: FormData) {
     console.log('[Signup Action] Signup successful for:', data.user?.email)
     revalidatePath('/', 'layout')
     redirect('/onboarding')
-  } catch (error: any) {
+  } catch (error) {
     // Handle Next.js redirect (not an actual error)
     if (error?.digest?.includes('NEXT_REDIRECT')) {
       throw error

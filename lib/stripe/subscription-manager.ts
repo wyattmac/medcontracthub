@@ -4,7 +4,7 @@
  */
 
 import Stripe from 'stripe'
-import { getStripe, stripeConfig, planLimits } from './client'
+import { getStripe, stripeConfig } from './client'
 import { createServiceClient } from '@/lib/supabase/server'
 import { apiLogger } from '@/lib/errors/logger'
 import { ExternalServiceError, ValidationError } from '@/lib/errors/types'

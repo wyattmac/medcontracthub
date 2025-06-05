@@ -9,7 +9,7 @@ import { getSubscriptionDetails } from '@/lib/stripe/subscription-manager'
 import { getUsageSummary } from '@/lib/usage/tracker'
 
 export const GET = routeHandler.GET(
-  async ({ user, supabase }) => {
+  async ({ user }) => {
     // Get subscription details
     const subscriptionData = await getSubscriptionDetails(user.id)
     

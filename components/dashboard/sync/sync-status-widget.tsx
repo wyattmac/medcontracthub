@@ -19,12 +19,13 @@ import {
   TrendingUp,
   Loader2
 } from 'lucide-react'
-import { toast } from 'sonner'
+import { useToast } from '@/components/ui/use-toast'
 import { formatDistanceToNow } from 'date-fns'
 
 export function SyncStatusWidget() {
   const [isManualSyncing, setIsManualSyncing] = useState(false)
   const queryClient = useQueryClient()
+  const { toast } = useToast()
 
   // Fetch sync status
   const { data: syncStatus, isLoading } = useQuery({
@@ -53,16 +54,28 @@ export function SyncStatusWidget() {
       const result = await response.json()
 
       if (response.ok) {
-        toast.success(`Sync completed: ${result.stats.inserted} new, ${result.stats.updated} updated`)
+        toast({
+          title: 'Sync completed',
+          description: `${result.stats.inserted} new, ${result.stats.updated} updated`,
+          variant: 'default'
+        })
         // Refresh sync status and opportunities list
         queryClient.invalidateQueries({ queryKey: ['sync-status'] })
         queryClient.invalidateQueries({ queryKey: ['opportunities'] })
       } else {
-        toast.error(result.error || 'Sync failed')
+        toast({
+          title: 'Sync failed',
+          description: result.error || 'Unknown error occurred',
+          variant: 'destructive'
+        })
       }
     } catch (error) {
       console.error('Manual sync error:', error)
-      toast.error('Sync failed - please try again')
+      toast({
+        title: 'Sync failed',
+        description: 'Please try again',
+        variant: 'destructive'
+      })
     } finally {
       setIsManualSyncing(false)
     }

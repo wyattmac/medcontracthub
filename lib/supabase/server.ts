@@ -62,16 +62,8 @@ export async function createClient() {
       }
     )
 
-    // Test database connection
-    const { error: pingError } = await client
-      .from('profiles')
-      .select('count')
-      .limit(1)
-      .maybeSingle()
-
-    if (pingError) {
-      dbLogger.warn('Database connection test failed', { error: pingError })
-    }
+    // Database connection test temporarily disabled for debugging
+    // Will re-enable once login is working
 
     return client
   } catch (error) {

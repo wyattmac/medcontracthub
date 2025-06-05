@@ -9,6 +9,8 @@ import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
 import { DatabaseError } from '@/lib/errors/types'
 import { apiLogger } from '@/lib/errors/logger'
 import { subDays, format, startOfDay, endOfDay } from 'date-fns'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/database.types'
 
 // Query parameters validation
 const analyticsQuerySchema = z.object({
@@ -30,7 +32,7 @@ export const GET = routeHandler.GET(
     const endDate = endOfDay(new Date())
 
     try {
-      let analyticsData: any = {}
+      const analyticsData: Record<string, any> = {}
 
       if (type === 'overview' || type === 'opportunities') {
         // Get opportunities analytics
@@ -64,7 +66,7 @@ export const GET = routeHandler.GET(
         generatedAt: new Date().toISOString()
       })
 
-    } catch (error: any) {
+    } catch (error) {
       apiLogger.error('Analytics generation failed', error, { 
         userId: user.id, 
         period, 
@@ -84,7 +86,7 @@ export const GET = routeHandler.GET(
  * Get opportunities analytics data
  */
 async function getOpportunitiesAnalytics(
-  supabase: any, 
+  supabase: SupabaseClient<Database>, 
   userId: string, 
   startDate: Date, 
   endDate: Date,
@@ -128,7 +130,7 @@ async function getOpportunitiesAnalytics(
     throw new DatabaseError('Failed to fetch status data')
   }
 
-  const statusDistribution = statusData?.reduce((acc: any, item: any) => {
+  const statusDistribution = statusData?.reduce((acc: Record<string, number>, item: { status: string; count: number }) => {
     const status = item.status || 'unknown'
     acc[status] = (acc[status] || 0) + 1
     return acc
@@ -146,7 +148,7 @@ async function getOpportunitiesAnalytics(
  * Get performance analytics data  
  */
 async function getPerformanceAnalytics(
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   userId: string,
   startDate: Date,
   endDate: Date
@@ -180,7 +182,7 @@ async function getPerformanceAnalytics(
   const dailyActivity = processDailyActivity(savedData, analysesData, startDate, endDate)
   
   // Calculate win probability distribution from analyses
-  const winProbabilityData = analysesData?.map((analysis: any) => {
+  const winProbabilityData = analysesData?.map((analysis: { win_probability: number; created_at: string }) => {
     try {
       const result = typeof analysis.analysis_result === 'string' 
         ? JSON.parse(analysis.analysis_result)
@@ -207,7 +209,7 @@ async function getPerformanceAnalytics(
 /**
  * Get summary statistics
  */
-async function getSummaryStats(supabase: any, userId: string) {
+async function getSummaryStats(supabase: SupabaseClient<Database>, userId: string) {
   // Get total counts
   const [
     { count: totalOpportunities },
@@ -262,8 +264,8 @@ function processNaicsDistribution(naicsData: any[]) {
  * Process daily activity timeline
  */
 function processDailyActivity(
-  savedData: any[], 
-  analysesData: any[], 
+  savedData: Array<{ created_at: string }>, 
+  analysesData: Array<{ created_at: string }>, 
   startDate: Date, 
   endDate: Date
 ) {

@@ -3,8 +3,7 @@ const { withSentryConfig } = require('@sentry/nextjs')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable SWC minification for faster builds and smaller bundles
-  swcMinify: true,
+  // SWC minification is enabled by default in Next.js 15+
   
   // Optimize images with modern formats
   images: {

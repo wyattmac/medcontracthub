@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle2, Loader2 } from 'lucide-react'
-import { getPlanPrice, planLimits } from '@/lib/stripe/client'
+import { getPlanPrice } from '@/lib/stripe/client'
 
 interface Plan {
   id: string
@@ -181,21 +181,21 @@ export default function PricingPage() {
           <div>
             <h3 className="font-semibold mb-2">Do I need a credit card for the trial?</h3>
             <p className="text-muted-foreground">
-              No, you can start your 14-day free trial without a credit card. We'll only ask for
-              payment information when you're ready to continue after the trial.
+              No, you can start your 14-day free trial without a credit card. We&apos;ll only ask for
+              payment information when you&apos;re ready to continue after the trial.
             </p>
           </div>
           <div>
             <h3 className="font-semibold mb-2">Can I change plans anytime?</h3>
             <p className="text-muted-foreground">
               Yes, you can upgrade or downgrade your plan at any time. Changes take effect
-              immediately, and we'll prorate any charges.
+              immediately, and we&apos;ll prorate any charges.
             </p>
           </div>
           <div>
             <h3 className="font-semibold mb-2">What happens to my data if I cancel?</h3>
             <p className="text-muted-foreground">
-              Your data is safe. We'll keep your saved opportunities and data for 90 days after
+              Your data is safe. We&apos;ll keep your saved opportunities and data for 90 days after
               cancellation, so you can easily reactivate if you change your mind.
             </p>
           </div>

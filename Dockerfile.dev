@@ -1,0 +1,25 @@
+# Development Dockerfile - Hot reload enabled
+FROM node:20-alpine AS dev
+
+# Install dependencies for building native modules
+RUN apk add --no-cache libc6-compat python3 make g++
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies (including devDependencies)
+RUN npm ci
+
+# Copy project files
+COPY . .
+
+# Create .env.local from example if it doesn't exist
+RUN if [ ! -f .env.local ]; then cp .env.example .env.local 2>/dev/null || true; fi
+
+# Expose port
+EXPOSE 3000
+
+# Development command with hot reload
+CMD ["npm", "run", "dev"]

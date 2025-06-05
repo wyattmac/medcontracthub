@@ -59,7 +59,7 @@ export default function OnboardingPage() {
         subscription_status: 'active'
       }
       
-      const { data: company, error: companyError } = await (supabase as any)
+      const { data: company, error: companyError } = await supabase
         .from('companies')
         .insert(companyInsert)
         .select()
@@ -77,7 +77,7 @@ export default function OnboardingPage() {
 
       // Update profile
       console.log('[Onboarding] Updating profile for user:', user.id)
-      const { error: profileError } = await (supabase as any)
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({
           full_name: formData.full_name,

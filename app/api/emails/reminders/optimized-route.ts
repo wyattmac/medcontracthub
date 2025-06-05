@@ -3,7 +3,7 @@
  * Fixes N+1 query issues by batching email sends
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { parseISO, differenceInDays, differenceInHours, format } from 'date-fns'
 import React from 'react'
@@ -11,7 +11,6 @@ import { routeHandler } from '@/lib/api/route-handler'
 import { emailService } from '@/lib/email/client'
 import { OpportunityDeadlineReminder } from '@/emails/opportunity-deadline-reminder'
 import { emailLogger } from '@/lib/errors/logger'
-import { ValidationError } from '@/lib/errors/types'
 
 const bulkReminderSchema = z.object({
   reminderType: z.enum(['24_hours', '3_days', '7_days']),

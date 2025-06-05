@@ -3,7 +3,7 @@
  * POST /api/export
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
 import { DatabaseError, ValidationError } from '@/lib/errors/types'
@@ -45,9 +45,6 @@ export const POST = routeHandler.POST(
 
     try {
       let exportData: any
-      let filename: string
-      let mimeType: string
-      let buffer: Buffer
 
       // Fetch data based on format
       switch (format) {
@@ -90,9 +87,7 @@ export const POST = routeHandler.POST(
         }
       )
       
-      buffer = exportResult.buffer
-      filename = exportResult.filename
-      mimeType = exportResult.mimeType
+      const { buffer, filename, mimeType } = exportResult
 
       // Log successful export
       await supabase.rpc('log_audit', {
@@ -260,7 +255,7 @@ async function getAnalyticsData(
 async function getProposalsData(
   supabase: any,
   userId: string,
-  filters?: any
+  _filters?: any
 ) {
   const { data, error } = await supabase
     .from('proposals')

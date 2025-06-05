@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
 import { analyzeOpportunity } from '@/lib/ai/claude-client'
-import { DatabaseError, NotFoundError, ValidationError } from '@/lib/errors/types'
+import { NotFoundError } from '@/lib/errors/types'
 import { aiLogger } from '@/lib/errors/logger'
 import { withUsageCheck } from '@/lib/usage/tracker'
 
@@ -53,7 +53,7 @@ export const POST = routeHandler.POST(
       throw new NotFoundError('User profile')
     }
 
-    const company = profile.companies as any
+    const company = profile.companies
     
     // Build company profile for AI analysis
     const companyProfile = {
@@ -123,7 +123,7 @@ export const POST = routeHandler.POST(
         win_probability: analysis.winProbability,
         competition_level: analysis.competitionLevel
       }
-    }).catch((error: any) => {
+    }).catch((error) => {
       aiLogger.warn('Failed to log analysis audit', error)
     })
 

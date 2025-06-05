@@ -140,14 +140,6 @@ export class ProductMatcher {
       })
       .limit(20)
 
-    // Get supplier products
-    const { data: supplierProducts } = await this.supabase
-      .from('supplier_pricing')
-      .select(`
-        *,
-        supplier_catalog!inner(*)
-      `)
-      .in('product_catalog_id', catalogProducts?.map(p => p.id) || [])
 
     // Fuzzy search on supplier products
     const allProducts = await this.getAllSupplierProducts()

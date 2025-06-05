@@ -17,12 +17,6 @@ export type TrackedFeature =
   | 'email_sent'
   | 'api_call'
 
-interface UsageRecord {
-  feature: TrackedFeature
-  quantity: number
-  metadata?: Record<string, any>
-}
-
 interface UsageLimit {
   limit: number
   period: 'day' | 'month'

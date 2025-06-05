@@ -31,7 +31,7 @@ export const GET = routeHandler.GET(
       )
     }
 
-    const company = profile.companies as any
+    const company = profile.companies
 
     // Get saved opportunities
     const { data: savedOpportunities, error: savedError } = await supabase
@@ -84,7 +84,7 @@ export const GET = routeHandler.GET(
     // Build recent activity summary
     const searchQueries = (recentActivity || [])
       .filter(log => log.action === 'search_opportunities')
-      .map(log => (log.changes as any)?.filters?.searchQuery)
+      .map(log => (log.changes as Record<string, any>)?.filters?.searchQuery)
       .filter(Boolean)
       .slice(0, 10)
 

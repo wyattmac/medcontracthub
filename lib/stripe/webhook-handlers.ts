@@ -4,7 +4,6 @@
  */
 
 import Stripe from 'stripe'
-import { getStripe } from './client'
 import { createServiceClient } from '@/lib/supabase/server'
 import { apiLogger } from '@/lib/errors/logger'
 import { sendEmail } from '@/lib/email/client'

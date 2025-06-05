@@ -27,7 +27,7 @@ const bulkReminderSchema = z.object({
 export const POST = routeHandler.POST(
   async ({ request, user, supabase }) => {
     const body = await request.json()
-    const { opportunityId, reminderType, customDays } = reminderRequestSchema.parse(body)
+    const { opportunityId, reminderType } = reminderRequestSchema.parse(body)
 
     // Get the opportunity details
     const { data: opportunity, error: opportunityError } = await supabase
@@ -77,7 +77,6 @@ export const POST = routeHandler.POST(
       .single()
 
     const companyName = company?.name || 'Your Company'
-    const firstName = company?.primary_contact_name?.split(' ')[0]
 
     // Create the email template
     const emailTemplate = React.createElement(OpportunityDeadlineReminder, {
