@@ -1,0 +1,209 @@
+
+> medcontracthub@0.1.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use, using available port 3001 instead.
+   ▲ Next.js 15.3.3
+   - Local:        http://localhost:3001
+   - Network:      http://10.255.255.254:3001
+   - Environments: .env.local, .env
+
+ ✓ Starting...
+ ○ Compiling /instrumentation ...
+ ✓ Compiled /instrumentation in 5.1s (2097 modules)
+ ✓ Ready in 14.7s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 862ms (571 modules)
+[2025-06-06T20:13:30.612Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749240810612_kdzykoucb" pathname="/" method="GET"
+ ○ Compiling / ...
+ ✓ Compiled / in 13.3s (5035 modules)
+ GET / 200 in 14653ms
+ ✓ Compiled in 1846ms (729 modules)
+[2025-06-06T20:14:12.238Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749240852238_ownxpjakh" pathname="/" method="GET"
+ GET / 200 in 455ms
+[2025-06-06T20:14:13.300Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749240853300_s5fisvvqb" pathname="/api/health" method="GET"
+ ○ Compiling /api/health ...
+ ✓ Compiled /api/health in 6.5s (7019 modules)
+[2025-06-06T20:14:20.670Z] [INFO] [API] Health check started | requestId="health_1749240860670_u4bsqpzam"
+[2025-06-06T20:14:21.347Z] [INFO] [API] Redis connected successfully
+[2025-06-06T20:14:21.359Z] [INFO] [API] Redis ready to accept commands
+[2025-06-06T20:14:21.363Z] [DEBUG] [Database] Created new connection | id="conn_1749240861361_i6hmaoqlo"
+[2025-06-06T20:14:21.365Z] [DEBUG] [Database] Created new connection | id="conn_1749240861364_zhil609do"
+[2025-06-06T20:14:21.366Z] [INFO] [Database] Connection pool initialized | minConnections=2
+[2025-06-06T20:14:21.367Z] [INFO] [API] Health check completed | requestId="health_1749240860670_u4bsqpzam" status="healthy" responseTime=697
+ GET /api/health 200 in 8065ms
+[2025-06-06T20:14:23.101Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749240863101_k7hmvbt50" pathname="/" method="GET"
+[2025-06-06T20:14:23.143Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749240863143_b60xxrj1f" pathname="/opportunities" method="GET"
+[2025-06-06T20:14:23.479Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749240863479_cr1e8i26h" pathname="/" method="GET"
+ GET / 200 in 726ms
+ ○ Compiling /opportunities ...
+[2025-06-06T20:14:26.167Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749240866166_c3u4mctmd" pathname="/opportunities" method="GET"
+ ✓ Compiled /opportunities in 7.5s (7520 modules)
+ GET / 200 in 9408ms
+ GET /opportunities 200 in 6814ms
+ GET /opportunities 200 in 9895ms
+[2025-06-06T20:14:34.159Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749240874159_pogyb64v6" pathname="/login" method="GET"
+ ○ Compiling /login ...
+[2025-06-06T20:14:34.796Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749240874796_xtu0l6vds" pathname="/signup" method="GET"
+ ✓ Compiled /signup in 5.6s (7552 modules)
+[2025-06-06T20:22:13.190Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241333189_3k8forpe0" pathname="/" method="GET"
+ GET / 200 in 685ms
+[2025-06-06T20:22:14.706Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241334706_r13fqzw9a" pathname="/api/health" method="GET"
+[2025-06-06T20:22:14.992Z] [INFO] [API] Health check started | requestId="health_1749241334992_d41ysa1yw"
+[2025-06-06T20:22:15.506Z] [INFO] [API] Redis connected successfully
+[2025-06-06T20:22:15.510Z] [INFO] [API] Redis ready to accept commands
+[2025-06-06T20:22:15.516Z] [DEBUG] [Database] Created new connection | id="conn_1749241335513_2gotilbtz"
+[2025-06-06T20:22:15.518Z] [DEBUG] [Database] Created new connection | id="conn_1749241335517_0mtpgch32"
+[2025-06-06T20:22:15.518Z] [INFO] [Database] Connection pool initialized | minConnections=2
+[2025-06-06T20:22:15.519Z] [INFO] [API] Health check completed | requestId="health_1749241334992_d41ysa1yw" status="healthy" responseTime=527
+ GET /api/health 200 in 811ms
+[2025-06-06T20:22:17.024Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241337024_ccvrp6idp" pathname="/" method="GET"
+[2025-06-06T20:22:17.025Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241337025_rnuqlr0xn" pathname="/" method="GET"
+[2025-06-06T20:22:17.057Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241337057_csgom59jg" pathname="/opportunities" method="GET"
+ GET / 200 in 900ms
+ GET / 200 in 910ms
+ GET /opportunities 200 in 937ms
+[2025-06-06T20:22:18.813Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241338813_mwkv0bxkm" pathname="/opportunities" method="GET"
+[2025-06-06T20:22:19.125Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241339125_bqx18lvfh" pathname="/login" method="GET"
+ GET /opportunities 200 in 393ms
+[2025-06-06T20:22:19.453Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241339453_e9a8zhrgv" pathname="/signup" method="GET"
+ GET /signup 200 in 50ms
+[2025-06-06T20:22:20.044Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241340044_oae17s312" pathname="/signup" method="POST"
+[2025-06-06T20:22:20.096Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241340096_ugarwxqvs" pathname="/dashboard" method="GET"
+[Signup Action] Starting signup process...
+[Signup Action] Attempting signup for: test-1749241336659@medcontracthub.test
+[2025-06-06T20:22:19.573Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241339573_gwwvhfg5o" pathname="/login" method="GET"
+ ○ Compiling /dashboard ...
+[Signup Action] Signup failed: Email address "test-1749241336659@medcontracthub.test" is invalid
+[2025-06-06T20:22:19.889Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241339889_o8182l28a" pathname="/signup" method="GET"
+ ✓ Compiled /login in 6.5s (7695 modules)
+ POST /signup 303 in 7657ms
+ GET /signup?error=Email+address+%22test-1749241336659%40medcontracthub.test%22+is+invalid 200 in 7890ms
+ GET /dashboard 200 in 7792ms
+[2025-06-06T20:22:28.740Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241348740_jjgopu42v" pathname="/login" method="GET"
+ GET /login 200 in 41ms
+[2025-06-06T20:22:29.696Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241349696_6ggru5ux0" pathname="/opportunities" method="GET"
+ GET /opportunities 200 in 312ms
+[2025-06-06T20:22:30.830Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241350830_juu06whls" pathname="/login" method="GET"
+ GET /login 200 in 42ms
+[2025-06-06T20:22:42.159Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241362159_znoaje2tc" pathname="/proposals" method="GET"
+ ○ Compiling /proposals ...
+ ✓ Compiled /proposals in 5.5s (7723 modules)
+ GET /proposals 200 in 6201ms
+[2025-06-06T20:22:48.469Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241368469_72tz8e69k" pathname="/login" method="GET"
+ GET /login 200 in 56ms
+[2025-06-06T20:22:49.832Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241369832_8firipms6" pathname="/analytics" method="GET"
+ ○ Compiling /analytics ...
+[2025-06-06T20:22:51.837Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241371837_ygup5u19l" pathname="/dashboard" method="GET"
+ ✓ Compiled /analytics in 10.5s (8838 modules)
+ GET /dashboard 200 in 11398ms
+[2025-06-06T20:24:00.912Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241440912_kc2chqxxt" pathname="/" method="GET"
+ GET / 200 in 1588ms
+[2025-06-06T20:24:03.104Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241443104_we00rf29y" pathname="/api/health" method="GET"
+[2025-06-06T20:24:03.282Z] [INFO] [API] Health check started | requestId="health_1749241443281_jw40xrdc1"
+[2025-06-06T20:24:03.790Z] [INFO] [API] Redis connected successfully
+[2025-06-06T20:24:03.794Z] [INFO] [API] Redis ready to accept commands
+[2025-06-06T20:24:03.796Z] [DEBUG] [Database] Created new connection | id="conn_1749241443795_cnnux1atj"
+[2025-06-06T20:24:03.797Z] [DEBUG] [Database] Created new connection | id="conn_1749241443796_9x3k7oasf"
+[2025-06-06T20:24:03.797Z] [INFO] [Database] Connection pool initialized | minConnections=2
+[2025-06-06T20:24:03.798Z] [INFO] [API] Health check completed | requestId="health_1749241443281_jw40xrdc1" status="healthy" responseTime=516
+ GET /api/health 200 in 690ms
+[2025-06-06T20:24:05.458Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241445458_gdzgbdpe2" pathname="/" method="GET"
+[2025-06-06T20:24:05.474Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241445474_vz3moz0vt" pathname="/" method="GET"
+[2025-06-06T20:24:05.502Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241445502_ed4tvkafg" pathname="/opportunities" method="GET"
+ GET / 200 in 944ms
+ GET / 200 in 931ms
+ GET /opportunities 200 in 1009ms
+[2025-06-06T20:24:07.297Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241447297_ji85vsxxi" pathname="/opportunities" method="GET"
+ GET /opportunities 200 in 346ms
+[2025-06-06T20:24:07.876Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241447876_61inz9t9c" pathname="/signup" method="GET"
+ GET /signup 200 in 65ms
+[2025-06-06T20:24:08.397Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241448397_57hv2wv5d" pathname="/signup" method="POST"
+[2025-06-06T20:24:08.451Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241448451_g7zm7v5sg" pathname="/dashboard" method="GET"
+[Signup Action] Starting signup process...
+[Signup Action] Attempting signup for: test+1749241445150@example.com
+ POST /signup 200 in 275ms
+[2025-06-06T20:24:08.772Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241448772_5hr9agzsu" pathname="/login" method="GET"
+ GET /login 200 in 117ms
+ GET /dashboard 200 in 469ms
+[Signup Action] Signup failed: Email address "test+1749241445150@example.com" is invalid
+[2025-06-06T20:24:09.171Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241449171_7y375xu78" pathname="/signup" method="GET"
+ GET /signup?error=Email+address+%22test%2B1749241445150%40example.com%22+is+invalid 200 in 60ms
+[2025-06-06T20:24:09.725Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241449725_hbu8msyhf" pathname="/login" method="GET"
+ GET /login 200 in 56ms
+[2025-06-06T20:24:10.619Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241450619_ar1dlot2o" pathname="/opportunities" method="GET"
+ GET /opportunities 200 in 276ms
+[2025-06-06T20:24:11.756Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241451756_5ce7111r3" pathname="/login" method="GET"
+ GET /login 200 in 62ms
+[2025-06-06T20:24:22.193Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241462193_vggcd16d3" pathname="/proposals" method="GET"
+ GET /proposals 200 in 119ms
+[2025-06-06T20:24:23.117Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241463117_mltj3ap2z" pathname="/login" method="GET"
+ GET /login 200 in 53ms
+[2025-06-06T20:24:24.437Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241464437_4a430yz40" pathname="/analytics" method="GET"
+ GET /analytics 200 in 217ms
+[2025-06-06T20:24:25.452Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241465452_xjldwr33t" pathname="/login" method="GET"
+ GET /login 200 in 39ms
+[2025-06-06T20:24:26.345Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241466345_zxoquvnn9" pathname="/settings" method="GET"
+ ○ Compiling /settings ...
+ ✓ Compiled /settings in 6.2s (8853 modules)
+ GET /settings 200 in 6608ms
+[2025-06-06T20:24:33.727Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241473727_u3n4vn9sp" pathname="/login" method="GET"
+ GET /login 200 in 55ms
+[2025-06-06T20:24:34.617Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241474617_ed7pgbkcs" pathname="/settings/billing" method="GET"
+ ○ Compiling /settings/billing ...
+ ✓ Compiled /settings/billing in 6.6s (9286 modules)
+ GET /settings/billing 200 in 7818ms
+[2025-06-06T20:24:43.403Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241483403_n4n8v9gs0" pathname="/login" method="GET"
+ GET /login 200 in 62ms
+[2025-06-06T20:24:43.037Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241483037_ctxorfdij" pathname="/saved" method="GET"
+ ○ Compiling /saved ...
+ ✓ Compiled /saved in 8.3s (10951 modules)
+[Error: Route "/saved" used `cookies().get('sb-icxhwszgneovjzmqdjri-auth-token')`. `cookies()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+ GET /saved 200 in 8717ms
+[2025-06-06T20:24:52.494Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241492494_assuexf0o" pathname="/login" method="GET"
+ GET /login 200 in 72ms
+[2025-06-06T20:24:53.384Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241493384_oj8yk0kd8" pathname="/opportunities" method="GET"
+ GET /opportunities 200 in 254ms
+[2025-06-06T20:24:54.481Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241494481_kd1sk4d25" pathname="/login" method="GET"
+ GET /login 200 in 38ms
+[2025-06-06T20:24:55.160Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241495160_896p88i8b" pathname="/test-errors" method="GET"
+ ○ Compiling /test-errors ...
+ ✓ Compiled /test-errors in 5.6s (10966 modules)
+ GET /test-errors 200 in 6503ms
+[2025-06-06T20:25:02.521Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241502521_cqx7vmisx" pathname="/login" method="GET"
+ GET /login 200 in 67ms
+[2025-06-06T20:25:02.795Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241502795_gba3f5354" pathname="/opportunities" method="GET"
+ GET /opportunities 200 in 316ms
+[2025-06-06T20:25:03.887Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749241503887_y9r8urun7" pathname="/login" method="GET"
+ GET /login 200 in 47ms
+ ✓ Compiled in 5.7s (6937 modules)
+ ✓ Compiled in 6.2s (7494 modules)
+ ✓ Compiled in 4.2s (7494 modules)
+ ✓ Compiled in 459ms (4892 modules)
+ ✓ Compiled in 4.1s (7496 modules)
+ ✓ Compiled in 467ms (2604 modules)
+ ✓ Compiled in 7.7s (2604 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 1446ms (2604 modules)
+ ✓ Compiled in 7.9s (2618 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 1817ms (2618 modules)
+ ✓ Compiled in 1171ms (2618 modules)
+ ✓ Compiled in 1091ms (2618 modules)
+ ✓ Compiled in 17.2s (7496 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/server-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/edge-server-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 4.8s (7496 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 1147ms (2618 modules)
+ ✓ Compiled in 851ms (2618 modules)
+ ✓ Compiled in 683ms (2618 modules)
+ ✓ Compiled in 1518ms (6925 modules)
+ ✓ Compiled in 1634ms (6925 modules)
+ ✓ Compiled in 1957ms (2618 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 4.1s (2618 modules)
+ ✓ Compiled in 1254ms (2618 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /home/locklearwyatt/projects/medcontracthub/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 1633ms (2618 modules)
