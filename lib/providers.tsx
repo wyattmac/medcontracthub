@@ -22,6 +22,7 @@ import { AppError, ErrorCode } from '@/lib/errors/types'
 import { AuthProvider } from '@/lib/hooks/useAuth'
 import { SafeAuthProvider } from '@/components/auth/safe-auth-provider'
 import { MockAuthProvider } from '@/components/auth/mock-auth-provider'
+import { ErrorProvider } from '@/providers/error-provider'
 
 function makeQueryClient() {
   return new QueryClient({
@@ -130,14 +131,7 @@ export function Providers({ children }: IProvidersProps) {
   const queryClient = getQueryClient()
 
   return (
-    <ErrorBoundary
-      onError={(error, errorInfo) => {
-        logger.error('Application error boundary triggered', error, {
-          componentStack: errorInfo.componentStack,
-          digest: (errorInfo as any).digest
-        })
-      }}
-    >
+    <ErrorProvider>
       <QueryClientProvider client={queryClient}>
         <MockAuthProvider>
           {children}
@@ -156,7 +150,7 @@ export function Providers({ children }: IProvidersProps) {
           />
         </MockAuthProvider>
       </QueryClientProvider>
-    </ErrorBoundary>
+    </ErrorProvider>
   )
 }
 
