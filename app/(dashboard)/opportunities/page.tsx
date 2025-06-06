@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { OpportunitiesContainer } from '@/components/dashboard/opportunities/opportunities-container'
-import { OpportunitiesFilters } from '@/components/dashboard/opportunities/opportunities-filters'
+import { OpportunitiesLayout } from '@/components/dashboard/opportunities/opportunities-layout'
 import { OpportunitiesStats } from '@/components/dashboard/opportunities/opportunities-stats'
 import { SectionErrorBoundary } from '@/components/ui/error-boundary'
 import { TrendingUp, Zap, Database, RefreshCw } from 'lucide-react'
@@ -24,9 +24,9 @@ interface OpportunitiesPageProps {
 export default async function OpportunitiesPage({ searchParams }: OpportunitiesPageProps) {
   const params = await searchParams
   return (
-    <div className="space-y-8">
+    <OpportunitiesLayout searchParams={params}>
       {/* Enhanced Page Header */}
-      <div className="text-center space-y-4">
+      <div className="space-y-4">
         <h1 
           className="text-4xl font-bold animate-pulse"
           style={{
@@ -38,13 +38,13 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         >
           🔍 Federal Contract Opportunities
         </h1>
-        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+        <p className="text-lg text-muted-foreground max-w-4xl">
           Live federal medical supply contracts from <strong>SAM.gov</strong> tailored to your capabilities. 
           Real-time data powered by AI matching for optimal results.
         </p>
         
         {/* Status Indicators */}
-        <div className="flex justify-center gap-6 text-sm">
+        <div className="flex gap-6 text-sm">
           <div className="flex items-center gap-2 text-green-600">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span>SAM.gov API Active</span>
@@ -65,11 +65,6 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         <Suspense fallback={<StatsLoadingSkeleton />}>
           <OpportunitiesStats />
         </Suspense>
-      </SectionErrorBoundary>
-
-      {/* Enhanced Filters */}
-      <SectionErrorBoundary name="Filters">
-        <OpportunitiesFilters searchParams={params} />
       </SectionErrorBoundary>
 
       {/* Live Opportunities Container */}
@@ -102,7 +97,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
           </div>
         </CardContent>
       </Card>
-    </div>
+    </OpportunitiesLayout>
   )
 }
 

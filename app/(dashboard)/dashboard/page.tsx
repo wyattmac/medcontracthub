@@ -8,9 +8,9 @@ import { SectionErrorBoundary } from '@/components/ui/error-boundary'
 
 export default function DashboardPage() {
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="w-full space-y-8">
       {/* Hero Header */}
-      <div className="text-center space-y-4">
+      <div className="space-y-4">
         <div className="relative">
           <h1 
             className="text-4xl font-bold"

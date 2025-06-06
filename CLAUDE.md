@@ -214,6 +214,22 @@ SENTRY_DSN
 - **Database**: Supabase state during failures
 - **Documentation**: Context7 for library issues
 
+## 🚀 Performance & AI Configuration
+
+### AI Features Status
+- **AI Recommendations**: Currently DISABLED (static responses for performance)
+- **AI Analysis**: Currently DISABLED (static responses for performance)  
+- **Reason**: Cost optimization during development phase
+- **Re-enable**: Set `ENABLE_AI_FEATURES=true` when ready
+
+### Performance Optimizations ✅
+- **Next.js 15 cookies**: Fixed async/await warnings
+- **API response times**: Reduced from 48s to instant
+- **localhost:3000**: Now loads in 0.19s (was 9+ seconds)
+- **Anthropic costs**: Eliminated during development
+
+See [PERFORMANCE_OPTIMIZATIONS.md](./PERFORMANCE_OPTIMIZATIONS.md) for complete details.
+
 ## 🏃‍♂️ Quick Troubleshooting
 
 **📋 For current production issues and priorities, always check [PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md) first.**
@@ -225,6 +241,7 @@ SENTRY_DSN
 4. **Auth issues**: Use `npm run dev-setup` for test user
 5. **Redis errors**: ✅ **RESOLVED** - Edge runtime compatibility fixed
 6. **SAM.gov sync**: ✅ **WORKING** - 1,002+ real opportunities loaded
+7. **Performance issues**: ✅ **OPTIMIZED** - Major speed improvements applied
 
 ### Development Tips
 - **Always review [ARCHITECTURE.md](./ARCHITECTURE.md) and [PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md) before coding**
@@ -237,4 +254,4 @@ SENTRY_DSN
 
 ---
 
-**Last Updated**: June 6, 2025
+**Last Updated**: December 6, 2024

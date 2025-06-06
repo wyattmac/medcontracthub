@@ -4,11 +4,11 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 
-// Initialize Claude client with timeout configuration
+// Initialize Claude client with optimized timeout configuration
 const claude = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-  timeout: 30000, // 30 seconds timeout
-  maxRetries: 2, // Retry failed requests up to 2 times
+  timeout: 15000, // Reduced to 15 seconds for faster responses
+  maxRetries: 1, // Reduced retries to speed up failure cases
 })
 
 export interface IOpportunityAnalysis {
@@ -207,9 +207,9 @@ Focus on:
 
   try {
     const response = await claude.messages.create({
-      model: 'claude-3-5-sonnet-latest',
-      max_tokens: 2000,
-      temperature: 0.4,
+      model: 'claude-3-5-haiku-latest', // Use faster Haiku model for recommendations
+      max_tokens: 1500, // Reduced token count for faster generation
+      temperature: 0.3, // Slightly more focused responses
       messages: [
         {
           role: 'user',

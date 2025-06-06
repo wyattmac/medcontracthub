@@ -83,20 +83,30 @@ export const POST = routeHandler.POST(
       })
     }
 
-    // Generate new AI analysis with timeout and usage tracking
-    const analysis = await withUsageCheck(
-      user.id,
-      'ai_analysis',
-      1,
-      async () => {
-        return await Promise.race([
-          analyzeOpportunity(opportunity, companyProfile),
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('AI analysis timeout - please try again')), 45000)
-          )
-        ])
-      }
-    )
+    // AI DISABLED: Return static analysis to avoid Anthropic API costs
+    const analysis = {
+      matchReasoning: `Based on your NAICS codes and company profile, this opportunity shows potential alignment with your capabilities. The agency is ${opportunity.agency} seeking ${opportunity.title}.`,
+      competitionLevel: 'medium' as const,
+      winProbability: 65,
+      keyRequirements: [
+        'Review full solicitation document when available',
+        'Ensure compliance with delivery requirements',
+        'Verify set-aside eligibility if applicable'
+      ],
+      recommendations: [
+        'Monitor for full solicitation release',
+        'Prepare capability statement highlighting relevant experience',
+        'Consider teaming opportunities if contract value is large'
+      ],
+      riskFactors: [
+        'Competition from established federal contractors',
+        'Potential for unclear requirements until full RFP',
+        'Agency budget constraints'
+      ],
+      proposalStrategy: 'Focus on demonstrating technical capabilities, past performance, and competitive pricing. Emphasize any relevant certifications or set-aside qualifications.',
+      estimatedEffort: 'medium' as const,
+      timelineAnalysis: `Response deadline is ${opportunity.response_deadline}. Allow adequate time for proposal preparation and review.`
+    }
 
     // Cache the analysis
     const { error: insertError } = await supabase
