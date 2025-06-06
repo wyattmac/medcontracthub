@@ -130,10 +130,10 @@ export const GET = routeHandler.GET(
         throw error
       }
 
-      const processed = documents?.filter(d => d.ocr_status === 'completed').length || 0
-      const failed = documents?.filter(d => d.ocr_status === 'failed').length || 0
-      const pending = documents?.filter(d => d.ocr_status === 'pending').length || 0
-      const processing = documents?.filter(d => d.ocr_status === 'processing').length || 0
+      const processed = documents?.filter((d: any) => d.ocr_status === 'completed').length || 0
+      const failed = documents?.filter((d: any) => d.ocr_status === 'failed').length || 0
+      const pending = documents?.filter((d: any) => d.ocr_status === 'pending').length || 0
+      const processing = documents?.filter((d: any) => d.ocr_status === 'processing').length || 0
 
       return NextResponse.json({
         opportunityId,
@@ -144,7 +144,7 @@ export const GET = routeHandler.GET(
           pending,
           processing
         },
-        documents: documents?.map(d => ({
+        documents: documents?.map((d: any) => ({
           id: d.id,
           fileName: d.file_name,
           status: d.ocr_status,

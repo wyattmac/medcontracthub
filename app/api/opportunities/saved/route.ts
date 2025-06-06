@@ -114,7 +114,7 @@ export const GET = routeHandler.GET(
     }
 
     // Process and enhance data
-    const enhancedOpportunities = (savedOpportunities || []).map(savedOpp => {
+    const enhancedOpportunities = (savedOpportunities || []).map((savedOpp: any) => {
       const opportunity = savedOpp.opportunities as any
       const matchScore = calculateOpportunityMatch(opportunity, companyNaicsCodes)
       
@@ -128,7 +128,7 @@ export const GET = routeHandler.GET(
     })
 
     // Sort based on the requested criteria
-    enhancedOpportunities.sort((a, b) => {
+    enhancedOpportunities.sort((a: any, b: any) => {
       switch (filters.sortBy) {
         case 'deadline':
           return new Date(a.opportunity.response_deadline).getTime() - 
@@ -143,14 +143,14 @@ export const GET = routeHandler.GET(
     })
 
     // Get unique tags for filter options
-    const allTags = enhancedOpportunities.flatMap(opp => opp.tags || [])
+    const allTags = enhancedOpportunities.flatMap((opp: any) => opp.tags || [])
     const uniqueTags = Array.from(new Set(allTags)).sort()
 
     // Count reminders due soon (next 7 days)
     const now = new Date()
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
     
-    const remindersDueSoon = enhancedOpportunities.filter(opp => {
+    const remindersDueSoon = enhancedOpportunities.filter((opp: any) => {
       if (!opp.reminder_date) return false
       const reminderDate = new Date(opp.reminder_date)
       return reminderDate >= now && reminderDate <= nextWeek
@@ -163,9 +163,9 @@ export const GET = routeHandler.GET(
       remindersDueSoon,
       stats: {
         total: enhancedOpportunities.length,
-        pursuing: enhancedOpportunities.filter(opp => opp.is_pursuing).length,
-        withReminders: enhancedOpportunities.filter(opp => opp.reminder_date).length,
-        expiringSoon: enhancedOpportunities.filter(opp => {
+        pursuing: enhancedOpportunities.filter((opp: any) => opp.is_pursuing).length,
+        withReminders: enhancedOpportunities.filter((opp: any) => opp.reminder_date).length,
+        expiringSoon: enhancedOpportunities.filter((opp: any) => {
           const deadline = new Date(opp.opportunity.response_deadline)
           return deadline >= now && deadline <= nextWeek
         }).length

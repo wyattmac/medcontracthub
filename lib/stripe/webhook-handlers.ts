@@ -8,6 +8,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { apiLogger } from '@/lib/errors/logger'
 import { sendEmail } from '@/lib/email/client'
 import { SubscriptionCreated, SubscriptionUpdated, SubscriptionCanceled, PaymentFailed } from '@/emails'
+import type { ReactElement } from 'react'
 
 type WebhookHandler = (event: Stripe.Event) => Promise<void>
 
@@ -53,8 +54,8 @@ async function handleSubscriptionCreated(event: Stripe.Event) {
     .update({
       stripe_subscription_id: subscription.id,
       status: subscription.status,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+      current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
       cancel_at: subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toISOString() : null,
       canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
       updated_at: new Date().toISOString()
@@ -80,7 +81,7 @@ async function handleSubscriptionCreated(event: Stripe.Event) {
         userName: user.full_name || 'there',
         planName: subscription.items.data[0]?.price.nickname || 'Premium',
         trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : undefined
-      })
+      }) as ReactElement
     })
   }
 
@@ -103,8 +104,8 @@ async function handleSubscriptionUpdated(event: Stripe.Event) {
     .from('subscriptions')
     .update({
       status: subscription.status,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+      current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
       cancel_at: subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toISOString() : null,
       canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
       updated_at: new Date().toISOString()
@@ -158,8 +159,8 @@ async function handleSubscriptionDeleted(event: Stripe.Event) {
         subject: 'Your MedContractHub subscription has been canceled',
         react: SubscriptionCanceled({
           userName: user.full_name || 'there',
-          endDate: new Date(subscription.current_period_end * 1000)
-        })
+          endDate: new Date((subscription as any).current_period_end * 1000)
+        }) as ReactElement
       })
     }
   }
@@ -198,7 +199,7 @@ async function handleTrialWillEnd(event: Stripe.Event) {
           userName: user.full_name || 'there',
           message: 'Your trial period is ending in 3 days. Add a payment method to continue using MedContractHub.',
           trialEnd: new Date(subscription.trial_end * 1000)
-        })
+        }) as ReactElement
       })
     }
   }
@@ -215,7 +216,7 @@ async function handleInvoicePaymentSucceeded(event: Stripe.Event) {
   const invoice = event.data.object as Stripe.Invoice
   const supabase = createServiceClient()
 
-  if (!invoice.subscription || !invoice.customer) return
+  if (!(invoice as any).subscription || !invoice.customer) return
 
   // Get user ID
   const { data: subscription } = await supabase
@@ -257,7 +258,7 @@ async function handleInvoicePaymentFailed(event: Stripe.Event) {
   const invoice = event.data.object as Stripe.Invoice
   const supabase = createServiceClient()
 
-  if (!invoice.subscription || !invoice.customer) return
+  if (!(invoice as any).subscription || !invoice.customer) return
 
   // Get user details
   const { data: subscription } = await supabase
@@ -279,9 +280,9 @@ async function handleInvoicePaymentFailed(event: Stripe.Event) {
         subject: 'Payment failed for your MedContractHub subscription',
         react: PaymentFailed({
           userName: user.full_name || 'there',
-          amount: formatPrice(invoice.amount_due),
+          amount: formatPrice(invoice.amount_due || 0),
           nextAttempt: invoice.next_payment_attempt ? new Date(invoice.next_payment_attempt * 1000) : undefined
-        })
+        }) as ReactElement
       })
     }
 
@@ -291,7 +292,7 @@ async function handleInvoicePaymentFailed(event: Stripe.Event) {
       .insert({
         user_id: subscription.user_id,
         stripe_invoice_id: invoice.id,
-        amount_cents: invoice.amount_due,
+        amount_cents: invoice.amount_due || 0,
         currency: invoice.currency,
         status: 'failed',
         invoice_pdf: invoice.invoice_pdf,

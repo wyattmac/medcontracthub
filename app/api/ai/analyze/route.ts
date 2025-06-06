@@ -123,7 +123,7 @@ export const POST = routeHandler.POST(
         win_probability: analysis.winProbability,
         competition_level: analysis.competitionLevel
       }
-    }).catch((error) => {
+    }).catch((error: any) => {
       aiLogger.warn('Failed to log analysis audit', error)
     })
 

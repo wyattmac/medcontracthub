@@ -59,12 +59,6 @@ export default function BillingPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [processingPortal, setProcessingPortal] = useState(false)
 
-  useEffect(() => {
-    if (user) {
-      fetchBillingData()
-    }
-  }, [user, fetchBillingData])
-
   const fetchBillingData = useCallback(async () => {
     try {
       setLoading(true)
@@ -88,6 +82,12 @@ export default function BillingPage() {
       setLoading(false)
     }
   }, [handleError])
+
+  useEffect(() => {
+    if (user) {
+      fetchBillingData()
+    }
+  }, [user, fetchBillingData])
 
   const handleManageSubscription = async () => {
     try {

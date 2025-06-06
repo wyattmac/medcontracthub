@@ -5,7 +5,7 @@
 
 import { AppError, ErrorCode, ExternalAPIError, RateLimitError, ValidationError } from '@/lib/errors/types'
 import { errorReporter } from '@/lib/errors/error-reporter'
-import { toast } from '@/lib/hooks/useToast'
+import { toast } from 'sonner'
 
 interface ApiErrorResponse {
   error: {

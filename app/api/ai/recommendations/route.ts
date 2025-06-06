@@ -81,18 +81,29 @@ export const GET = routeHandler.GET(
       companySize: 'small' // Could be determined from company data
     }
 
+    // Define type for audit log
+    interface AuditLog {
+      action: string
+      changes: Record<string, any> | null
+      [key: string]: any
+    }
+
     // Build recent activity summary
     const searchQueries = (recentActivity || [])
-      .filter(log => log.action === 'search_opportunities')
-      .map(log => (log.changes as Record<string, any>)?.filters?.searchQuery)
-      .filter(Boolean)
+      .filter((log: AuditLog) => log.action === 'search_opportunities')
+      .map((log: AuditLog) => (log.changes as Record<string, any>)?.filters?.searchQuery)
+      .filter((query: any): query is string => typeof query === 'string' && Boolean(query))
       .slice(0, 10)
 
     const viewedOpportunities = (recentActivity || [])
-      .filter(log => log.action === 'view_opportunity')
+      .filter((log: AuditLog) => log.action === 'view_opportunity')
       .slice(0, 10)
 
-    const recentActivitySummary = {
+    const recentActivitySummary: {
+      searchQueries: string[]
+      viewedOpportunities: any[]
+      savedCount: number
+    } = {
       searchQueries: Array.from(new Set(searchQueries)), // Remove duplicates
       viewedOpportunities,
       savedCount: savedOpportunities?.length || 0
