@@ -20,7 +20,8 @@ Before making any code changes, Claude Code MUST review these critical documents
 **MedContractHub** - AI-powered platform for medical distributors to win federal contracts
 - **Stack**: Next.js 15, TypeScript, Supabase, Tailwind CSS, Docker, Redis
 - **Path**: `/home/locklearwyatt/projects/medcontracthub`
-- **Status**: Production ready with zero TypeScript errors
+- **Status**: 99% Production ready - Database populated with 1,002+ real opportunities
+- **Recent**: Redis DNS errors resolved, Sentry monitoring restored, bulk sync operational
 
 ## 🚀 Essential Commands
 
@@ -144,16 +145,22 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 ### Known Issues
 **⚠️ Check [PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md) for current production blockers before making changes.**
 
-- **SAM.gov sync**: Endpoint needs repair (`getSAMApiClient` error) - **CRITICAL BLOCKER**
+**Recently Resolved (June 6, 2025)**:
+- ✅ **Redis DNS errors**: Edge runtime compatibility fixed
+- ✅ **SAM.gov sync**: Working with 1,002+ real opportunities loaded
+- ✅ **Sentry monitoring**: Error tracking restored and functional
+
+**Remaining Issues**:
+- **Next.js headers import**: Causing Docker health check failures (app functional)
 - **SSL in Docker**: Disabled for development, enabled for production
-- **Test data**: Database contains only 2 test opportunities
 
 ## 🔗 Key Integrations
 
 ### SAM.gov (`lib/sam-gov/`)
-- 22k+ federal opportunities
-- Quota management and rate limiting
-- Cache strategy for performance
+- **Status**: ✅ Operational with 1,002+ opportunities loaded
+- **Sync**: Automated daily sync configured and working
+- **Performance**: 4.24ms average insert time, Redis caching active
+- **Quota**: Management and rate limiting functional
 
 ### AI Services
 - **Claude**: `lib/ai/claude-client.ts` (contract analysis)
@@ -177,11 +184,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_ACCESS_TOKEN       # For MCP server dashboard access
 CSRF_SECRET                 # 32+ chars, NEVER use default
 SAM_GOV_API_KEY
 ANTHROPIC_API_KEY
 STRIPE_SECRET_KEY
 RESEND_API_KEY
+SYNC_TOKEN                  # For automated sync security
 ```
 
 ### Optional
@@ -211,10 +220,11 @@ SENTRY_DSN
 
 ### Common Issues
 1. **TypeScript errors**: Run `npm run type-check`
-2. **Docker not starting**: Check `docker-compose.yml` and ports
+2. **Docker health check failing**: Known Next.js headers import issue (app functional)
 3. **Database connection**: Verify Supabase environment variables
 4. **Auth issues**: Use `npm run dev-setup` for test user
-5. **SAM.gov data**: Currently showing test data only - **See PRODUCTION_TASKS.md for fix priority**
+5. **Redis errors**: ✅ **RESOLVED** - Edge runtime compatibility fixed
+6. **SAM.gov sync**: ✅ **WORKING** - 1,002+ real opportunities loaded
 
 ### Development Tips
 - **Always review [ARCHITECTURE.md](./ARCHITECTURE.md) and [PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md) before coding**

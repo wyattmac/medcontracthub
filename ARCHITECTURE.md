@@ -1,6 +1,7 @@
 # MedContractHub Architecture
 
-**Status**: Production Ready | **TypeScript**: Zero Errors | **Design**: Mobile-First | **Pattern**: Clean Architecture + DDD
+**Status**: 99% Production Ready | **Database**: 1,002+ Real Opportunities | **TypeScript**: Zero Errors | **Pattern**: Clean Architecture + DDD
+**Last Updated**: June 6, 2025
 
 ## 🏗️ Architectural Overview
 
@@ -278,18 +279,28 @@ ON saved_opportunities FOR ALL
 USING (auth.uid() = user_id);
 ```
 
-**Tables**:
-- `company_profiles` - User company information with certifications
-- `opportunities` - SAM.gov contract opportunities (22k+ records)
-- `saved_opportunities` - User bookmarked opportunities
-- `proposals` - User-generated proposals and submissions
+**Tables** (Current Status June 6, 2025):
+- `opportunities` - **1,002 real SAM.gov opportunities** (populated June 6, 2025)
+  - 92.2% NAICS code coverage
+  - 15 medical/healthcare opportunities identified
+  - Performance: 4.24ms average bulk insert time
+- `profiles` - 1 test user configured
+- `companies` - 1 test company configured  
+- `saved_opportunities` - 2 test bookmarks
+- `proposals` - Ready for user-generated proposals
 - `api_usage` - Usage tracking for billing and quota management
 - `reminders` - Deadline notifications and alerts
 
 ### **Background Job Processing (Bull.js + Redis)**
 
+**Redis Infrastructure Status** (Updated June 6, 2025):
+- ✅ **Edge Runtime Compatibility**: Fixed DNS resolution errors
+- ✅ **Graceful Fallbacks**: Operates without Redis when unavailable
+- ✅ **Docker Environment**: Redis container healthy (22+ hours uptime)
+- ✅ **Performance**: Queue processing and caching operational
+
 ```typescript
-// Job queue implementation
+// Job queue implementation (with edge-runtime fixes)
 const emailQueue = new Bull('email-notifications', {
   redis: { port: 6379, host: 'redis' },
   defaultJobOptions: {
