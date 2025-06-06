@@ -41,10 +41,19 @@ const quotaCache = new MemoryCache(100)
 
 export class SAMQuotaManager {
   private config: QuotaConfig
-  private redis = getRedisClient()
+  private redisAvailable: boolean
 
   constructor(config: Partial<QuotaConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config }
+    this.redisAvailable = isRedisAvailable()
+    
+    if (!this.redisAvailable) {
+      apiLogger?.warn('SAM.gov quota manager operating without Redis - using in-memory fallback')
+    }
+  }
+
+  private getRedis() {
+    return this.redisAvailable ? getRedisClient() : null
   }
 
   /**
@@ -321,14 +330,15 @@ export class SAMQuotaManager {
     if (cached !== null) return cached
 
     try {
-      if (await isRedisAvailable()) {
-        const usage = await this.redis.get(key)
+      const redis = this.getRedis()
+      if (redis) {
+        const usage = await redis.get(key)
         const count = usage ? parseInt(usage, 10) : 0
         quotaCache.set(cacheKey, count, 60) // Cache for 1 minute
         return count
       }
     } catch (error) {
-      apiLogger.error('Failed to get quota usage from Redis', error as Error)
+      apiLogger?.error('Failed to get quota usage from Redis', error as Error)
     }
 
     return 0
@@ -336,13 +346,14 @@ export class SAMQuotaManager {
 
   private async incrementUsage(key: string, type: 'daily' | 'hourly'): Promise<void> {
     try {
-      if (await isRedisAvailable()) {
-        await this.redis.incr(key)
+      const redis = this.getRedis()
+      if (redis) {
+        await redis.incr(key)
         const expiry = type === 'daily' ? 86400 : 3600 // 24h or 1h
-        await this.redis.expire(key, expiry)
+        await redis.expire(key, expiry)
       }
     } catch (error) {
-      apiLogger.error('Failed to increment quota usage in Redis', error as Error)
+      apiLogger?.error('Failed to increment quota usage in Redis', error as Error)
     }
   }
 
