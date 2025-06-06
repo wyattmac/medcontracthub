@@ -8,7 +8,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Bookmark, BookmarkCheck, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { useToast } from '@/components/ui/use-toast'
 
 interface ISaveOpportunityButtonProps {
   opportunityId: string
@@ -26,6 +26,7 @@ export function SaveOpportunityButton({
   showText = false
 }: ISaveOpportunityButtonProps) {
   const router = useRouter()
+  const { toast } = useToast()
   const [isSaved, setIsSaved] = useState(initialIsSaved)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -49,14 +50,25 @@ export function SaveOpportunityButton({
 
       if (response.ok) {
         setIsSaved(!isSaved)
-        toast.success(result.message)
+        toast({
+          title: "Success",
+          description: result.message
+        })
         router.refresh() // Refresh to update the data
       } else {
-        toast.error(result.error || 'Failed to save opportunity')
+        toast({
+          title: "Error",
+          description: result.error || 'Failed to save opportunity',
+          variant: "destructive"
+        })
       }
     } catch (error) {
       console.error('Error saving opportunity:', error)
-      toast.error('An error occurred while saving the opportunity')
+      toast({
+        title: "Error",
+        description: 'An error occurred while saving the opportunity',
+        variant: "destructive"
+      })
     } finally {
       setIsLoading(false)
     }

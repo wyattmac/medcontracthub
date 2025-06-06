@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { routeHandler } from '@/lib/api/route-handler'
+import { enhancedRouteHandler } from '@/lib/api/enhanced-route-handler'
 import { calculateOpportunityMatch } from '@/lib/sam-gov/utils'
 import { DatabaseError } from '@/lib/errors/types'
 
@@ -17,18 +17,16 @@ const savedOpportunitiesQuerySchema = z.object({
   sort_by: z.enum(['deadline', 'saved_date', 'match_score']).optional().default('deadline')
 })
 
-export const GET = routeHandler.GET(
-  async ({ user, supabase, request }) => {
-    const { searchParams } = new URL(request.url)
-    
-    // Parse query parameters
+export const GET = enhancedRouteHandler.GET(
+  async ({ user, supabase, sanitizedQuery }) => {
+    // Parse query parameters from sanitized query
     const filters = {
-      isPursuing: searchParams.get('is_pursuing') === 'true' ? true : 
-                  searchParams.get('is_pursuing') === 'false' ? false : undefined,
-      hasReminder: searchParams.get('has_reminder') === 'true' ? true :
-                   searchParams.get('has_reminder') === 'false' ? false : undefined,
-      tags: searchParams.get('tags')?.split(',').filter(Boolean) || [],
-      sortBy: searchParams.get('sort_by') as 'deadline' | 'saved_date' | 'match_score' || 'deadline'
+      isPursuing: sanitizedQuery.is_pursuing === 'true' ? true : 
+                  sanitizedQuery.is_pursuing === 'false' ? false : undefined,
+      hasReminder: sanitizedQuery.has_reminder === 'true' ? true :
+                   sanitizedQuery.has_reminder === 'false' ? false : undefined,
+      tags: sanitizedQuery.tags?.split(',').filter(Boolean) || [],
+      sortBy: sanitizedQuery.sort_by || 'deadline'
     }
 
     // Get user's company NAICS codes for match scoring

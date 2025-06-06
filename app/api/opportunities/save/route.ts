@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { routeHandler } from '@/lib/api/route-handler'
+import { enhancedRouteHandler } from '@/lib/api/enhanced-route-handler'
 import { 
   NotFoundError,
   DatabaseError
@@ -23,7 +23,7 @@ const saveOpportunitySchema = z.object({
   reminderDate: z.string().datetime().nullable().optional()
 })
 
-export const POST = routeHandler.POST(
+export const POST = enhancedRouteHandler.POST(
   async ({ user, supabase, sanitizedBody }) => {
     // Parse and validate request body
     const { 
@@ -89,13 +89,18 @@ export const POST = routeHandler.POST(
         }
       }
 
-      // Log the action
-      await supabase.rpc('log_audit', {
-        p_action: 'save_opportunity',
-        p_entity_type: 'opportunities',
-        p_entity_id: opportunityId,
-        p_changes: { action: 'save', notes: !!notes, tags: tags.length }
-      })
+      // Log the action (if audit function exists)
+      try {
+        await supabase.rpc('log_audit', {
+          p_action: 'save_opportunity',
+          p_entity_type: 'opportunities',
+          p_entity_id: opportunityId,
+          p_changes: { action: 'save', notes: !!notes, tags: tags.length }
+        })
+      } catch (auditError) {
+        // Continue if audit logging fails - it's not critical
+        console.warn('Audit logging failed:', auditError)
+      }
 
       return NextResponse.json({ 
         success: true,
@@ -115,13 +120,18 @@ export const POST = routeHandler.POST(
         throw new DatabaseError('Failed to unsave opportunity', deleteError)
       }
 
-      // Log the action
-      await supabase.rpc('log_audit', {
-        p_action: 'unsave_opportunity',
-        p_entity_type: 'opportunities',
-        p_entity_id: opportunityId,
-        p_changes: { action: 'unsave' }
-      })
+      // Log the action (if audit function exists)
+      try {
+        await supabase.rpc('log_audit', {
+          p_action: 'unsave_opportunity',
+          p_entity_type: 'opportunities',
+          p_entity_id: opportunityId,
+          p_changes: { action: 'unsave' }
+        })
+      } catch (auditError) {
+        // Continue if audit logging fails - it's not critical
+        console.warn('Audit logging failed:', auditError)
+      }
 
       return NextResponse.json({
         success: true,

@@ -108,13 +108,41 @@ export async function GET(request: Request) {
     
     const { opportunities, count } = result
     
+    // Get user's saved opportunities for isSaved status
+    let savedOpportunityIds: string[] = []
+    try {
+      const cookieStore = await cookies()
+      const authCookies = cookieStore.getAll()
+      
+      if (authCookies.length > 0) {
+        const authSupabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        )
+
+        const { data: { session } } = await authSupabase.auth.getSession()
+        
+        if (session?.user) {
+          const { data: savedOpportunities } = await authSupabase
+            .from('saved_opportunities')
+            .select('opportunity_id')
+            .eq('user_id', session.user.id)
+          
+          savedOpportunityIds = savedOpportunities?.map(s => s.opportunity_id) || []
+        }
+      }
+    } catch (error) {
+      // Continue without saved status if auth fails
+      console.log('Could not fetch saved opportunities status')
+    }
+    
     // Transform opportunities to match expected format with personalized medical matching
     const transformedOpportunities = opportunities?.map(opp => {
       const matchScore = calculateOpportunityMatch(opp, userNaicsCodes)
       return {
         ...opp,
         matchScore: Math.min(matchScore, 1.0), // Keep as decimal (0.0-1.0) and cap at 1.0
-        isSaved: false
+        isSaved: savedOpportunityIds.includes(opp.id)
       }
     }) || []
     
