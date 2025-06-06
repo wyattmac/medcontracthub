@@ -161,6 +161,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 - **Sync**: Automated daily sync configured and working
 - **Performance**: 4.24ms average insert time, Redis caching active
 - **Quota**: Management and rate limiting functional
+- **NAICS Matching**: Personalized medical industry matching (`lib/constants/medical-naics.ts`)
 
 ### AI Services
 - **Claude**: `lib/ai/claude-client.ts` (contract analysis)
@@ -232,6 +233,14 @@ See [PERFORMANCE_OPTIMIZATIONS.md](./PERFORMANCE_OPTIMIZATIONS.md) for complete 
 
 ## 📋 Recent Feature Updates
 
+### Personalized Medical NAICS Matching System ✅ (December 6, 2024)
+- **Medical NAICS Library**: Comprehensive reference with 150+ medical industry codes
+- **Interactive Onboarding**: Visual NAICS code selection organized by medical categories
+- **Personalized Matching**: Opportunities matched based on user's selected NAICS codes
+- **Smart Scoring**: Exact matches (100%), category matches (80%), partial matches (60%)
+- **Medical Focus**: Manufacturing, Wholesale, Healthcare, Research categorization
+- **Bug Fix**: Critical percentage display issue resolved (8000% → 80%)
+
 ### Opportunities Enhancement ✅
 - **Standard Layout**: Professional 3-column responsive design for opportunity details
 - **Newest First Ordering**: Opportunities now show newest posted dates first (2025 vs 2015)
@@ -265,4 +274,4 @@ See [OPPORTUNITIES_IMPROVEMENTS.md](./OPPORTUNITIES_IMPROVEMENTS.md) for complet
 
 ---
 
-**Last Updated**: December 6, 2024
+**Last Updated**: December 6, 2024 - Added Personalized Medical NAICS Matching System

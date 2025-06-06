@@ -1,7 +1,7 @@
 # MedContractHub Architecture
 
 **Status**: 99% Production Ready | **Database**: 1,002+ Real Opportunities | **TypeScript**: Zero Errors | **Pattern**: Clean Architecture + DDD
-**Last Updated**: June 6, 2025
+**Last Updated**: December 6, 2024
 
 ## 🏗️ Architectural Overview
 
@@ -59,7 +59,7 @@ infrastructure/
 │   ├── supabase/         # PostgreSQL with Row Level Security
 │   └── redis/            # Caching and session management
 ├── api-clients/
-│   ├── sam-gov/          # Federal opportunities API
+│   ├── sam-gov/          # Federal opportunities API + NAICS matching
 │   ├── stripe/           # Payment processing
 │   └── mistral/          # Document OCR processing
 ├── cache/                # Multi-level caching strategy
@@ -79,6 +79,7 @@ shared/
 ├── types/                # Shared TypeScript definitions
 ├── utils/                # Utility functions and helpers
 └── constants/            # Application-wide constants
+    └── medical-naics.ts  # Medical industry NAICS codes (150+ entries)
 ```
 
 ### **5. Infrastructure & Utilities (`/lib/`)**
@@ -279,21 +280,22 @@ ON saved_opportunities FOR ALL
 USING (auth.uid() = user_id);
 ```
 
-**Tables** (Current Status June 6, 2025):
-- `opportunities` - **1,002 real SAM.gov opportunities** (populated June 6, 2025)
+**Tables** (Current Status December 6, 2024):
+- `opportunities` - **1,002 real SAM.gov opportunities** (populated)
   - 92.2% NAICS code coverage
   - 15 medical/healthcare opportunities identified
   - Performance: 4.24ms average bulk insert time
-- `profiles` - 1 test user configured
-- `companies` - 1 test company configured  
-- `saved_opportunities` - 2 test bookmarks
+  - **Personalized matching**: Based on user's selected medical NAICS codes
+- `profiles` - Enhanced with medical industry preferences
+- `companies` - **NAICS codes storage**: User-selected medical industry classifications
+- `saved_opportunities` - Match score-based recommendations
 - `proposals` - Ready for user-generated proposals
 - `api_usage` - Usage tracking for billing and quota management
 - `reminders` - Deadline notifications and alerts
 
 ### **Background Job Processing (Bull.js + Redis)**
 
-**Redis Infrastructure Status** (Updated June 6, 2025):
+**Redis Infrastructure Status** (Updated December 6, 2024):
 - ✅ **Edge Runtime Compatibility**: Fixed DNS resolution errors
 - ✅ **Graceful Fallbacks**: Operates without Redis when unavailable
 - ✅ **Docker Environment**: Redis container healthy (22+ hours uptime)
@@ -499,6 +501,6 @@ core/ai/           → ai-processing-service
 
 ---
 
-**Architecture Status**: Production Ready with 98% implementation complete
-**Last Updated**: June 6, 2025
+**Architecture Status**: Production Ready with 99% implementation complete - Personalized Medical NAICS Matching Added
+**Last Updated**: December 6, 2024
 **Next Review**: Upon completion of immediate priorities
