@@ -1,513 +1,316 @@
-# MedContractHub Project Rules
+# CLAUDE.md
 
-## Quick Context
-AI platform for medical distributors to win federal contracts via SAM.gov integration
-Stack: Next.js 15, TypeScript, Supabase, Tailwind CSS, Docker, Redis, PostgreSQL
-Path: /home/locklearwyatt/projects/medcontracthub
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Current Status ✅
-✅ Complete AI-powered contract analysis with Claude & Mistral OCR
-✅ SAM.gov integration (22k+ opportunities) with real-time sync
-✅ Stripe billing, usage metering, 14-day trials with webhooks
-✅ Modern dashboard UI with gradient design and color-coded themes
-✅ Virtual scrolling, CI/CD pipeline, Redis, Bull.js queues, DB optimization
-✅ Docker multi-environment setup (dev/staging/prod) with build optimizations
-✅ Production-ready security, monitoring, health checks, automated backups
-📊 Production Readiness: 100% (Test Coverage: Comprehensive ✅)
+## Project Overview
+**MedContractHub** - AI-powered platform for medical distributors to win federal contracts
+- Stack: Next.js 15, TypeScript, Supabase, Tailwind CSS, Docker, Redis, PostgreSQL
+- Path: /home/locklearwyatt/projects/medcontracthub
+- Production Status: 100% Ready with multi-environment Docker deployment
 
-### Latest Development Session (December 2025)
-✅ Fixed DNS/SSL certificate issues with Supabase
-✅ Resolved Next.js 15 dynamic routing params issues
-✅ Fixed virtual scrolling charAt errors
-✅ Implemented development mode authentication bypass
-✅ Simplified opportunity detail API routes
-⚠️ Identified SAM.gov sync endpoint needs repair
-📊 Database currently contains test data only
+## Essential Development Commands
 
-## Architecture Overview
-```
-Frontend (Next.js 15)
-├── Authentication (Supabase Auth)
-├── Dashboard (Gradient UI)
-├── Opportunities (Virtual scroll)
-├── AI Analysis (Claude/Mistral)
-├── Billing (Stripe)
-└── Settings
-
-Backend Services
-├── API Routes (Route handlers)
-├── SAM.gov Integration
-├── AI Processing (Background jobs)
-├── Email System (Resend)
-├── Cache Layer (Redis)
-└── Database (Supabase/PostgreSQL)
-
-Infrastructure (Docker)
-├── Development (Port 3000)
-├── Staging (Port 3001)
-├── Production (Port 3002)
-├── Redis Cache
-├── PostgreSQL DB
-└── Background Workers
-```
-
-## Development Workflow
-
-### Docker Development (Recommended)
+### Quick Start
 ```bash
-# Quick start options
-make dev                        # Start development (Makefile)
-./easy-docker.sh               # Interactive menu
+# Docker Development (Recommended) - Port 3000
+make dev                    # Start with Makefile
+./easy-docker.sh           # Interactive menu
 ./docker-scripts.sh start dev  # Direct command
 
-# Advanced management
-make staging                    # Start staging environment
-make prod                       # Start production environment
-make health-check              # Check all service health
-make backup-dev                # Backup development DB
+# Local Development (Alternative)
+npm run dev                # Start dev server
+npm run worker:dev        # Start background worker with hot reload
 ```
 
-### Standard Workflow
-1. **Before Starting**: `make dev` or `npm test && npm run type-check`
-2. **While Coding**: Use TodoWrite to track progress, hot reload active
-3. **Before Committing**: `npm run lint && npm run type-check`
-4. **Commit Style**: Use conventional commits (feat:, fix:, docs:, chore:)
-5. **Testing**: Test in staging before production deployment
+### Testing & Validation
+```bash
+# Before committing - ALWAYS run these
+npm run lint              # ESLint + Prettier
+npm run type-check        # TypeScript validation
 
-## Todo List Management
+# Testing commands
+npm test                  # Run all tests
+npm run test:fast        # Quick test run (bail on first failure)
+npm run test:changed     # Test only changed files
+npm run test:api         # API route tests (sequential)
+npm run test:components  # Component tests
+npm run test:coverage    # Full coverage report
 
-Claude Code has built-in todo list functionality. Use it to track tasks:
-
-### Commands
-- **TodoRead**: View current todo list (no parameters needed)
-- **TodoWrite**: Update todo list with array of tasks
-
-### Todo Structure
-```json
-{
-  "content": "Task description",
-  "status": "pending" | "in_progress" | "completed",
-  "priority": "high" | "medium" | "low",
-  "id": "unique-task-id"
-}
+# Single test execution
+npm test -- path/to/test.ts --watch
 ```
 
-### Best Practices
-1. Always check TodoRead at start of session
-2. Update status as you work (pending → in_progress → completed)
-3. Add new tasks as discovered
-4. Use high priority for blockers
-5. Keep descriptions concise but clear
+### Build & Deployment
+```bash
+# Docker environments
+make staging             # Start staging (port 3001)
+make prod               # Start production (port 3002)
+make health-check       # Check all service health
+make backup-dev         # Backup development DB
 
-**Note**: The todo list is session-based and managed by Claude Code internally.
+# Production build
+npm run build           # Next.js production build
+make test-build         # Test Docker production build
+```
 
-## Critical Rules
-1. **TypeScript strict** - `as any` only for DB compatibility with Supabase types
-2. **Custom errors only** - Use `@/lib/errors/types` (NotFoundError, ValidationError, etc.)
-3. **Route handler wrapper** - ALL APIs use `routeHandler` for auth/validation/logging
-4. **Context7 MCP first** - Research libraries before implementing
-5. **Test before commit** - Always run linting and type checking
-6. **Docker first** - Use containerized development for consistency
-7. **Health checks** - All services must have `/api/health` endpoints
-8. **Security headers** - CSRF protection, rate limiting, sanitization required
+### Database Operations
+```bash
+npm run db:types        # Generate TypeScript types from Supabase
+npm run db:migrate      # Apply database migrations
+npm run dev-setup       # Set up development user (bypass onboarding)
+```
 
-## Code Patterns
+## High-Level Architecture
 
-### API Routes (REQUIRED)
+### API Route Pattern (MANDATORY)
+All API routes MUST use the enhanced route handler located at `lib/api/enhanced-route-handler.ts`:
+
 ```typescript
-// Standard API route with authentication
-export const GET = routeHandler.GET(
-  async ({ user, supabase }) => {
-    const { data, error } = await supabase
-      .from('opportunities')
-      .select('*')
-      .eq('user_id', user.id)
-    
-    if (error) throw new DatabaseError('Failed to fetch opportunities')
-    return NextResponse.json({ data })
-  },
-  { requireAuth: true, validateQuery: querySchema, rateLimit: 'api' }
-)
+import { enhancedRouteHandler } from '@/lib/api/enhanced-route-handler'
 
-// Background job processing
-export const POST = routeHandler.POST(
-  async ({ sanitizedBody, user }) => {
-    await emailQueue.add('send-notification', {
-      userId: user.id,
-      type: 'opportunity-match',
-      data: sanitizedBody
-    })
-    return NextResponse.json({ success: true })
+export const GET = enhancedRouteHandler.GET(
+  async ({ user, supabase, sanitizedQuery }) => {
+    // Implementation
   },
-  { requireAuth: true, validateBody: emailSchema, rateLimit: 'api' }
+  { 
+    requireAuth: true,      // Authentication required
+    validateQuery: schema,  // Zod schema validation
+    rateLimit: 'api'       // Rate limiting tier
+  }
 )
 ```
 
-### Error Handling
-```typescript
-// Custom error throwing
-throw new NotFoundError('Opportunity')
-throw new ValidationError('Invalid opportunity ID')
-throw new AuthenticationError('User not authenticated')
-throw new ExternalServiceError('SAM.gov API', 'Connection timeout')
+This wrapper provides:
+- Automatic authentication with `user` object
+- Request validation (query/body) with sanitization
+- Enhanced error handling with debugging context
+- Rate limiting per tier (api: 10req/s, auth: 5req/min)
+- CSRF protection on state-changing methods
+- Supabase client with proper error recovery
+- Detailed error reporting for Claude Code debugging
 
-// Client-side error handling
-const { handleError } = useErrorHandler()
-handleError(error, { showToast: true, logLevel: 'error' })
+### Enhanced Error Handling System
+Comprehensive error handling with Claude Code debugging support:
+
+**Error Types** (`lib/errors/types.ts`):
+- `NotFoundError` - Resource not found
+- `ValidationError` - Input validation failures
+- `AuthenticationError` - Auth failures
+- `DatabaseError` - Database operations
+- `ExternalServiceError` - Third-party API failures
+- `RateLimitError` - Rate limit exceeded
+
+**Error Reporter** (`lib/errors/error-reporter.ts`):
+- Detailed debugging hints based on error type
+- Suggested actions for common issues
+- Automatic file path extraction from stack traces
+- Environment-specific error contexts
+
+**Enhanced Error Boundaries** (`components/ui/enhanced-error-boundary.tsx`):
+- Development vs production error displays
+- Visual debugging with Puppeteer MCP integration
+- Interactive error analysis tools
+- Screenshot capture and DOM state analysis
+
+**Client-side Error Handling**:
+```typescript
+import { api } from '@/lib/api/error-interceptor'
+// Automatic error handling with user-friendly messages
+const data = await api.get('/api/opportunities')
+
+// Manual error reporting
+import { useError } from '@/providers/error-provider'
+const { reportError } = useError()
+reportError(error, { context: 'custom-operation' })
 ```
+
+**Error Testing & Debugging**:
+- Test endpoint: `/api/test-error?type=validation&throwError=true`
+- Interactive test page: `/test-errors` (requires auth)
+- Visual debugging with Puppeteer screenshots
+- Automated page diagnostics (accessibility, performance, SEO)
+
+### Background Job Processing
+Bull.js queues with Redis for async operations:
+- Email notifications via `emailQueue`
+- OCR document processing via `ocrQueue`
+- SAM.gov sync via `syncQueue`
+
+Workers run separately: `npm run worker` or `npm run worker:dev`
+
+### Critical Integration Points
+
+**SAM.gov Integration** (`lib/sam-gov/`)
+- 22k+ federal opportunities
+- Quota management system with rate limiting
+- Cache strategy for API efficiency
+- Prefetch manager for performance
+
+**AI Services**
+- Claude API (`lib/ai/claude-client.ts`) - Contract analysis
+- Mistral OCR (`lib/ai/mistral-ocr-client.ts`) - Document processing at $0.001/page
+
+**Billing System** (`lib/stripe/`)
+- Subscription tiers: Starter ($29), Professional ($99), Enterprise ($299)
+- Usage metering for AI features
+- Webhook handlers for subscription events
+
+### Database Architecture
+**Supabase PostgreSQL** with Row Level Security (cloud-hosted):
+- `company_profiles` - User company information
+- `opportunities` - SAM.gov contract opportunities
+- `saved_opportunities` - User bookmarked items
+- `proposals` - User-generated proposals
+- `api_usage` - Usage tracking for billing
+- `reminders` - Deadline notifications
+
+**Local Development Support**:
+- Redis for caching and queues (Docker container)
+- Connection pooling via `lib/db/connection-pool.ts`
+- Environment-specific Supabase projects
+
+### UI Component System
+shadcn/ui components with custom gradient themes:
+- Blue gradients for Opportunities
+- Green gradients for Saved items
+- Purple gradients for Proposals
+- Amber gradients for Analytics
+
+Virtual scrolling implemented for lists >1000 items using `react-window`
+
+## Development Patterns
 
 ### Component Structure
 ```typescript
-// Dashboard component with gradients
-export default function OpportunitiesPage() {
-  const { data, isLoading, error } = useOpportunities()
-  
-  if (error) return <ErrorBoundary error={error} />
-  
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg">
-        {/* Content */}
-      </div>
-    </div>
-  )
+// Always use route groups for organization
+app/(dashboard)/opportunities/page.tsx  // Protected routes
+app/(auth)/login/page.tsx              // Public routes
+
+// Server components by default, client components explicit
+'use client'  // Only when needed for interactivity
+```
+
+### State Management
+- Server state: TanStack Query (React Query) with SSR support
+- Client state: Zustand for global state
+- Form state: React Hook Form with Zod validation
+
+### Performance Optimizations
+- Dynamic imports for code splitting
+- Image optimization with Next.js Image
+- Redis caching with TTL management
+- Database query optimization with DataLoader pattern
+- Virtual scrolling for large lists
+
+### Security Requirements
+- CSRF tokens required on all mutations
+- Input sanitization with DOMPurify
+- Environment variable validation on startup
+- Non-root Docker containers
+- Security headers via middleware
+
+## Known Issues & Solutions
+
+### Next.js 15 Dynamic Routes
+Always await params in dynamic routes:
+```typescript
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
 }
 ```
 
-## UI Design System
-
-### Color Themes & Gradients
-```css
-/* Opportunities (Blue) */
-bg-gradient-to-r from-blue-500 to-blue-600
-text-blue-600 border-blue-200
-
-/* Saved (Green) */  
-bg-gradient-to-r from-green-500 to-emerald-600
-text-green-600 border-green-200
-
-/* Proposals (Purple) */
-bg-gradient-to-r from-purple-500 to-violet-600
-text-purple-600 border-purple-200
-
-/* Value/Analytics (Amber) */
-bg-gradient-to-r from-amber-500 to-orange-600
-text-amber-600 border-amber-200
-```
-
-### Animations & Interactions
-```css
-/* Standard hover effects */
-hover:shadow-lg transition-all duration-300 hover:scale-105
-
-/* Loading states */
-animate-pulse bg-gray-200
-
-/* Status indicators */
-animate-bounce text-green-500 /* Success */
-animate-spin text-blue-500    /* Loading */
-```
-
-### Layout Patterns
-```typescript
-// Responsive grid layout
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-
-// Card component with gradient
-<div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-all duration-300">
-```
-
-## Project Structure
-```
-/home/locklearwyatt/projects/medcontracthub/
-├── app/
-│   ├── (auth)/             # Public authentication routes
-│   │   ├── login/          # Login page with error handling
-│   │   ├── signup/         # User registration
-│   │   └── onboarding/     # User setup flow
-│   ├── (dashboard)/        # Protected dashboard routes
-│   │   ├── dashboard/      # Main dashboard with gradient UI
-│   │   ├── opportunities/  # SAM.gov opportunities (22k+)
-│   │   ├── proposals/      # Contract proposals management
-│   │   ├── analytics/      # Performance analytics
-│   │   ├── settings/       # User settings & billing
-│   │   └── test-ocr/       # Mistral OCR testing
-│   ├── api/               # API endpoints (ALL use routeHandler)
-│   │   ├── ai/            # Claude AI analysis
-│   │   ├── opportunities/ # SAM.gov data sync
-│   │   ├── billing/       # Stripe integration
-│   │   ├── emails/        # Resend email system
-│   │   ├── ocr/           # Document processing
-│   │   └── health/        # Health check endpoint
-│   └── globals.css        # Tailwind + custom gradients
-├── components/
-│   ├── ui/                # shadcn/ui with custom gradients
-│   │   ├── button.tsx     # Gradient button components
-│   │   ├── card.tsx       # Card layouts with backdrop blur
-│   │   └── error-boundary.tsx # Error handling
-│   ├── dashboard/         # Dashboard-specific components
-│   │   ├── opportunities/ # Virtual scrolling lists
-│   │   ├── analytics/     # Chart components
-│   │   └── ai/            # AI analysis widgets
-│   └── auth/              # Authentication components
-├── lib/
-│   ├── api/               # API utilities
-│   │   └── route-handler.ts # REQUIRED wrapper for all APIs
-│   ├── errors/            # Error system
-│   │   ├── types.ts       # Custom error classes
-│   │   └── logger.ts      # Error logging
-│   ├── supabase/          # Database clients
-│   │   ├── client.ts      # Client-side DB
-│   │   └── server.ts      # Server-side DB
-│   ├── sam-gov/           # SAM.gov integration
-│   │   ├── client.ts      # API client
-│   │   ├── hooks.ts       # React Query hooks
-│   │   └── utils.ts       # Data processing
-│   ├── ai/                # AI processing
-│   │   ├── claude-client.ts # Claude API
-│   │   └── mistral-ocr-client.ts # Mistral OCR
-│   ├── stripe/            # Billing system
-│   │   ├── client.ts      # Stripe client
-│   │   └── webhook-handlers.ts # Webhook processing
-│   ├── email/             # Email system
-│   │   └── client.ts      # Resend integration
-│   ├── queue/             # Background jobs
-│   │   ├── index.ts       # Bull.js setup
-│   │   └── processors/    # Job processors
-│   ├── redis/             # Cache layer
-│   │   └── client.ts      # Redis client
-│   └── monitoring/        # Observability
-│       └── sentry.ts      # Error tracking
-├── Docker Configuration
-│   ├── Dockerfile.dev     # Development with hot reload
-│   ├── Dockerfile.staging # Staging environment
-│   ├── Dockerfile.prod    # Production optimized
-│   ├── Dockerfile.worker  # Background job workers
-│   ├── docker-compose.multi-env.yml # All environments
-│   └── nginx/             # Nginx configurations
-│       ├── staging.conf   # Staging proxy
-│       └── production.conf # Production with SSL
-├── scripts/
-│   ├── docker-scripts.sh  # Docker management
-│   ├── easy-docker.sh     # Interactive Docker menu
-│   ├── backup-automation.sh # Automated backups
-│   └── start-worker.ts    # Background job worker
-├── supabase/
-│   ├── migrations/        # Database migrations
-│   └── schema.sql         # Database schema
-└── Configuration
-    ├── next.config.js     # Next.js config (standalone output)
-    ├── middleware.ts      # Auth protection
-    ├── Makefile          # 30+ management commands
-    └── CLAUDE.md         # This file
-```
-
-## Commands & Scripts
-
-### Docker Commands (Recommended)
-```bash
-# Quick start (multiple options)
-make dev                        # Makefile (recommended)
-./easy-docker.sh               # Interactive menu
-./docker-scripts.sh start dev  # Direct command
-
-# Environment management
-make staging                    # Start staging (port 3001)
-make prod                       # Start production (port 3002)
-make stop                       # Stop all environments
-make clean                      # Remove containers & volumes
-
-# Monitoring & maintenance
-make health-check              # Test all service endpoints
-make logs                      # View all container logs
-make status                    # Check container status
-make backup-dev                # Backup development database
-make security-scan             # Security vulnerability scan
-```
-
-### Development Commands
-```bash
-# Local development (non-Docker)
-npm run dev          # Start dev server (port 3000)
-npm run build        # Production build
-npm run lint         # ESLint + Prettier
-npm run type-check   # TypeScript validation
-npm test            # Jest test suite
-
-# Docker builds
-make test-build      # Test production build
-make build           # Build all environments
-make update          # Update and rebuild images
-```
-
-## Environment Variables
-```env
-# Core Application
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-# External APIs
-SAM_GOV_API_KEY=your-sam-gov-key
-ANTHROPIC_API_KEY=sk-ant-your-claude-key
-MISTRAL_API_KEY=your-mistral-key (optional)
-RESEND_API_KEY=re_your-resend-key
-
-# Billing & Payments
-STRIPE_SECRET_KEY=sk_test_your-stripe-key
-STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret
-
-# Security (CRITICAL - generate secure values)
-CSRF_SECRET=your-32-char-secret-NEVER-use-default
-FROM_EMAIL=noreply@yourdomain.com
-FROM_NAME=MedContractHub
-
-# Production Infrastructure
-REDIS_URL=redis://localhost:6379
-REDIS_PASSWORD=your-redis-password
-DB_MAX_CONNECTIONS=25
-
-# Monitoring
-SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
-NEXT_PUBLIC_SENTRY_DSN=https://your-public-sentry-dsn@sentry.io/project-id
-
-# Environment-specific (for multi-environment setup)
-DATABASE_URL_DEV=postgresql://user:pass@localhost:5432/medcontracthub_dev
-DATABASE_URL_STAGING=postgresql://user:pass@localhost:5433/medcontracthub_staging
-DATABASE_URL=postgresql://user:pass@your-prod-db/medcontracthub
-```
-
-## Integration Systems
-
-### MCP (Model Context Protocol) Servers
-```bash
-# GitHub operations
-mcp__github__create_repository      # Create new repos
-mcp__github__push_files            # Push file changes
-mcp__github__create_pull_request   # Create PRs
-mcp__github__search_code           # Search codebase
-
-# Library research
-mcp__context7__resolve-library-id  # Find library info
-mcp__context7__get-library-docs    # Get documentation
-```
-
-### AI & Processing
-- **Claude (Anthropic)**: Contract analysis, recommendations
-- **Mistral**: OCR document processing, text extraction
-- **SAM.gov API**: 22k+ federal opportunities, real-time sync
-- **Brave Search**: Web research for competitive intelligence
-
-### Infrastructure Services
-- **Supabase**: PostgreSQL database, authentication, real-time
-- **Redis**: Caching, session storage, rate limiting
-- **Bull.js**: Background job processing
-- **Stripe**: Billing, subscriptions, usage metering
-- **Resend**: Transactional emails, notifications
-- **Sentry**: Error tracking, performance monitoring
-
-## Key Files & Architecture
-
-### Critical Files
-```bash
-# API Infrastructure
-lib/api/route-handler.ts           # REQUIRED: All API routes use this
-middleware.ts                      # Authentication & security
-
-# Error System
-lib/errors/types.ts                # Custom error classes
-lib/errors/logger.ts               # Centralized logging
-
-# Database
-lib/supabase/client.ts             # Client-side database
-lib/supabase/server.ts             # Server-side database
-types/database.types.ts            # TypeScript types
-
-# External Integrations
-lib/sam-gov/client.ts              # SAM.gov API client
-lib/ai/claude-client.ts            # AI analysis
-lib/stripe/client.ts               # Billing system
-
-# UI Components
-app/(dashboard)/dashboard/page.tsx  # Main dashboard
-components/ui/                     # shadcn/ui + gradients
-```
-
-### Docker Environments
-```bash
-# Development (Port 3000)
-- Hot reload enabled
-- Development database
-- Debug logging
-- Volume mounts for live coding
-
-# Staging (Port 3001)  
-- Production build
-- Staging database
-- Resource limits (1GB RAM)
-- Nginx proxy with caching
-
-# Production (Port 3002)
-- Optimized build (standalone output)
-- Production database (Supabase)
-- Resource limits (2GB RAM)
-- SSL termination, security headers
-- Automated health checks
-- Zero-downtime deployments
-```
-
-## Production Features ✅
-
-### Security & Compliance
-- CSRF protection on all state-changing requests
-- Rate limiting (API: 10req/s, Auth: 5req/min)
-- Input sanitization with DOMPurify
-- Security headers (HSTS, CSP, XSS protection)
-- Non-root containers with signal handling
-
-### Performance & Scalability
-- Virtual scrolling for large datasets
-- Redis caching with TTL management
-- Database connection pooling
-- Optimized Docker builds (standalone output)
-- CDN-ready static asset caching
-
-### Monitoring & Reliability
-- Health check endpoints (`/api/health`)
-- Comprehensive error tracking (Sentry)
-- Automated database backups (30-day retention)
-- Container resource limits & restart policies
-- Real-time log aggregation
-
-### Deployment & DevOps
-- Multi-environment Docker setup
-- Zero-downtime rolling updates
-- Automated backup system
-- CI/CD ready with health checks
-- Production-ready Nginx configuration
-
-**Status: 100% Production Ready** 🚀
-
-## Common Issues & Solutions
-
-### DNS/SSL Issues
-If you encounter SSL certificate errors with Supabase:
-1. Check DNS settings in `/etc/resolv.conf`
-2. Docker compose includes `NODE_TLS_REJECT_UNAUTHORIZED=0` for dev
-3. Google DNS (8.8.8.8) configured in docker-compose.multi-env.yml
-
-### Next.js 15 Dynamic Routes
-- Use `await params` in dynamic routes
-- Search params must be awaited: `const params = await searchParams`
-- Route handlers simplified for development mode
+### Supabase SSL/DNS Issues
+Docker compose includes `NODE_TLS_REJECT_UNAUTHORIZED=0` for development
+Production uses proper SSL certificates
 
 ### Authentication in Development
-- Mock auth session stored in localStorage
-- API routes bypass auth in development mode
-- Use `NODE_ENV=development` for auth bypass
+Development mode bypasses auth when `NODE_ENV=development`
+Use `npm run dev-setup` to create test user
 
-### Database Issues
-- Currently contains test data only (2 opportunities)
-- SAM.gov sync endpoint needs fixing for real data
-- Use simplified queries without complex joins for Supabase compatibility
+### Current Data State
+- Database contains test data only (2 opportunities)
+- SAM.gov sync endpoint needs repair for real data import
+- Use simplified queries for Supabase compatibility
+
+## Environment Configuration
+
+Required environment variables:
+```env
+# Core (Required)
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+CSRF_SECRET  # 32+ chars, NEVER use default
+
+# External Services
+SAM_GOV_API_KEY
+ANTHROPIC_API_KEY
+STRIPE_SECRET_KEY
+STRIPE_WEBHOOK_SECRET
+RESEND_API_KEY
+
+# Optional Services
+MISTRAL_API_KEY
+BRAVE_SEARCH_API_KEY
+
+# Production Infrastructure
+REDIS_URL
+REDIS_PASSWORD
+SENTRY_DSN
+```
+
+## Docker Multi-Environment Setup
+
+Three isolated environments with separate configurations:
+- **Development** (3000): Hot reload, debug logging, enhanced error details
+- **Staging** (3001): Production build, 1GB RAM limit
+- **Production** (3002): Optimized build, 2GB RAM, SSL ready
+
+Each environment has:
+- **Isolated Supabase project/database** (cloud-hosted PostgreSQL)
+- Shared Redis container with namespacing (local Docker)
+- Nginx reverse proxy (staging/prod)
+- Health check endpoints
+- Automated backup capabilities
+
+## MCP (Model Context Protocol) Servers
+
+### Available MCP Servers
+The project includes several MCP servers that extend Claude's capabilities:
+
+**Puppeteer MCP Server** (`mcp__puppeteer__*`)
+- Browser automation and web scraping
+- Screenshot capture of pages or elements
+- Form interaction (click, fill, select)
+- JavaScript execution in browser context
+- **Error Debugging**: Automatic screenshot capture on errors
+- **Page Diagnostics**: Performance, accessibility, and SEO analysis
+
+**Supabase MCP Server** (`mcp__supabase__*`)
+- Direct database operations and management
+- Project creation, pausing, and restoration
+- Database migrations and SQL execution
+- Edge function deployment
+- Branch management for development workflows
+- Real-time log access for debugging
+- TypeScript type generation from schema
+
+**Context7 MCP Server** (`mcp__context7__*`)
+- Library documentation retrieval
+- Package/product name resolution to library IDs
+- Up-to-date documentation for frameworks and libraries
+- Topic-focused documentation queries
+
+**GitHub MCP Server** (`mcp__github__*`)
+- Repository creation and management
+- File operations (create, update, push multiple files)
+- Pull request creation and management
+- Issue tracking and commenting
+- Code search across repositories
+- Branch management and forking
+
+### Error Handling Integration with MCP
+- **Visual Debugging**: Puppeteer MCP captures error screenshots automatically
+- **Database Context**: Supabase MCP provides database state during errors
+- **Documentation Lookup**: Context7 MCP helps resolve library-related errors
+- **Issue Reporting**: GitHub MCP can create issues from error reports (future enhancement)
