@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { OpportunitiesContainer } from '@/components/dashboard/opportunities/opportunities-container'
 import { OpportunitiesLayout } from '@/components/dashboard/opportunities/opportunities-layout'
 import { OpportunitiesStats } from '@/components/dashboard/opportunities/opportunities-stats'

@@ -6,10 +6,10 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
-import { analyzeOpportunity } from '@/lib/ai/claude-client'
+// import { analyzeOpportunity } from '@/lib/ai/claude-client' // Currently disabled for performance
 import { NotFoundError } from '@/lib/errors/types'
 import { aiLogger } from '@/lib/errors/logger'
-import { withUsageCheck } from '@/lib/usage/tracker'
+// import { withUsageCheck } from '@/lib/usage/tracker' // Currently disabled for performance
 
 // Request body validation
 const analyzeRequestSchema = z.object({
@@ -56,7 +56,7 @@ export const POST = routeHandler.POST(
     const company = profile.companies
     
     // Build company profile for AI analysis
-    const companyProfile = {
+    const _companyProfile = {
       naicsCodes: company?.naics_codes || [],
       capabilities: company?.description ? [company.description] : [],
       pastPerformance: [], // Could be expanded to include past contract history

@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
+import { routeHandler } from '@/lib/api/route-handler'
 import { generateAndSetCSRFToken } from '@/lib/security/csrf'
 
 export const GET = routeHandler.GET(

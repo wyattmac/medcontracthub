@@ -300,7 +300,7 @@ export default function OnboardingPage() {
                 <div className="mt-2">
                   <details className="text-sm">
                     <summary className="cursor-pointer text-blue-600 hover:text-blue-800">
-                      Don't see your NAICS code? Enter manually
+                      Don&apos;t see your NAICS code? Enter manually
                     </summary>
                     <div className="mt-2">
                       <input
@@ -311,7 +311,7 @@ export default function OnboardingPage() {
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                       />
                       <p className="mt-1 text-xs text-gray-500">
-                        Enter comma-separated NAICS codes if yours aren't listed above
+                        Enter comma-separated NAICS codes if yours aren&apos;t listed above
                       </p>
                     </div>
                   </details>

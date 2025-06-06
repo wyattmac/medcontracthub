@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { routeHandler } from '@/lib/api/route-handler'
-import { generateCompanyRecommendations } from '@/lib/ai/claude-client'
+// import { generateCompanyRecommendations } from '@/lib/ai/claude-client' // Currently disabled for performance
 import { createServiceClient } from '@/lib/supabase/server'
 
 export const GET = routeHandler.GET(
@@ -74,7 +74,7 @@ export const GET = routeHandler.GET(
       .limit(50)
 
     // Build company profile
-    const companyProfile = {
+    const _companyProfile = {
       naicsCodes: company.naics_codes || [],
       capabilities: company.description ? [company.description] : [],
       pastPerformance: [], // Could be expanded

@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test'
  */
 export default defineConfig({
   // Test directory
-  testDir: './e2e',
+  testDir: './__tests__/e2e',
   
   // Test timeout
   timeout: 30 * 1000,
@@ -92,14 +92,15 @@ export default defineConfig({
   },
   
   // Global setup
-  globalSetup: './e2e/global-setup.ts',
+  globalSetup: './__tests__/e2e/global-setup.ts',
   
   // Test output directory
   outputDir: 'test-results',
   
   // Test match patterns
   testMatch: [
-    'e2e/**/*.spec.ts',
-    'e2e/**/*.e2e.ts',
+    '__tests__/e2e/**/*.spec.ts',
+    '__tests__/e2e/**/*.e2e.ts',
+    '__tests__/e2e/**/*.test.ts',
   ],
 })

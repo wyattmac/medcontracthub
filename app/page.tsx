@@ -6,7 +6,8 @@ import { redirect } from 'next/navigation'
 
 export default function LandingPage() {
   // Developer bypass - redirect to dashboard in development
-  if (process.env.NODE_ENV === 'development') {
+  // Skip redirect if E2E testing is enabled
+  if (process.env.NODE_ENV === 'development' && !process.env.E2E_TESTING) {
     redirect('/dashboard')
   }
   return (

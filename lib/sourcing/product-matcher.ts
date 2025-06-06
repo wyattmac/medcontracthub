@@ -131,7 +131,7 @@ class ProductMatcher {
     }
 
     // Search in product catalog
-    const { data: catalogProducts } = await this.supabase
+    const { data: _catalogProducts } = await this.supabase
       .from('product_catalog')
       .select('*')
       .textSearch('product_name', requirement.productName, {

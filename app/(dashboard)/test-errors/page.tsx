@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { api, ApiErrorInterceptor } from '@/lib/api/error-interceptor'
+import { api } from '@/lib/api/error-interceptor'
 import { useError } from '@/providers/error-provider'
 import { AlertCircle, Bug, Zap, Database, Shield, Globe, RefreshCcw } from 'lucide-react'
 

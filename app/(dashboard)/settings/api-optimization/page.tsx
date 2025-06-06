@@ -156,7 +156,7 @@ export default function ApiOptimizationPage() {
               </div>
               <div className="flex items-start space-x-2">
                 <span className="text-green-500">✓</span>
-                <p>Use the local database search when real-time data isn't critical</p>
+                <p>Use the local database search when real-time data isn&apos;t critical</p>
               </div>
             </div>
           </CardContent>
