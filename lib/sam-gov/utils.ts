@@ -5,6 +5,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database.types'
 import { ISAMOpportunity } from './types'
+import { calculateMedicalMatchScore, isMedicalNAICS } from '@/lib/constants/medical-naics'
 
 type OpportunityRow = Database['public']['Tables']['opportunities']['Row']
 type OpportunityInsert = Database['public']['Tables']['opportunities']['Insert']
@@ -270,6 +271,7 @@ export async function getOpportunitiesFromDatabase(filters: {
 
 /**
  * Calculate opportunity match score based on company NAICS codes
+ * Enhanced with medical industry expertise
  */
 export function calculateOpportunityMatch(
   opportunity: OpportunityRow,
@@ -279,6 +281,12 @@ export function calculateOpportunityMatch(
     return 0
   }
   
+  // Use enhanced medical NAICS matching if this is a medical opportunity
+  if (isMedicalNAICS(opportunity.naics_code)) {
+    return calculateMedicalMatchScore(opportunity.naics_code, companyNaicsCodes)
+  }
+  
+  // Fallback to original matching logic for non-medical opportunities
   // Exact NAICS match
   if (companyNaicsCodes.includes(opportunity.naics_code)) {
     return 1.0

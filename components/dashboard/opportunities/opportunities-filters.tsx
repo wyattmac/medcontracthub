@@ -16,7 +16,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select'
-import { Search, X, Filter } from 'lucide-react'
+import { Search, X, Filter, Stethoscope } from 'lucide-react'
+import { getMedicalNAICSGrouped, getSpecificMedicalNAICS } from '@/lib/constants/medical-naics'
 
 interface IOpportunitiesFiltersProps {
   searchParams?: {
@@ -42,45 +43,15 @@ const US_STATES = [
   'Wisconsin', 'Wyoming'
 ]
 
-const MEDICAL_NAICS_CODES = [
-  { code: '334510', label: 'Electromedical and Electrotherapeutic Apparatus Manufacturing' },
-  { code: '334516', label: 'Analytical Laboratory Instrument Manufacturing' },
-  { code: '339112', label: 'Surgical and Medical Instrument Manufacturing' },
-  { code: '339113', label: 'Surgical Appliance and Supplies Manufacturing' },
-  { code: '339114', label: 'Dental Equipment and Supplies Manufacturing' },
-  { code: '339115', label: 'Ophthalmic Goods Manufacturing' },
-  { code: '339116', label: 'Dental Laboratories' },
-  { code: '423450', label: 'Medical, Dental, and Hospital Equipment and Supplies Merchant Wholesalers' },
-  { code: '446110', label: 'Pharmacies and Drug Stores' },
-  { code: '621210', label: 'Offices of Dentists' },
-  { code: '621310', label: 'Offices of Chiropractors' },
-  { code: '621320', label: 'Offices of Optometrists' },
-  { code: '621330', label: 'Offices of Mental Health Practitioners (except Physicians)' },
-  { code: '621340', label: 'Offices of Physical, Occupational and Speech Therapists, and Audiologists' },
-  { code: '621391', label: 'Offices of Podiatrists' },
-  { code: '621399', label: 'Offices of All Other Miscellaneous Health Practitioners' },
-  { code: '621410', label: 'Family Planning Centers' },
-  { code: '621420', label: 'Outpatient Mental Health and Substance Abuse Centers' },
-  { code: '621491', label: 'HMO Medical Centers' },
-  { code: '621492', label: 'Kidney Dialysis Centers' },
-  { code: '621493', label: 'Freestanding Ambulatory Surgical and Emergency Centers' },
-  { code: '621498', label: 'All Other Outpatient Care Centers' },
-  { code: '621511', label: 'Medical Laboratories' },
-  { code: '621512', label: 'Diagnostic Imaging Centers' },
-  { code: '621610', label: 'Home Health Care Services' },
-  { code: '621910', label: 'Ambulance Services' },
-  { code: '621991', label: 'Blood and Organ Banks' },
-  { code: '621999', label: 'All Other Miscellaneous Ambulatory Health Care Services' },
-  { code: '622110', label: 'General Medical and Surgical Hospitals' },
-  { code: '622210', label: 'Psychiatric and Substance Abuse Hospitals' },
-  { code: '622310', label: 'Specialty (except Psychiatric and Substance Abuse) Hospitals' },
-  { code: '623110', label: 'Nursing Care Facilities (Skilled Nursing Facilities)' },
-  { code: '623210', label: 'Residential Intellectual and Developmental Disability Facilities' },
-  { code: '623220', label: 'Residential Mental Health and Substance Abuse Facilities' },
-  { code: '623311', label: 'Continuing Care Retirement Communities' },
-  { code: '623312', label: 'Assisted Living Facilities for the Elderly' },
-  { code: '623990', label: 'Other Residential Care Facilities' }
-]
+// Get medical NAICS codes from our comprehensive reference
+const MEDICAL_NAICS_CODES = getSpecificMedicalNAICS().map(naics => ({
+  code: naics.code,
+  label: naics.title,
+  category: naics.category
+}))
+
+// Group NAICS codes by category for better organization
+const MEDICAL_NAICS_GROUPED = getMedicalNAICSGrouped()
 
 const OPPORTUNITY_STATUSES = [
   { value: 'active', label: 'Active' },
@@ -202,21 +173,74 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
         </Button>
       </div>
 
-      {/* NAICS Code Filter */}
+      {/* NAICS Code Filter - Enhanced with Medical Categories */}
       <div className="space-y-2">
-        <Label htmlFor="naics">Industry (NAICS)</Label>
+        <Label htmlFor="naics" className="flex items-center gap-2">
+          <Stethoscope className="h-4 w-4 text-blue-600" />
+          Medical Industry (NAICS)
+        </Label>
         <Select
           value={filters.naics}
           onValueChange={(value: string) => handleFilterChange('naics', value)}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select industry..." />
+            <SelectValue placeholder="Select medical industry..." />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Industries</SelectItem>
-            {MEDICAL_NAICS_CODES.map((naics) => (
-              <SelectItem key={naics.code} value={naics.code}>
-                {naics.code} - {naics.label}
+          <SelectContent className="max-h-96">
+            <SelectItem value="all">All Medical Industries</SelectItem>
+            
+            {/* Manufacturing */}
+            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50">
+              Manufacturing
+            </div>
+            {MEDICAL_NAICS_GROUPED.manufacturing?.map((naics) => (
+              <SelectItem key={naics.code} value={naics.code} className="pl-4">
+                {naics.code} - {naics.title}
+              </SelectItem>
+            ))}
+            
+            {/* Wholesale */}
+            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50">
+              Wholesale & Distribution
+            </div>
+            {MEDICAL_NAICS_GROUPED.wholesale?.map((naics) => (
+              <SelectItem key={naics.code} value={naics.code} className="pl-4">
+                {naics.code} - {naics.title}
+              </SelectItem>
+            ))}
+            
+            {/* Healthcare Services */}
+            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50">
+              Healthcare Services
+            </div>
+            {MEDICAL_NAICS_GROUPED.healthcare?.slice(0, 20).map((naics) => (
+              <SelectItem key={naics.code} value={naics.code} className="pl-4">
+                {naics.code} - {naics.title}
+              </SelectItem>
+            ))}
+            
+            {/* Research & Development */}
+            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50">
+              Research & Development
+            </div>
+            {MEDICAL_NAICS_GROUPED.research?.map((naics) => (
+              <SelectItem key={naics.code} value={naics.code} className="pl-4">
+                {naics.code} - {naics.title}
+              </SelectItem>
+            ))}
+            
+            {/* Retail */}
+            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50">
+              Retail & Services
+            </div>
+            {MEDICAL_NAICS_GROUPED.retail?.map((naics) => (
+              <SelectItem key={naics.code} value={naics.code} className="pl-4">
+                {naics.code} - {naics.title}
+              </SelectItem>
+            ))}
+            {MEDICAL_NAICS_GROUPED.services?.map((naics) => (
+              <SelectItem key={naics.code} value={naics.code} className="pl-4">
+                {naics.code} - {naics.title}
               </SelectItem>
             ))}
           </SelectContent>
@@ -309,10 +333,67 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
         </div>
       </div>
 
-      {/* Quick Filters */}
+      {/* Quick Filters - Medical Focused */}
       <div className="space-y-2">
-        <Label>Quick Filters</Label>
+        <Label className="flex items-center gap-2">
+          <Filter className="h-4 w-4" />
+          Quick Medical Filters
+        </Label>
         <div className="space-y-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const newFilters = {
+                ...filters,
+                naics: '423450', // Medical Equipment Wholesalers
+                status: 'active'
+              }
+              setFilters(newFilters)
+              updateURL(newFilters)
+            }}
+            className="w-full justify-start"
+          >
+            <Stethoscope className="mr-2 h-4 w-4 text-blue-600" />
+            Medical Equipment
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const newFilters = {
+                ...filters,
+                naics: '325412', // Pharmaceutical Manufacturing
+                status: 'active'
+              }
+              setFilters(newFilters)
+              updateURL(newFilters)
+            }}
+            className="w-full justify-start"
+          >
+            <Stethoscope className="mr-2 h-4 w-4 text-green-600" />
+            Pharmaceuticals
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const newFilters = {
+                ...filters,
+                naics: '622110', // Hospitals
+                status: 'active'
+              }
+              setFilters(newFilters)
+              updateURL(newFilters)
+            }}
+            className="w-full justify-start"
+          >
+            <Stethoscope className="mr-2 h-4 w-4 text-red-600" />
+            Hospital Services
+          </Button>
+          
           <Button
             variant="outline"
             size="sm"
@@ -330,21 +411,6 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
           >
             <Filter className="mr-2 h-4 w-4" />
             Closing in 30 Days
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setFilters(prev => ({
-                ...prev,
-                status: 'active'
-              }))
-            }}
-            className="w-full justify-start"
-          >
-            <Filter className="mr-2 h-4 w-4" />
-            Active Only
           </Button>
           
           <Button

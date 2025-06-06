@@ -52,10 +52,12 @@ export function StandardOpportunityLayout({ opportunity }: StandardOpportunityLa
     return <Badge variant="default" className="gap-1 bg-green-100 text-green-800"><CheckCircle className="h-3 w-3" />Active</Badge>
   }
 
-  // Match score calculation (simplified)
+  // Match score calculation - use actual matchScore from opportunity data
   const getMatchScore = () => {
-    // Simple match logic - you can enhance this
-    const score = Math.floor(Math.random() * 40) + 60 // 60-100 range
+    // Convert decimal matchScore (0.0-1.0) to percentage (0-100) and cap at 100
+    const rawScore = (opportunity as any).matchScore || 0
+    const score = Math.min(Math.round(rawScore * 100), 100)
+    
     if (score >= 90) return { score, level: 'Excellent', color: 'bg-green-500' }
     if (score >= 75) return { score, level: 'Good', color: 'bg-blue-500' }
     if (score >= 60) return { score, level: 'Fair', color: 'bg-yellow-500' }

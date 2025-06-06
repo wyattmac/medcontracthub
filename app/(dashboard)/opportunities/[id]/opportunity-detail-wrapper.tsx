@@ -5,6 +5,8 @@ import { notFound, useRouter } from 'next/navigation'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
 import { StandardOpportunityLayout } from '@/components/dashboard/opportunities/standard-opportunity-layout'
+import { calculateOpportunityMatch } from '@/lib/sam-gov/utils'
+import { createClient } from '@/lib/supabase/client'
 
 interface OpportunityDetailWrapperProps {
   opportunityId: string
@@ -14,7 +16,39 @@ export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWra
   const [opportunity, setOpportunity] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [userNaicsCodes, setUserNaicsCodes] = useState<string[]>(['423450', '339112']) // Default fallback
   const router = useRouter()
+  const supabase = createClient()
+
+  // Fetch user's NAICS codes for personalized matching
+  useEffect(() => {
+    async function fetchUserNaics() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select(`
+              company_id,
+              companies!inner(naics_codes)
+            `)
+            .eq('id', user.id)
+            .single()
+          
+          if (profile?.companies) {
+            const companyNaics = (profile.companies as any)?.naics_codes || []
+            if (companyNaics.length > 0) {
+              setUserNaicsCodes(companyNaics)
+            }
+          }
+        }
+      } catch (error) {
+        console.log('Could not fetch user NAICS codes, using defaults')
+      }
+    }
+    
+    fetchUserNaics()
+  }, [])
 
   useEffect(() => {
     async function fetchOpportunity() {
@@ -78,13 +112,20 @@ export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWra
 
         const data = await response.json()
         console.log('Opportunity data:', data)
-        setOpportunity(data.opportunity)
+        
+        // Add match score based on user's NAICS codes
+        const opportunityWithMatch = {
+          ...data.opportunity,
+          matchScore: calculateOpportunityMatch(data.opportunity, userNaicsCodes)
+        }
+        
+        setOpportunity(opportunityWithMatch)
       } catch (err) {
         console.error('Error fetching opportunity:', err)
         
-        // Fallback to mock data instead of showing error
+        // Fallback to mock data instead of showing error with calculated match score
         console.log('Using fallback mock data')
-        setOpportunity({
+        const mockOpportunity = {
           id: opportunityId,
           title: 'Medical Equipment and Supplies Contract',
           description: 'This is a demonstration opportunity showing how the opportunity detail layout works. In a real environment, this would fetch actual data from the SAM.gov API integration.',
@@ -112,7 +153,15 @@ export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWra
               url: 'https://sam.gov/example-sow.pdf'
             }
           ]
-        })
+        }
+        
+        // Add personalized match score
+        const mockOpportunityWithMatch = {
+          ...mockOpportunity,
+          matchScore: calculateOpportunityMatch(mockOpportunity, userNaicsCodes)
+        }
+        
+        setOpportunity(mockOpportunityWithMatch)
       } finally {
         setLoading(false)
       }
@@ -121,7 +170,7 @@ export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWra
     if (opportunityId) {
       fetchOpportunity()
     }
-  }, [opportunityId])
+  }, [opportunityId, userNaicsCodes])
 
   if (loading) {
     return (

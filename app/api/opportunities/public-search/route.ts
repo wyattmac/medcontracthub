@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { withCache } from '@/lib/sam-gov/cache-strategy'
 import { createCacheKey } from '@/lib/utils/cache'
+import { calculateOpportunityMatch } from '@/lib/sam-gov/utils'
+import { cookies } from 'next/headers'
 
 // Create service role client to bypass RLS
 const serviceSupabase = createClient(
@@ -18,6 +20,46 @@ export async function GET(request: Request) {
     const status = searchParams.get('status') || 'active'
     const q = searchParams.get('q') || ''
     const set_aside = searchParams.get('set_aside') || ''
+
+    // Try to get user's NAICS codes for personalized matching
+    let userNaicsCodes: string[] = ['423450', '339112'] // Fallback to medical equipment defaults
+    
+    try {
+      const cookieStore = await cookies()
+      const authCookies = cookieStore.getAll()
+      
+      if (authCookies.length > 0) {
+        // Create authenticated client to get user's NAICS codes
+        const authSupabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        )
+
+        // Try to get the current user and their company NAICS codes
+        const { data: { session } } = await authSupabase.auth.getSession()
+        
+        if (session?.user) {
+          const { data: profile } = await authSupabase
+            .from('profiles')
+            .select(`
+              company_id,
+              companies!inner(naics_codes)
+            `)
+            .eq('id', session.user.id)
+            .single()
+          
+          if (profile?.companies) {
+            const companyNaics = (profile.companies as any)?.naics_codes || []
+            if (companyNaics.length > 0) {
+              userNaicsCodes = companyNaics
+            }
+          }
+        }
+      }
+    } catch (authError) {
+      // If authentication fails, continue with default NAICS codes
+      console.log('No authentication found, using default medical NAICS codes')
+    }
     
     // Create cache key for this search
     const cacheKey = createCacheKey('public-search', {
@@ -66,12 +108,15 @@ export async function GET(request: Request) {
     
     const { opportunities, count } = result
     
-    // Transform opportunities to match expected format
-    const transformedOpportunities = opportunities?.map(opp => ({
-      ...opp,
-      matchScore: Math.floor(Math.random() * 40) + 60, // Mock match score
-      isSaved: false
-    })) || []
+    // Transform opportunities to match expected format with personalized medical matching
+    const transformedOpportunities = opportunities?.map(opp => {
+      const matchScore = calculateOpportunityMatch(opp, userNaicsCodes)
+      return {
+        ...opp,
+        matchScore: Math.min(matchScore, 1.0), // Keep as decimal (0.0-1.0) and cap at 1.0
+        isSaved: false
+      }
+    }) || []
     
     return NextResponse.json({
       opportunities: transformedOpportunities,

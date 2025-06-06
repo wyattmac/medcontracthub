@@ -14,7 +14,7 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-8">
       {/* Page Header with Gradient */}
-      <div className="text-center space-y-4">
+      <div className="space-y-4">
         <h1 
           className="text-4xl font-bold animate-pulse"
           style={{
@@ -26,7 +26,7 @@ export default function AnalyticsPage() {
         >
           🚀 Enhanced Analytics Dashboard
         </h1>
-        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+        <p className="text-lg text-muted-foreground max-w-4xl">
           Track your performance, monitor opportunities, and optimize your federal contracting strategy
         </p>
       </div>
