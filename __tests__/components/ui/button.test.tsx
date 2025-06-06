@@ -53,7 +53,7 @@ describe('Button Component', () => {
 
   it('should handle disabled state', () => {
     render(<Button disabled>Disabled</Button>)
-    const button = screen.getByRole('button')
+    const button = screen.getByRole('button') as HTMLButtonElement
     
     expect(button.disabled).toBe(true)
   })
@@ -71,7 +71,7 @@ describe('Button Component', () => {
 
   it('should handle different button types', () => {
     render(<Button type="submit">Submit</Button>)
-    const button = screen.getByRole('button')
+    const button = screen.getByRole('button') as HTMLButtonElement
     expect(button.type).toBe('submit')
   })
 })

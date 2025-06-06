@@ -6,6 +6,7 @@ import { OpportunityDetailContainer } from '@/components/dashboard/opportunities
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/hooks/useAuth'
 
 interface OpportunityDetailWrapperProps {
   opportunityId: string
@@ -13,11 +14,10 @@ interface OpportunityDetailWrapperProps {
 
 export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWrapperProps) {
   const [opportunity, setOpportunity] = useState<any>(null)
-  const [userProfile, setUserProfile] = useState<any>(null)
-  const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const { user, profile: userProfile } = useAuth()
 
   useEffect(() => {
     async function fetchOpportunity() {
@@ -114,7 +114,7 @@ export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWra
   }
 
   // Get company NAICS codes from user profile
-  const companyNaicsCodes = userProfile.naics_codes || []
+  const companyNaicsCodes = (userProfile as any)?.naics_codes || []
 
   return (
     <OpportunityDetailContainer

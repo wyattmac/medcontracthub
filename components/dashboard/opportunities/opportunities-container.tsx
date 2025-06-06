@@ -22,6 +22,7 @@ interface IOpportunitiesContainerProps {
     naics?: string
     state?: string
     status?: string
+    set_aside?: string
     deadline_from?: string
     deadline_to?: string
     page?: string
@@ -39,6 +40,7 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
     searchQuery: searchParams?.q,
     naicsCodes: searchParams?.naics?.split(',').filter(Boolean),
     state: searchParams?.state,
+    set_aside: searchParams?.set_aside,
     responseDeadlineFrom: searchParams?.deadline_from,
     responseDeadlineTo: searchParams?.deadline_to,
     active: searchParams?.status !== 'expired' && searchParams?.status !== 'awarded',
@@ -108,6 +110,7 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
       if (filters.searchQuery) params.set('q', filters.searchQuery)
       if (filters.naicsCodes?.length) params.set('naics', filters.naicsCodes.join(','))
       if (filters.state) params.set('state', filters.state)
+      if (filters.set_aside && filters.set_aside !== 'all') params.set('set_aside', filters.set_aside)
       if (filters.responseDeadlineFrom) params.set('deadline_from', filters.responseDeadlineFrom)
       if (filters.responseDeadlineTo) params.set('deadline_to', filters.responseDeadlineTo)
       params.set('limit', filters.limit.toString())
@@ -121,7 +124,7 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
       }, 30000) // 30 second timeout
 
       try {
-        const response = await fetch(`/api/opportunities/search?${params.toString()}`, {
+        const response = await fetch(`/api/opportunities/public-search?${params.toString()}`, {
           signal,
           headers: {
             'Content-Type': 'application/json',

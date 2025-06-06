@@ -24,6 +24,7 @@ interface IOpportunitiesFiltersProps {
     naics?: string
     state?: string
     status?: string
+    set_aside?: string
     deadline_from?: string
     deadline_to?: string
     page?: string
@@ -88,6 +89,22 @@ const OPPORTUNITY_STATUSES = [
   { value: 'expired', label: 'Expired' }
 ]
 
+const SET_ASIDE_TYPES = [
+  { value: 'all', label: 'All Opportunities' },
+  { value: 'NONE', label: 'No Set-Aside (Full & Open)' },
+  { value: 'SBA', label: 'Small Business Set-Aside' },
+  { value: 'SDVOSBC', label: 'Service-Disabled Veteran-Owned Small Business' },
+  { value: 'VOSB', label: 'Veteran-Owned Small Business' },
+  { value: 'WOSB', label: 'Women-Owned Small Business' },
+  { value: 'EDWOSB', label: 'Economically Disadvantaged Women-Owned Small Business' },
+  { value: '8A', label: '8(a) Business Development Program' },
+  { value: 'HUBZone', label: 'HUBZone Small Business' },
+  { value: 'ISBEE', label: 'Indian Small Business Economic Enterprise' },
+  { value: 'IEE', label: 'Indian Economic Enterprise' },
+  { value: 'NATIVE', label: 'Native American Owned' },
+  { value: 'SDB', label: 'Small Disadvantaged Business' }
+]
+
 export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProps) {
   const router = useRouter()
   const currentSearchParams = useSearchParams()
@@ -97,6 +114,7 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
     naics: searchParams?.naics || 'all',
     state: searchParams?.state || 'all',
     status: searchParams?.status || 'active',
+    set_aside: searchParams?.set_aside || 'all',
     deadline_from: searchParams?.deadline_from || '',
     deadline_to: searchParams?.deadline_to || ''
   })
@@ -124,7 +142,7 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
     params.delete('page')
     
     const query = params.toString()
-    const url = query ? `/dashboard/opportunities?${query}` : '/dashboard/opportunities'
+    const url = query ? `/opportunities?${query}` : '/opportunities'
     router.push(url)
   }
 
@@ -144,6 +162,7 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
       naics: 'all',
       state: 'all',
       status: 'active',
+      set_aside: 'all',
       deadline_from: '',
       deadline_to: ''
     }
@@ -245,6 +264,26 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
         </Select>
       </div>
 
+      {/* Set-Aside Filter */}
+      <div className="space-y-2">
+        <Label htmlFor="set_aside">Set-Aside Type</Label>
+        <Select
+          value={filters.set_aside}
+          onValueChange={(value: string) => handleFilterChange('set_aside', value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select set-aside type..." />
+          </SelectTrigger>
+          <SelectContent>
+            {SET_ASIDE_TYPES.map((setAside) => (
+              <SelectItem key={setAside.value} value={setAside.value}>
+                {setAside.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Date Range Filters */}
       <div className="space-y-4">
         <div className="space-y-2">
@@ -306,6 +345,24 @@ export function OpportunitiesFilters({ searchParams }: IOpportunitiesFiltersProp
           >
             <Filter className="mr-2 h-4 w-4" />
             Active Only
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const newFilters = {
+                ...filters,
+                set_aside: 'SBA',
+                status: 'active'
+              }
+              setFilters(newFilters)
+              updateURL(newFilters)
+            }}
+            className="w-full justify-start"
+          >
+            <Filter className="mr-2 h-4 w-4" />
+            Small Business Set-Asides
           </Button>
         </div>
       </div>

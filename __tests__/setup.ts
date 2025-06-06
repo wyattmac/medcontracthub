@@ -4,11 +4,14 @@
 
 // Polyfill Web APIs for Node.js test environment
 import { TextEncoder, TextDecoder } from 'util'
-import { ReadableStream } from 'stream/web'
 
 global.TextEncoder = TextEncoder
 global.TextDecoder = TextDecoder as any
-global.ReadableStream = ReadableStream
+
+// Mock ReadableStream to avoid type conflicts
+global.ReadableStream = class MockReadableStream {
+  constructor(source?: any, strategy?: any) {}
+} as any
 
 // Mock Web APIs
 Object.defineProperty(global, 'Request', {
@@ -126,7 +129,10 @@ jest.mock('@anthropic-ai/sdk', () => ({
 }))
 
 // Mock environment variables
-process.env.NODE_ENV = 'test'
+Object.defineProperty(process.env, 'NODE_ENV', {
+  value: 'test',
+  writable: true
+})
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key'

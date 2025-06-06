@@ -162,25 +162,25 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
         {/* Left Column - Filters and Live Metrics */}
         <div className="xl:col-span-1 space-y-6">
-          <SectionErrorBoundary>
+          <SectionErrorBoundary name="AnalyticsFilters">
             <AnalyticsFilters />
           </SectionErrorBoundary>
           
-          <SectionErrorBoundary>
+          <SectionErrorBoundary name="LiveMetricsWidget">
             <LiveMetricsWidget />
           </SectionErrorBoundary>
         </div>
 
         {/* Center Column - Main Analytics Dashboard */}
         <div className="xl:col-span-3">
-          <SectionErrorBoundary>
+          <SectionErrorBoundary name="AnalyticsDashboard">
             <AnalyticsDashboard />
           </SectionErrorBoundary>
         </div>
 
         {/* Right Column - AI Insights */}
         <div className="xl:col-span-1">
-          <SectionErrorBoundary>
+          <SectionErrorBoundary name="InsightsPanel">
             <InsightsPanel />
           </SectionErrorBoundary>
         </div>

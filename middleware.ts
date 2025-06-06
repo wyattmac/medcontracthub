@@ -147,7 +147,7 @@ export async function middleware(request: NextRequest) {
     )
 
     // Skip auth check entirely during development to prevent SSL issues
-    const authCheck = process.env.NODE_ENV === 'development' 
+    const authCheck = process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test' 
       ? { data: { user: null }, error: null }
       : await Promise.race([
           supabase.auth.getUser(),
@@ -199,7 +199,7 @@ export async function middleware(request: NextRequest) {
       if (profileError) {
         logger.error('Error fetching profile in middleware', profileError, { 
           requestId,
-          userId: user.id 
+          userId: user?.id 
         })
       }
 
@@ -207,7 +207,7 @@ export async function middleware(request: NextRequest) {
       if (!profile?.company_id) {
         logger.info('Redirecting user to complete onboarding', { 
           requestId,
-          userId: user.id,
+          userId: user?.id,
           from: pathname 
         })
         const url = request.nextUrl.clone()

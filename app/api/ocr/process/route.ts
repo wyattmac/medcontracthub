@@ -137,6 +137,6 @@ export const POST = routeHandler.POST(
   },
   { 
     requireAuth: true,
-    rateLimit: 'default' // OCR processing is resource-intensive
+    rateLimit: 'api' // OCR processing is resource-intensive
   }
 )

@@ -100,7 +100,10 @@ describe('ErrorBoundary', () => {
 
   it('should show error details in development', () => {
     const originalEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'development'
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: 'development',
+      writable: true
+    })
 
     render(
       <ErrorBoundary>
@@ -110,12 +113,18 @@ describe('ErrorBoundary', () => {
 
     expect(screen.getByText('Test error')).toBeTruthy()
 
-    process.env.NODE_ENV = originalEnv
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: originalEnv,
+      writable: true
+    })
   })
 
   it('should hide error details in production', () => {
     const originalEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'production'
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: 'production',
+      writable: true
+    })
 
     render(
       <ErrorBoundary>
@@ -126,7 +135,10 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('An unexpected error occurred. Please try again.')).toBeTruthy()
     expect(screen.queryByText('Test error')).not.toBeTruthy()
 
-    process.env.NODE_ENV = originalEnv
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: originalEnv,
+      writable: true
+    })
   })
 })
 
