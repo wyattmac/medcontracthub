@@ -251,9 +251,9 @@ export async function getOpportunitiesFromDatabase(filters: {
     query = query.lte('response_deadline', filters.responseDeadlineTo)
   }
   
-  // Simplify ordering - Supabase doesn't support complex CASE statements in ORDER BY
-  // Sort by response deadline first (most urgent first)
-  query = query.order('response_deadline', { ascending: true })
+  // Order by newest opportunities first - show most recently posted opportunities
+  query = query.order('posted_date', { ascending: false })
+  query = query.order('created_at', { ascending: false })
   
   // If we have company NAICS codes, we'll calculate match scores on the client side
   // This is more reliable than complex SQL ordering

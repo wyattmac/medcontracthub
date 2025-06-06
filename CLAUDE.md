@@ -230,6 +230,17 @@ SENTRY_DSN
 
 See [PERFORMANCE_OPTIMIZATIONS.md](./PERFORMANCE_OPTIMIZATIONS.md) for complete details.
 
+## 📋 Recent Feature Updates
+
+### Opportunities Enhancement ✅
+- **Standard Layout**: Professional 3-column responsive design for opportunity details
+- **Newest First Ordering**: Opportunities now show newest posted dates first (2025 vs 2015)
+- **Improved UX**: Color-coded status indicators, match scores, organized action buttons
+- **Mobile Optimized**: Fully responsive design with stacked mobile layout
+- **Authentication Fixed**: Eliminated auth errors blocking opportunity viewing
+
+See [OPPORTUNITIES_IMPROVEMENTS.md](./OPPORTUNITIES_IMPROVEMENTS.md) for complete details.
+
 ## 🏃‍♂️ Quick Troubleshooting
 
 **📋 For current production issues and priorities, always check [PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md) first.**

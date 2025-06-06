@@ -33,11 +33,12 @@ export async function GET(request: Request) {
       cacheKey,
       'SEARCH_RESULTS',
       async () => {
-        // Build query
+        // Build query - Order by newest opportunities first
         let query = serviceSupabase
           .from('opportunities')
           .select('*', { count: 'exact' })
-          .order('response_deadline', { ascending: true })
+          .order('posted_date', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(limit)
           .range(offset, offset + limit - 1)
         
