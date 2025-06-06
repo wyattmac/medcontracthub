@@ -78,7 +78,7 @@ class EnhancedRouteHandler {
       }
 
       // Initialize Supabase client
-      const supabase = createClient()
+      const supabase = await createClient()
       
       // Authentication
       if (options.requireAuth || options.requireAdmin) {

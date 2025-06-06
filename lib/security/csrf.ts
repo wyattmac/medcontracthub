@@ -86,8 +86,8 @@ export function verifyCSRFToken(token: string): boolean {
 /**
  * Set CSRF token in cookies
  */
-export function setCSRFTokenCookie(token: string) {
-  const cookieStore = cookies()
+export async function setCSRFTokenCookie(token: string) {
+  const cookieStore = await cookies()
   
   cookieStore.set(CSRF_TOKEN_NAME, token, {
     httpOnly: true,
@@ -101,9 +101,9 @@ export function setCSRFTokenCookie(token: string) {
 /**
  * Get CSRF token from cookies
  */
-export function getCSRFTokenFromCookies(): string | null {
+export async function getCSRFTokenFromCookies(): Promise<string | null> {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const token = cookieStore.get(CSRF_TOKEN_NAME)
     return token?.value || null
   } catch (error) {

@@ -16,9 +16,9 @@ export async function GET() {
     // Get cache statistics
     const cacheStats = cacheStrategy.getCacheStats()
     
-    // Calculate savings from caching
-    const totalCacheHits = Object.values(cacheStats).reduce(
-      (sum, stat) => sum + stat.hits,
+    // Calculate savings from caching (using entries as proxy for activity)
+    const totalCacheEntries = Object.values(cacheStats).reduce(
+      (sum, stat) => sum + stat.entries,
       0
     )
     
@@ -35,9 +35,9 @@ export async function GET() {
       },
       cache: {
         stats: cacheStats,
-        totalHits: totalCacheHits,
-        apiCallsSaved: totalCacheHits,
-        estimatedCostSaved: `$${(totalCacheHits * 0.001).toFixed(2)}` // Assuming $0.001 per API call
+        totalEntries: totalCacheEntries,
+        apiCallsSaved: totalCacheEntries,
+        estimatedCostSaved: `$${(totalCacheEntries * 0.001).toFixed(2)}` // Assuming $0.001 per API call
       },
       recommendations: [
         {

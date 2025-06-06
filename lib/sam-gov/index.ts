@@ -34,8 +34,8 @@ export {
   getSAMApiClient
 } from './client'
 
-// Default client instance alias
-export const samApiClient = getSAMApiClient
+// Default client instance alias  
+export const samApiClient = getSAMApiClient()
 
 // Hooks
 export {

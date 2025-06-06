@@ -99,7 +99,7 @@ function getIdentifier(request: NextRequest): string {
   // Try to get real IP from headers (for production with proxies)
   const forwardedFor = request.headers.get('x-forwarded-for')
   const realIp = request.headers.get('x-real-ip')
-  const ip = request.ip || forwardedFor?.split(',')[0] || realIp || 'unknown'
+  const ip = forwardedFor?.split(',')[0] || realIp || 'unknown'
   
   // Include user agent for additional uniqueness
   const userAgent = request.headers.get('user-agent') || 'unknown'

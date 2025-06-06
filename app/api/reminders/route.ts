@@ -75,7 +75,7 @@ export const GET = routeHandler.GET(
     }
 
     // Filter to only include saved opportunities that are being pursued
-    const filteredExpiringOpportunities = (expiringOpportunities || []).filter(opp => {
+    const filteredExpiringOpportunities = (expiringOpportunities || []).filter((opp: any) => {
       const savedOpp = opp.saved_opportunities as any
       return savedOpp && savedOpp.length > 0 && savedOpp[0].is_pursuing
     })
@@ -89,20 +89,20 @@ export const GET = routeHandler.GET(
     
     const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    const todayReminders = (upcomingReminders || []).filter(r => 
+    const todayReminders = (upcomingReminders || []).filter((r: any) => 
       new Date(r.reminder_date!) <= today
     ).length
 
-    const next7DaysReminders = (upcomingReminders || []).filter(r => {
+    const next7DaysReminders = (upcomingReminders || []).filter((r: any) => {
       const reminderDate = new Date(r.reminder_date!)
       return reminderDate > today && reminderDate <= next7Days
     }).length
 
-    const todayDeadlines = filteredExpiringOpportunities.filter(opp => 
+    const todayDeadlines = filteredExpiringOpportunities.filter((opp: any) => 
       new Date(opp.response_deadline) <= today
     ).length
 
-    const next7DaysDeadlines = filteredExpiringOpportunities.filter(opp => {
+    const next7DaysDeadlines = filteredExpiringOpportunities.filter((opp: any) => {
       const deadline = new Date(opp.response_deadline)
       return deadline > today && deadline <= next7Days
     }).length

@@ -376,6 +376,41 @@ export type Database = {
           updated_at?: string
         }
       }
+      opportunity_analyses: {
+        Row: {
+          id: string
+          opportunity_id: string
+          company_id: string
+          analysis_type: string
+          analysis_data: any
+          score: number | null
+          generated_at: string
+          expires_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          opportunity_id: string
+          company_id: string
+          analysis_type: string
+          analysis_data: any
+          score?: number | null
+          generated_at?: string
+          expires_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          opportunity_id?: string
+          company_id?: string
+          analysis_type?: string
+          analysis_data?: any
+          score?: number | null
+          generated_at?: string
+          expires_at?: string
+          created_at?: string
+        }
+      }
     }
     Views: {}
     Functions: {}

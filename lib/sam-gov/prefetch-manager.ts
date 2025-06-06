@@ -93,9 +93,9 @@ export class PrefetchManager {
       const quotaStatus = await quotaManager.getQuotaStatus()
 
       // Only prefetch if we have sufficient quota
-      if (quotaStatus.quota.daily.remaining < 300) {
+      if (quotaStatus.daily.remaining < 300) {
         apiLogger.debug('Insufficient quota for prefetching', {
-          remaining: quotaStatus.quota.daily.remaining
+          remaining: quotaStatus.daily.remaining
         })
         return
       }
@@ -104,10 +104,10 @@ export class PrefetchManager {
       const currentHour = new Date().getHours()
       const isOptimalWindow = this.isOptimalPrefetchWindow(currentHour, quotaStatus.analytics.hourlyPattern)
 
-      if (!isOptimalWindow && quotaStatus.quota.daily.remaining < 500) {
+      if (!isOptimalWindow && quotaStatus.daily.remaining < 500) {
         apiLogger.debug('Not in optimal window and quota not abundant', {
           currentHour,
-          remaining: quotaStatus.quota.daily.remaining
+          remaining: quotaStatus.daily.remaining
         })
         return
       }
@@ -122,7 +122,7 @@ export class PrefetchManager {
       let executed = 0
       const maxExecutions = Math.min(
         5, // Never execute more than 5 prefetch tasks at once
-        Math.floor(quotaStatus.quota.daily.remaining / 10) // Use max 10% of remaining quota
+        Math.floor(quotaStatus.daily.remaining / 10) // Use max 10% of remaining quota
       )
 
       for (const task of tasksToExecute) {
@@ -147,7 +147,7 @@ export class PrefetchManager {
       apiLogger.info('Prefetch completed', {
         executed,
         available: tasksToExecute.length,
-        quotaRemaining: quotaStatus.quota.daily.remaining - executed
+        quotaRemaining: quotaStatus.daily.remaining - executed
       })
 
     } catch (error) {

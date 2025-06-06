@@ -130,7 +130,7 @@ async function getOpportunitiesAnalytics(
     throw new DatabaseError('Failed to fetch status data')
   }
 
-  const statusDistribution = statusData?.reduce((acc: Record<string, number>, item: { status: string; count: number }) => {
+  const statusDistribution = statusData?.reduce((acc: Record<string, number>, item: { status: string; id: string }) => {
     const status = item.status || 'unknown'
     acc[status] = (acc[status] || 0) + 1
     return acc
@@ -166,11 +166,21 @@ async function getPerformanceAnalytics(
     throw new DatabaseError('Failed to fetch saved opportunities data')
   }
 
-  // Get AI analyses count
+  // Get AI analyses count - need to join with user's company
+  const { data: userProfile, error: profileError } = await supabase
+    .from('profiles')
+    .select('company_id')
+    .eq('id', userId)
+    .single()
+
+  if (profileError || !userProfile?.company_id) {
+    throw new DatabaseError('Failed to fetch user profile')
+  }
+
   const { data: analysesData, error: analysesError } = await supabase
     .from('opportunity_analyses')
-    .select('created_at, analysis_result')
-    .eq('user_id', userId)
+    .select('created_at, analysis_data')
+    .eq('company_id', userProfile.company_id)
     .gte('created_at', startDate.toISOString())
     .lte('created_at', endDate.toISOString())
 
@@ -182,11 +192,11 @@ async function getPerformanceAnalytics(
   const dailyActivity = processDailyActivity(savedData, analysesData, startDate, endDate)
   
   // Calculate win probability distribution from analyses
-  const winProbabilityData = analysesData?.map((analysis: { win_probability: number; created_at: string }) => {
+  const winProbabilityData = analysesData?.map((analysis: { analysis_data: any; created_at: string }) => {
     try {
-      const result = typeof analysis.analysis_result === 'string' 
-        ? JSON.parse(analysis.analysis_result)
-        : analysis.analysis_result
+      const result = typeof analysis.analysis_data === 'string' 
+        ? JSON.parse(analysis.analysis_data)
+        : analysis.analysis_data
       return result.winProbability || 0
     } catch {
       return 0

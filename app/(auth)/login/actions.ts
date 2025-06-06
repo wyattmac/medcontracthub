@@ -60,7 +60,7 @@ export async function login(formData: FormData) {
     }
     
     redirect('/dashboard')
-  } catch (error) {
+  } catch (error: any) {
     // Handle Next.js redirect (not an actual error)
     if (error?.digest?.includes('NEXT_REDIRECT')) {
       throw error
@@ -101,7 +101,7 @@ export async function signup(formData: FormData) {
     console.log('[Signup Action] Signup successful for:', data.user?.email)
     revalidatePath('/', 'layout')
     redirect('/onboarding')
-  } catch (error) {
+  } catch (error: any) {
     // Handle Next.js redirect (not an actual error)
     if (error?.digest?.includes('NEXT_REDIRECT')) {
       throw error
