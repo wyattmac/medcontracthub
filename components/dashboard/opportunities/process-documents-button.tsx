@@ -34,7 +34,7 @@ export function ProcessDocumentsButton({
         priority: 5,
         skipCache: false,
         maxRetries: 3
-      })
+      }) as any
       return response.data
     },
     onSuccess: (data) => {

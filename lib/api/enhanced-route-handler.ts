@@ -17,7 +17,7 @@ import type { User } from '@supabase/supabase-js'
 interface RouteOptions {
   requireAuth?: boolean
   requireAdmin?: boolean
-  rateLimit?: 'api' | 'auth' | 'public'
+  rateLimit?: 'api' | 'auth' | 'search' | 'sync' | 'ai'
   validateQuery?: z.ZodSchema
   validateBody?: z.ZodSchema
   requireCSRF?: boolean
@@ -25,7 +25,7 @@ interface RouteOptions {
 
 interface RouteContext {
   user: User | null
-  supabase: ReturnType<typeof createClient>
+  supabase: Awaited<ReturnType<typeof createClient>>
   requestId: string
   sanitizedQuery?: any
   sanitizedBody?: any

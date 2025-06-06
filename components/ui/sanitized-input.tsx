@@ -16,7 +16,7 @@ interface ISanitizedInputProps extends Omit<InputProps, 'onChange'> {
   onSanitizedChange?: (sanitizedValue: string, originalValue: string) => void
 }
 
-interface ISanitizedTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface ISanitizedTextareaProps extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange'> {
   sanitizationType?: 'text' | 'basic' | 'rich'
   onChange?: (value: string, event: React.ChangeEvent<HTMLTextAreaElement>) => void
   onSanitizedChange?: (sanitizedValue: string, originalValue: string) => void

@@ -13,7 +13,7 @@ import { createServerClient } from '@/lib/supabase/server'
 // Import email templates
 import { OpportunityDeadlineReminder } from '@/emails/opportunity-deadline-reminder'
 import { NewOpportunityMatch } from '@/emails/new-opportunity-match'
-import { Welcome } from '@/emails/welcome'
+import Welcome from '@/emails/welcome'
 
 const emailTemplates = {
   'opportunity-deadline-reminder': OpportunityDeadlineReminder,
@@ -153,7 +153,7 @@ export async function processBulkEmailJob(job: Job<{
           data: recipient.data,
           userId: recipient.userId
         }
-      } as Job<IEmailJob>)
+      } as unknown as Job<IEmailJob>)
 
       results.push({
         to: recipient.to,

@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { errorReporter } from '@/lib/errors/error-reporter'
 import { captureErrorScreenshot, VisualErrorDebugger } from '@/lib/errors/visual-debugger'
-import { useToast } from '@/lib/hooks/useToast'
+import { toast } from 'sonner'
 
 interface Props {
   children: ReactNode
@@ -47,7 +47,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Create detailed error report
     const errorReport = errorReporter.report(error, {
-      componentStack: errorInfo.componentStack,
+      componentStack: errorInfo.componentStack || '',
       errorBoundary: this.props.name || 'UnknownSection',
       url: window.location.href,
       method: 'React Component',
@@ -270,11 +270,11 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
                     )}
 
                     {/* Component Stack */}
-                    {errorInfo?.componentStack && (
+                    {this.state.errorInfo?.componentStack && (
                       <div className="space-y-2">
                         <h4 className="font-semibold text-sm">Component Stack:</h4>
                         <pre className="text-xs overflow-auto p-3 bg-muted rounded-md max-h-[200px]">
-                          {errorInfo.componentStack}
+                          {this.state.errorInfo.componentStack}
                         </pre>
                       </div>
                     )}

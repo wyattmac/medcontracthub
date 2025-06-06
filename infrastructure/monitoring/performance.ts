@@ -123,7 +123,7 @@ export class PerformanceMonitor {
   /**
    * Record a metric
    */
-  private static recordMetric(metric: IPerformanceMetric) {
+  public static recordMetric(metric: IPerformanceMetric) {
     this.metrics.push(metric)
     
     // Batch send metrics every 10 seconds
