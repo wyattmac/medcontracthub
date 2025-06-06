@@ -71,7 +71,7 @@ async function testBraveSearch() {
     try {
       await braveSearchClient.webSearch({ q: '' })
     } catch (error) {
-      console.log(`✓ Correctly caught error: ${error.message}`)
+      console.log(`✓ Correctly caught error: ${(error as Error).message}`)
     }
 
     console.log('\n✅ All tests completed successfully!')

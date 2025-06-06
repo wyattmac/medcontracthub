@@ -15,7 +15,7 @@ import {
 import { getSAMApiClient, SAMApiError } from './client'
 
 // Create a lazy-loaded client instance
-const getClient = () => getClient()
+const getClient = () => getSAMApiClient()
 import { 
   ISAMOpportunity, 
   IOpportunityFilters, 

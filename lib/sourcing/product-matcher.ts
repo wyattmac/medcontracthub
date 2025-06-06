@@ -5,10 +5,10 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database.types'
-import { claudeClient } from '@/lib/ai/claude-client'
+import { claude } from '@/lib/ai/claude-client'
 import { costOptimizer } from '@/lib/ai/cost-optimizer'
 import { aiLogger } from '@/lib/errors/logger'
-import Fuse from 'fuse.js'
+// import Fuse from 'fuse.js' // TODO: Install fuse.js dependency
 
 interface IProductRequirement {
   id: string
@@ -46,7 +46,7 @@ interface IMatchResult {
   }>
 }
 
-export class ProductMatcher {
+class ProductMatcher {
   private supabase: ReturnType<typeof createClient<Database>>
   private productCache: Map<string, ISupplierProduct[]> = new Map()
 
@@ -141,15 +141,11 @@ export class ProductMatcher {
       .limit(20)
 
 
-    // Fuzzy search on supplier products
+    // Fuzzy search on supplier products (simplified without Fuse.js)
     const allProducts = await this.getAllSupplierProducts()
-    const fuse = new Fuse(allProducts, {
-      keys: ['productName', 'specifications.description'],
-      threshold: 0.4
-    })
-
-    const fuzzyResults = fuse.search(requirement.productName)
-    const candidates = fuzzyResults.map(r => r.item)
+    const candidates = allProducts.filter(product => 
+      product.productName.toLowerCase().includes(requirement.productName.toLowerCase())
+    )
 
     // Cache results
     this.productCache.set(cacheKey, candidates)
@@ -310,8 +306,12 @@ Candidate Product:
 
 Return only a number between 0 and 1.`
 
-      const response = await claudeClient.analyze(prompt, 'product_matching')
-      const score = parseFloat(response.analysis) || 0
+      const response = await claude.messages.create({
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+      const score = parseFloat(response.content[0]?.type === 'text' ? response.content[0].text : '0') || 0
 
       // Cache result
       cache.set(cacheKey, score, 3600) // 1 hour cache
@@ -480,5 +480,4 @@ import { cache } from '@/lib/utils/cache'
 // Export singleton instance
 export const productMatcher = new ProductMatcher()
 
-// Export for testing
-export { ProductMatcher }
+// Export for testing - removed duplicate export

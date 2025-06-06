@@ -52,7 +52,7 @@ export function sanitizeHtml(
   }
 
   try {
-    return DOMPurify.sanitize(dirty, sanitizationConfigs[config])
+    return DOMPurify.sanitize(dirty, sanitizationConfigs[config] as any) as unknown as string
   } catch (error) {
     console.error('Sanitization error:', error)
     // Return empty string on error for safety

@@ -130,7 +130,7 @@ export default function DashboardLayout({
       {/* Main content area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top header bar */}
-        <header className="flex h-16 items-center justify-between bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 shadow-sm">
+        <header className="flex h-16 items-center justify-between bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 shadow-sm">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -180,7 +180,7 @@ export default function DashboardLayout({
 
         {/* Page content with proper spacing */}
         <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-          <div className="container mx-auto px-6 py-8 max-w-7xl">
+          <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl">
             {children}
           </div>
         </main>

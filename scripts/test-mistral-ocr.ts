@@ -60,7 +60,7 @@ async function testMistralOCR() {
       console.log(`Tables found: ${bufferResult.tables?.length || 0}\n`)
     } catch (error) {
       console.log('⚠️  Buffer processing returned an error (expected for test buffer)')
-      console.log(`Error: ${error.message}\n`)
+      console.log(`Error: ${(error as Error).message}\n`)
     }
 
     console.log('🎉 All tests completed successfully!')
@@ -73,9 +73,9 @@ async function testMistralOCR() {
     console.log('- Estimated cost per page: $0.04-0.05')
 
   } catch (error) {
-    console.error('\n❌ Test failed:', error.message)
+    console.error('\n❌ Test failed:', (error as Error).message)
     
-    if (error.message.includes('API key')) {
+    if ((error as Error).message.includes('API key')) {
       console.log('\n🔑 API Key Issue:')
       console.log('1. Make sure your MISTRAL_API_KEY is valid')
       console.log('2. Check your Mistral AI account at https://console.mistral.ai/')

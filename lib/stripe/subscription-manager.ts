@@ -102,8 +102,8 @@ export async function createSubscription({
       .update({
         stripe_subscription_id: subscription.id,
         status: subscription.status,
-        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+        current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
         trial_start: subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null,
         trial_end: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null
       })
@@ -113,7 +113,7 @@ export async function createSubscription({
     let clientSecret: string | undefined
     if (subscription.status === 'incomplete' && subscription.latest_invoice) {
       const invoice = subscription.latest_invoice as Stripe.Invoice
-      const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent
+      const paymentIntent = (invoice as any).payment_intent as Stripe.PaymentIntent
       clientSecret = paymentIntent?.client_secret || undefined
     }
 
@@ -135,7 +135,7 @@ export async function createSubscription({
       userId,
       planId
     })
-    throw new ExternalServiceError('Failed to create subscription', 'Stripe', error as Error)
+    throw new ExternalServiceError('Failed to create subscription', 'Stripe')
   }
 }
 
@@ -217,7 +217,7 @@ export async function updateSubscription({
     apiLogger.error('Failed to update subscription', error as Error, {
       subscriptionId
     })
-    throw new ExternalServiceError('Failed to update subscription', 'Stripe', error as Error)
+    throw new ExternalServiceError('Stripe', 'Failed to update subscription')
   }
 }
 
@@ -248,7 +248,7 @@ export async function cancelSubscription(
     apiLogger.error('Failed to cancel subscription', error as Error, {
       subscriptionId
     })
-    throw new ExternalServiceError('Failed to cancel subscription', 'Stripe', error as Error)
+    throw new ExternalServiceError('Stripe', 'Failed to cancel subscription')
   }
 }
 
@@ -271,7 +271,7 @@ export async function resumeSubscription(subscriptionId: string): Promise<void> 
     apiLogger.error('Failed to resume subscription', error as Error, {
       subscriptionId
     })
-    throw new ExternalServiceError('Failed to resume subscription', 'Stripe', error as Error)
+    throw new ExternalServiceError('Stripe', 'Failed to resume subscription')
   }
 }
 
@@ -328,7 +328,7 @@ export async function createCheckoutSession(
       userId,
       planId
     })
-    throw new ExternalServiceError('Failed to create checkout session', 'Stripe', error as Error)
+    throw new ExternalServiceError('Stripe', 'Failed to create checkout session')
   }
 }
 
@@ -356,7 +356,7 @@ export async function createBillingPortalSession(
     apiLogger.error('Failed to create billing portal session', error as Error, {
       customerId
     })
-    throw new ExternalServiceError('Failed to create billing portal session', 'Stripe', error as Error)
+    throw new ExternalServiceError('Stripe', 'Failed to create billing portal session')
   }
 }
 

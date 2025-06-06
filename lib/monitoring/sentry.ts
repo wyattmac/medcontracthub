@@ -123,10 +123,7 @@ export function startApiTransaction(
 
   return Sentry.startSpan({
     name,
-    op: operation,
-    data: {
-      timestamp: new Date().toISOString()
-    }
+    op: operation
   }, () => {})
 }
 

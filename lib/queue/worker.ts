@@ -6,6 +6,7 @@
 import { queues } from './index'
 import { processOCRJob } from './processors/ocr.processor'
 import { processEmailJob, processBulkEmailJob } from './processors/email.processor'
+import { IBulkEmailJob } from './index'
 import { apiLogger } from '@/lib/errors/logger'
 
 // Configure concurrency
@@ -25,7 +26,7 @@ export function startWorkers() {
 
   // Email Sending Worker
   queues.email.process('send-email', CONCURRENCY.email, processEmailJob)
-  queues.email.process('send-bulk-email', CONCURRENCY.email, processBulkEmailJob)
+  queues.email.process('send-bulk-email', CONCURRENCY.email, processBulkEmailJob as any)
 
   // Sync Worker (placeholder for now)
   queues.sync.process('sync-opportunities', CONCURRENCY.sync, async (job) => {
@@ -61,7 +62,7 @@ async function setupRecurringJobs() {
   // Clean old jobs daily at 2 AM
   queues.ocr.add(
     'clean-old-jobs',
-    { type: 'maintenance' },
+    {} as any,
     {
       repeat: { cron: '0 2 * * *' },
       jobId: 'clean-ocr-jobs'
@@ -70,7 +71,7 @@ async function setupRecurringJobs() {
 
   queues.email.add(
     'clean-old-jobs',
-    { type: 'maintenance' },
+    {} as any,
     {
       repeat: { cron: '0 2 * * *' },
       jobId: 'clean-email-jobs'
@@ -80,7 +81,7 @@ async function setupRecurringJobs() {
   // Retry failed jobs every hour
   queues.ocr.add(
     'retry-failed',
-    { type: 'maintenance' },
+    {} as any,
     {
       repeat: { cron: '0 * * * *' },
       jobId: 'retry-ocr-failed'

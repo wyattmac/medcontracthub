@@ -196,10 +196,7 @@ export class SupabaseConnectionPool {
         return result
       } catch (error) {
         lastError = error as Error
-        dbLogger.warn('Connection execution failed', lastError, {
-          attempt: attempt + 1,
-          maxRetries: retries
-        })
+        dbLogger.warn('Connection execution failed', lastError)
         
         // Wait before retry (exponential backoff)
         if (attempt < retries - 1) {

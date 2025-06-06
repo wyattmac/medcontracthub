@@ -227,7 +227,7 @@ export function useCSRFToken() {
       return null
     },
     
-    getHeaders: () => {
+    getHeaders: function() {
       const token = this.getToken()
       return token ? { [CSRF_HEADER_NAME]: token } : {}
     }

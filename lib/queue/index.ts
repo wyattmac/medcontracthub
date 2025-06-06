@@ -25,15 +25,17 @@ function createQueue<T = any>(
 ): Bull.Queue<T> {
   const redisUrl = process.env.REDIS_URL
 
-  const queue = new Bull<T>(name, redisUrl || {
-    redis: {
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      host: process.env.REDIS_HOST || 'localhost',
-      password: process.env.REDIS_PASSWORD,
-      db: parseInt(process.env.REDIS_DB || '0')
-    },
-    ...options
-  })
+  const queue = redisUrl 
+    ? new Bull<T>(name, redisUrl, options)
+    : new Bull<T>(name, {
+        redis: {
+          port: parseInt(process.env.REDIS_PORT || '6379'),
+          host: process.env.REDIS_HOST || 'localhost',
+          password: process.env.REDIS_PASSWORD,
+          db: parseInt(process.env.REDIS_DB || '0')
+        },
+        ...options
+      })
 
   // Queue event handlers
   queue.on('error', (error) => {
@@ -92,6 +94,16 @@ export interface IEmailJob {
   template: string
   data: Record<string, any>
   userId?: string
+}
+
+export interface IBulkEmailJob {
+  template: string
+  recipients: Array<{
+    to: string
+    data: Record<string, any>
+    userId?: string
+  }>
+  subject: string
 }
 
 export interface ISyncJob {

@@ -60,7 +60,7 @@ async function testStripeIntegration() {
 
     for (const eventType of webhookEvents) {
       const handler = webhookHandlers[eventType]
-      console.log(`${handler ? '✅' : '❌'} Handler for ${eventType}: ${handler ? 'Found' : 'Missing'}`)
+      console.log(`${typeof handler === 'function' ? '✅' : '❌'} Handler for ${eventType}: ${typeof handler === 'function' ? 'Found' : 'Missing'}`)
     }
 
     // 4. Test Database Schema

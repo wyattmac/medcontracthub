@@ -31,7 +31,7 @@ export default function DashboardPage() {
       
       {/* Stats Grid - Enhanced with gradients and animations */}
       <SectionErrorBoundary name="Dashboard Stats">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <Card 
             className="relative overflow-hidden border-0 hover:shadow-lg transition-all duration-300 hover:scale-105"
             style={{
@@ -163,9 +163,9 @@ export default function DashboardPage() {
       </SectionErrorBoundary>
 
       {/* Main Content Grid - Enhanced styling */}
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-5 gap-6 lg:gap-8">
         {/* Recent Activity - Enhanced with better empty state */}
-        <div className="xl:col-span-3">
+        <div className="lg:col-span-2 xl:col-span-3">
           <SectionErrorBoundary name="Recent Activity">
             <Card className="h-full border-0 shadow-lg">
               <CardHeader 
@@ -230,7 +230,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Sidebar - Enhanced styling */}
-        <div className="xl:col-span-2 space-y-6">
+        <div className="lg:col-span-1 xl:col-span-2 space-y-4 lg:space-y-6">
           <SectionErrorBoundary name="Reminders">
             <div className="transform hover:scale-105 transition-transform duration-300">
               <RemindersWidget />
