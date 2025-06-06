@@ -1,71 +1,62 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides essential guidance to Claude Code when working with this repository.
+
+## 📋 **IMPORTANT: Required Reading Before Coding**
+
+Before making any code changes, Claude Code MUST review these critical documents:
+
+1. **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Complete system architecture, patterns, and technical decisions
+   - Review architectural patterns before implementing new features
+   - Follow established domain structure and layering principles
+   - Use documented performance optimizations and security patterns
+
+2. **[PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md)** - Current production blockers and priorities
+   - Check for critical issues that affect the code you're working on
+   - Align new work with immediate production priorities
+   - Avoid introducing changes that conflict with production readiness
 
 ## Project Overview
 **MedContractHub** - AI-powered platform for medical distributors to win federal contracts
-- Stack: Next.js 15, TypeScript, Supabase, Tailwind CSS, Docker, Redis, PostgreSQL
-- Path: /home/locklearwyatt/projects/medcontracthub
-- Production Status: 100% Ready with multi-environment Docker deployment
-- **TypeScript Status**: ✅ Zero compilation errors in source code
-- **Responsive Design**: ✅ Optimized for mobile, tablet, and desktop
+- **Stack**: Next.js 15, TypeScript, Supabase, Tailwind CSS, Docker, Redis
+- **Path**: `/home/locklearwyatt/projects/medcontracthub`
+- **Status**: Production ready with zero TypeScript errors
 
-## Essential Development Commands
+## 🚀 Essential Commands
 
-### Quick Start
+### Development
 ```bash
-# Docker Development (Recommended) - Port 3000
-make dev                    # Start with Makefile
-./easy-docker.sh           # Interactive menu
-./docker-scripts.sh start dev  # Direct command
+# Start development (Docker recommended)
+make dev                    # Port 3000
+npm run dev                # Local alternative
+npm run worker:dev         # Background worker
 
-# Local Development (Alternative)
-npm run dev                # Start dev server
-npm run worker:dev        # Start background worker with hot reload
-```
-
-### Testing & Validation
-```bash
 # Before committing - ALWAYS run these
 npm run lint              # ESLint + Prettier
 npm run type-check        # TypeScript validation
-
-# Testing commands
-npm test                  # Run all tests
-npm run test:fast        # Quick test run (bail on first failure)
-npm run test:changed     # Test only changed files
-npm run test:api         # API route tests (sequential)
-npm run test:components  # Component tests
-npm run test:coverage    # Full coverage report
-
-# Single test execution
-npm test -- path/to/test.ts --watch
+npm test                  # Run tests
 ```
 
-### Build & Deployment
+### Docker Environments
 ```bash
-# Docker environments
-make staging             # Start staging (port 3001)
-make prod               # Start production (port 3002)
-make health-check       # Check all service health
-make backup-dev         # Backup development DB
-
-# Production build
-npm run build           # Next.js production build
-make test-build         # Test Docker production build
+make dev                  # Development (3000)
+make staging             # Staging (3001) 
+make prod               # Production (3002)
+make health-check       # Check services
 ```
 
-### Database Operations
+### Database
 ```bash
-npm run db:types        # Generate TypeScript types from Supabase
-npm run db:migrate      # Apply database migrations
-npm run dev-setup       # Set up development user (bypass onboarding)
+npm run db:types        # Generate TypeScript types
+npm run dev-setup       # Create dev user (bypass onboarding)
 ```
 
-## High-Level Architecture
+## 🏗️ Architecture Essentials
+
+**⚠️ CRITICAL: Before implementing any architectural patterns, read [ARCHITECTURE.md](./ARCHITECTURE.md) for complete context and examples.**
 
 ### API Route Pattern (MANDATORY)
-All API routes MUST use the enhanced route handler located at `lib/api/enhanced-route-handler.ts`:
+Always use the enhanced route handler as documented in ARCHITECTURE.md:
 
 ```typescript
 import { enhancedRouteHandler } from '@/lib/api/enhanced-route-handler'
@@ -75,275 +66,165 @@ export const GET = enhancedRouteHandler.GET(
     // Implementation
   },
   { 
-    requireAuth: true,      // Authentication required
-    validateQuery: schema,  // Zod schema validation
-    rateLimit: 'api'       // Rate limiting tier
+    requireAuth: true,
+    validateQuery: schema,
+    rateLimit: 'api'
   }
 )
 ```
 
-This wrapper provides:
-- Automatic authentication with `user` object
-- Request validation (query/body) with sanitization
-- Enhanced error handling with debugging context
-- Rate limiting per tier (api: 10req/s, auth: 5req/min)
-- CSRF protection on state-changing methods
-- Supabase client with proper error recovery
-- Detailed error reporting for Claude Code debugging
+### Error Handling
+- **Custom Errors**: Use types from `lib/errors/types.ts`
+- **Error Boundaries**: Wrap sections with `SectionErrorBoundary`
+- **Client Errors**: Use `useError` hook for reporting
 
-### Enhanced Error Handling System
-Comprehensive error handling with Claude Code debugging support:
-
-**Error Types** (`lib/errors/types.ts`):
-- `NotFoundError` - Resource not found
-- `ValidationError` - Input validation failures
-- `AuthenticationError` - Auth failures
-- `DatabaseError` - Database operations
-- `ExternalServiceError` - Third-party API failures
-- `RateLimitError` - Rate limit exceeded
-
-**Error Reporter** (`lib/errors/error-reporter.ts`):
-- Detailed debugging hints based on error type
-- Suggested actions for common issues
-- Automatic file path extraction from stack traces
-- Environment-specific error contexts
-
-**Enhanced Error Boundaries** (`components/ui/enhanced-error-boundary.tsx`):
-- Development vs production error displays
-- Visual debugging with Puppeteer MCP integration
-- Interactive error analysis tools
-- Screenshot capture and DOM state analysis
-
-**Client-side Error Handling**:
+### Component Patterns
 ```typescript
-import { api } from '@/lib/api/error-interceptor'
-// Automatic error handling with user-friendly messages
-const data = await api.get('/api/opportunities')
+// Route groups for organization
+app/(dashboard)/page.tsx    // Protected routes
+app/(auth)/page.tsx        // Public routes
 
-// Manual error reporting
-import { useError } from '@/providers/error-provider'
-const { reportError } = useError()
-reportError(error, { context: 'custom-operation' })
+// Explicit client components only when needed
+'use client'  // For interactivity
 ```
 
-**Error Testing & Debugging**:
-- Test endpoint: `/api/test-error?type=validation&throwError=true`
-- Interactive test page: `/test-errors` (requires auth)
-- Visual debugging with Puppeteer screenshots
-- Automated page diagnostics (accessibility, performance, SEO)
+## 🎨 UI Guidelines
 
-### Background Job Processing
-Bull.js queues with Redis for async operations:
-- Email notifications via `emailQueue`
-- OCR document processing via `ocrQueue`
-- SAM.gov sync via `syncQueue`
+### Theme System
+- **Blue gradients**: Opportunities
+- **Green gradients**: Saved items  
+- **Purple gradients**: Proposals
+- **Amber gradients**: Analytics
 
-Workers run separately: `npm run worker` or `npm run worker:dev`
+### Responsive Design
+- **Mobile-first**: Start with 375px
+- **Breakpoints**: sm(640px), md(768px), lg(1024px), xl(1280px)
+- **Half-page support**: Optimized for windowed apps
+- **Touch navigation**: Mobile hamburger menu
 
-### Critical Integration Points
+### Performance
+- Use virtual scrolling for lists >1000 items
+- Dynamic imports for code splitting
+- Next.js Image for optimization
 
-**SAM.gov Integration** (`lib/sam-gov/`)
-- 22k+ federal opportunities
-- Quota management system with rate limiting
-- Cache strategy for API efficiency
-- Prefetch manager for performance
+## 🔧 Development Patterns
 
-**AI Services**
-- Claude API (`lib/ai/claude-client.ts`) - Contract analysis
-- Mistral OCR (`lib/ai/mistral-ocr-client.ts`) - Document processing at $0.001/page
-
-**Billing System** (`lib/stripe/`)
-- Subscription tiers: Starter ($29), Professional ($99), Enterprise ($299)
-- Usage metering for AI features
-- Webhook handlers for subscription events
-
-### Database Architecture
-**Supabase PostgreSQL** with Row Level Security (cloud-hosted):
-- `company_profiles` - User company information
-- `opportunities` - SAM.gov contract opportunities
-- `saved_opportunities` - User bookmarked items
-- `proposals` - User-generated proposals
-- `api_usage` - Usage tracking for billing
-- `reminders` - Deadline notifications
-
-**Local Development Support**:
-- Redis for caching and queues (Docker container)
-- Connection pooling via `lib/db/connection-pool.ts`
-- Environment-specific Supabase projects
-
-### UI Component System
-shadcn/ui components with custom gradient themes:
-- Blue gradients for Opportunities
-- Green gradients for Saved items
-- Purple gradients for Proposals
-- Amber gradients for Analytics
-
-Virtual scrolling implemented for lists >1000 items using `react-window`
-
-## Development Patterns
-
-### Component Structure
-```typescript
-// Always use route groups for organization
-app/(dashboard)/opportunities/page.tsx  // Protected routes
-app/(auth)/login/page.tsx              // Public routes
-
-// Server components by default, client components explicit
-'use client'  // Only when needed for interactivity
-```
+**📖 For complete implementation details, see [ARCHITECTURE.md](./ARCHITECTURE.md) sections on Domain Architecture and Development Patterns.**
 
 ### State Management
-- Server state: TanStack Query (React Query) with SSR support
-- Client state: Zustand for global state
-- Form state: React Hook Form with Zod validation
+- **Server state**: TanStack Query
+- **Client state**: Zustand
+- **Forms**: React Hook Form + Zod
 
-### Performance Optimizations
-- Dynamic imports for code splitting
-- Image optimization with Next.js Image
-- Redis caching with TTL management
-- Database query optimization with DataLoader pattern
-- Virtual scrolling for large lists
+### Database
+- **Supabase**: Cloud PostgreSQL with RLS
+- **Connection pooling**: `lib/db/connection-pool.ts`
+- **Type generation**: `npm run db:types`
 
-### Security Requirements
-- CSRF tokens required on all mutations
-- Input sanitization with DOMPurify
-- Environment variable validation on startup
-- Non-root Docker containers
-- Security headers via middleware
+### Security
+- **CSRF protection**: Required on mutations
+- **Input sanitization**: DOMPurify for all user input
+- **Environment validation**: On startup
 
-## Known Issues & Solutions
+## 🚨 Critical Patterns
 
 ### Next.js 15 Dynamic Routes
-Always await params in dynamic routes:
 ```typescript
+// Always await params
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 }
 ```
 
-### Supabase SSL/DNS Issues
-Docker compose includes `NODE_TLS_REJECT_UNAUTHORIZED=0` for development
-Production uses proper SSL certificates
+### Authentication
+- Development mode bypasses auth (`NODE_ENV=development`)
+- Use `npm run dev-setup` for test user
+- Protected routes use middleware
 
-### Authentication in Development
-Development mode bypasses auth when `NODE_ENV=development`
-Use `npm run dev-setup` to create test user
+### Known Issues
+**⚠️ Check [PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md) for current production blockers before making changes.**
 
-### Current Data State
-- Database contains test data only (2 opportunities)
-- SAM.gov sync endpoint needs repair for real data import
-- Use simplified queries for Supabase compatibility
+- **SAM.gov sync**: Endpoint needs repair (`getSAMApiClient` error) - **CRITICAL BLOCKER**
+- **SSL in Docker**: Disabled for development, enabled for production
+- **Test data**: Database contains only 2 test opportunities
 
-## Environment Configuration
+## 🔗 Key Integrations
 
-Required environment variables:
+### SAM.gov (`lib/sam-gov/`)
+- 22k+ federal opportunities
+- Quota management and rate limiting
+- Cache strategy for performance
+
+### AI Services
+- **Claude**: `lib/ai/claude-client.ts` (contract analysis)
+- **Mistral**: `lib/ai/mistral-ocr-client.ts` (document OCR)
+
+### Billing (`lib/stripe/`)
+- Subscription tiers: $29, $99, $299
+- Usage metering for AI features
+- Webhook handlers
+
+### Background Jobs
+- **Email**: `emailQueue`
+- **OCR**: `ocrQueue` 
+- **Sync**: `syncQueue`
+- Worker: `npm run worker:dev`
+
+## 🌍 Environment Variables
+
+### Required
 ```env
-# Core (Required)
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY
-CSRF_SECRET  # 32+ chars, NEVER use default
-
-# External Services
+CSRF_SECRET                 # 32+ chars, NEVER use default
 SAM_GOV_API_KEY
 ANTHROPIC_API_KEY
 STRIPE_SECRET_KEY
-STRIPE_WEBHOOK_SECRET
 RESEND_API_KEY
+```
 
-# Optional Services
+### Optional
+```env
 MISTRAL_API_KEY
 BRAVE_SEARCH_API_KEY
-
-# Production Infrastructure
 REDIS_URL
-REDIS_PASSWORD
 SENTRY_DSN
 ```
 
-## Docker Multi-Environment Setup
+## 🤖 MCP Server Integration
 
-Three isolated environments with separate configurations:
-- **Development** (3000): Hot reload, debug logging, enhanced error details
-- **Staging** (3001): Production build, 1GB RAM limit
-- **Production** (3002): Optimized build, 2GB RAM, SSL ready
+### Available Servers
+- **Puppeteer** (`mcp__puppeteer__*`): Browser automation, screenshots
+- **Supabase** (`mcp__supabase__*`): Database operations, migrations
+- **GitHub** (`mcp__github__*`): Repository management, PRs
+- **Context7** (`mcp__context7__*`): Library documentation
 
-Each environment has:
-- **Isolated Supabase project/database** (cloud-hosted PostgreSQL)
-- Shared Redis container with namespacing (local Docker)
-- Nginx reverse proxy (staging/prod)
-- Health check endpoints
-- Automated backup capabilities
+### Error Debugging
+- **Visual**: Puppeteer screenshots on errors
+- **Database**: Supabase state during failures
+- **Documentation**: Context7 for library issues
 
-## MCP (Model Context Protocol) Servers
+## 🏃‍♂️ Quick Troubleshooting
 
-### Available MCP Servers
-The project includes several MCP servers that extend Claude's capabilities:
+**📋 For current production issues and priorities, always check [PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md) first.**
 
-**Puppeteer MCP Server** (`mcp__puppeteer__*`)
-- Browser automation and web scraping
-- Screenshot capture of pages or elements
-- Form interaction (click, fill, select)
-- JavaScript execution in browser context
-- **Error Debugging**: Automatic screenshot capture on errors
-- **Page Diagnostics**: Performance, accessibility, and SEO analysis
+### Common Issues
+1. **TypeScript errors**: Run `npm run type-check`
+2. **Docker not starting**: Check `docker-compose.yml` and ports
+3. **Database connection**: Verify Supabase environment variables
+4. **Auth issues**: Use `npm run dev-setup` for test user
+5. **SAM.gov data**: Currently showing test data only - **See PRODUCTION_TASKS.md for fix priority**
 
-**Supabase MCP Server** (`mcp__supabase__*`)
-- Direct database operations and management
-- Project creation, pausing, and restoration
-- Database migrations and SQL execution
-- Edge function deployment
-- Branch management for development workflows
-- Real-time log access for debugging
-- TypeScript type generation from schema
+### Development Tips
+- **Always review [ARCHITECTURE.md](./ARCHITECTURE.md) and [PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md) before coding**
+- Always use Docker development environment (`make dev`)
+- Run linting before commits
+- Use virtual scrolling for large lists
+- Follow mobile-first responsive design
+- Implement proper error boundaries
+- Follow Clean Architecture + DDD patterns as documented in ARCHITECTURE.md
 
-**Context7 MCP Server** (`mcp__context7__*`)
-- Library documentation retrieval
-- Package/product name resolution to library IDs
-- Up-to-date documentation for frameworks and libraries
-- Topic-focused documentation queries
+---
 
-**GitHub MCP Server** (`mcp__github__*`)
-- Repository creation and management
-- File operations (create, update, push multiple files)
-- Pull request creation and management
-- Issue tracking and commenting
-- Code search across repositories
-- Branch management and forking
-
-### Error Handling Integration with MCP
-- **Visual Debugging**: Puppeteer MCP captures error screenshots automatically
-- **Database Context**: Supabase MCP provides database state during errors
-- **Documentation Lookup**: Context7 MCP helps resolve library-related errors
-- **Issue Reporting**: GitHub MCP can create issues from error reports (future enhancement)
-
-## Recent Improvements (December 2024)
-
-### TypeScript Error Resolution ✅
-- **37+ compilation errors** resolved systematically
-- **Zero source code TypeScript errors** remaining
-- **Type safety** enhanced across all components
-- **Error categories fixed**:
-  - Database connection pooling and logging
-  - API integration (Claude AI, SAM.gov, Stripe)
-  - Security (CSRF protection, input sanitization) 
-  - Queue systems and job processing
-  - Import/export consistency
-
-### Responsive Design Optimization ✅
-- **Mobile-first approach** with improved breakpoints
-- **Half-page window support** for windowed applications
-- **Breakpoint strategy**:
-  - Mobile (375px): Single column, stack vertically
-  - Small tablet (640px+): 2-column grid for stats
-  - Tablet (768px+): 2-column layout with responsive sidebar
-  - Desktop (1024px+): 4-column stats, full layout
-  - Large desktop (1280px+): Optimized 5-column grid
-- **Touch-friendly navigation** with slide-out mobile menu
-- **Improved spacing** and container padding for all screen sizes
-
-### Quality Assurance ✅
-- **87 out of 96 tests passing** (9 pre-existing auth hook issues)
-- **Manual verification** with Puppeteer in Docker development mode
-- **Cross-device testing** from mobile (375px) to desktop (1400px+)
-- **Production-ready** with clean compilation and functional UI
+**Last Updated**: June 6, 2025

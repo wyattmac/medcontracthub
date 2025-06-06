@@ -47,7 +47,8 @@ export const POST = routeHandler.POST(
     // Focus on recent opportunities (last 3 days)
     const threeDaysAgo = new Date()
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
-    samParams.postedFrom = threeDaysAgo.toISOString().split('T')[0]
+    // Format date as MM/DD/YYYY (required by SAM.gov API)
+    samParams.postedFrom = `${(threeDaysAgo.getMonth() + 1).toString().padStart(2, '0')}/${threeDaysAgo.getDate().toString().padStart(2, '0')}/${threeDaysAgo.getFullYear()}`
 
     // Fetch opportunities from SAM.gov
     const response = await samClient.getOpportunities(samParams)

@@ -96,7 +96,8 @@ async function performSync(request: NextRequest, user?: any): Promise<NextRespon
     if (!forceSync) {
       const yesterday = new Date()
       yesterday.setDate(yesterday.getDate() - 1)
-      samParams.postedFrom = yesterday.toISOString().split('T')[0]
+      // Format date as MM/DD/YYYY (required by SAM.gov API)
+      samParams.postedFrom = `${(yesterday.getMonth() + 1).toString().padStart(2, '0')}/${yesterday.getDate().toString().padStart(2, '0')}/${yesterday.getFullYear()}`
     }
 
     // Fetch opportunities from SAM.gov
