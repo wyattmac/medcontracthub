@@ -23,6 +23,8 @@
     "test:e2e:ui": "playwright test --ui",
     "bypass-onboarding": "tsx scripts/bypass-onboarding.ts",
     "test:e2e:debug": "playwright test --debug",
+    "test:critical": "./scripts/run-critical-journey-test.sh",
+    "test:critical:ci": "npx playwright test critical-user-journey.test.ts --reporter=json,html",
     "test:all": "npm run test:unit && npm run test:e2e",
     "db:reset": "npx supabase db reset",
     "db:types": "npx supabase gen types typescript --local > types/database.types.ts",
@@ -43,7 +45,12 @@
     "dev-setup": "tsx scripts/dev-setup-user.ts",
     "validate:env:production": "tsx scripts/validate-production-env.ts",
     "db:migrate": "bash scripts/apply-db-indexes.sh",
-    "health:check": "curl -s http://localhost:3000/api/health?detailed=true | jq ."
+    "health:check": "curl -s http://localhost:3000/api/health?detailed=true | jq .",
+    "monitor:test": "tsx scripts/test-monitoring.ts",
+    "monitor:start": "curl -X POST http://localhost:3000/api/monitoring/control -H 'Content-Type: application/json' -d '{\"action\":\"start\"}'",
+    "monitor:stop": "curl -X POST http://localhost:3000/api/monitoring/control -H 'Content-Type: application/json' -d '{\"action\":\"stop\"}'",
+    "monitor:status": "curl -s http://localhost:3000/api/monitoring/control | jq .",
+    "monitor:health-check": "curl -X POST http://localhost:3000/api/monitoring/control -H 'Content-Type: application/json' -d '{\"action\":\"health-check\"}' | jq ."
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",

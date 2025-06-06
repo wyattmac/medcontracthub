@@ -12,6 +12,8 @@ function generateCSP(): string {
       "'unsafe-eval'", // Required for Next.js in dev
       "'unsafe-inline'", // Required for Next.js
       'https://challenges.cloudflare.com',
+      'https://js.stripe.com', // Stripe payment scripts
+      'https://js.stripe.com/basil/', // Stripe basil scripts
       process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : ''
     ].filter(Boolean),
     'style-src': [
@@ -37,12 +39,14 @@ function generateCSP(): string {
       'https://api.anthropic.com',
       'https://api.sam.gov',
       'https://api.resend.com',
+      'https://api.stripe.com', // Stripe API
+      'https://*.stripe.com', // Stripe CDN and API subdomains
       'wss://*.supabase.co',
       'wss://*.supabase.in'
     ],
     'media-src': ["'self'"],
     'object-src': ["'none'"],
-    'frame-src': ["'self'"],
+    'frame-src': ["'self'", 'https://js.stripe.com', 'https://*.stripe.com'],
     'frame-ancestors': ["'none'"],
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
@@ -111,6 +115,10 @@ export const rateLimitConfig = {
   
   // Export endpoints - resource intensive
   '/api/export': { requests: 10, window: '1h' },
+  
+  // Monitoring endpoints - frequent but lightweight
+  '/api/monitoring/journey': { requests: 30, window: '1m' },
+  '/api/health': { requests: 120, window: '1m' },
   
   // Default for other endpoints
   default: { requests: 100, window: '1m' }

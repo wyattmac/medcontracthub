@@ -272,6 +272,119 @@ See [OPPORTUNITIES_IMPROVEMENTS.md](./OPPORTUNITIES_IMPROVEMENTS.md) for complet
 - Implement proper error boundaries
 - Follow Clean Architecture + DDD patterns as documented in ARCHITECTURE.md
 
+## 🧪 Critical Testing & Quality Insights
+
+### Lessons from Comprehensive E2E Testing (June 6, 2025)
+
+**⚠️ CRITICAL DISCOVERY**: A comprehensive critical user journey test revealed fundamental issues that traditional testing missed:
+
+#### Issues Discovered & Fixed:
+1. **Development Shortcuts Breaking Users**: Landing page redirect prevented new user registration
+2. **Configuration Chaos**: 15+ hardcoded localhost:3000 URLs throughout codebase
+3. **Performance Blindness**: 11+ second page loads going unnoticed
+4. **Environment Divergence**: Development too different from production reality
+
+#### Testing Philosophy Lessons:
+
+**❌ Soft Testing**: "Does the component render correctly?"
+**✅ Hard Testing**: "Can a real user complete their goal in under 30 seconds?"
+
+#### Key Insights:
+- **Perfect components can create broken user experiences**
+- **Development environment lies when too different from production**
+- **Performance is a product feature, not just technical debt**
+- **User journey validation must be part of development process**
+
+#### Systematic Quality Improvements Needed:
+```
+HIGH PRIORITY:
+- Set up automated user journey monitoring in production
+- Establish development environment standards that mirror production
+- Set up performance budgets and monitoring for all critical pages
+- Create E2E tests for all major user workflows
+- Create process for regular user journey validation during development
+
+MEDIUM PRIORITY:
+- Audit entire codebase for hardcoded values and implement proper config management
+- Implement production health checks that validate actual user journeys
+- Audit codebase for development shortcuts that could impact production
+- Set up RUM (Real User Monitoring) to track actual user experience metrics
+```
+
+#### Testing Infrastructure:
+- **Critical User Journey Test**: `__tests__/e2e/critical-user-journey.test.ts`
+- **Run Command**: `npm run test:critical`
+- **Coverage**: Registration → Onboarding → Discovery → Analysis → Proposals → Settings
+- **Performance Benchmarks**: Landing (<5s), Opportunities (<8s), Search (<3s)
+- **Edge Cases**: XSS protection, injection prevention, offline scenarios
+
+#### Cultural Shift Required:
+Move from **"Ship features fast"** to **"Ship user value reliably"**
+- Test real user journeys, not just individual features
+- Validate assumptions with actual user flows
+- Measure user success, not just code coverage
+- Prioritize user experience over developer convenience
+
+**The Meta-Lesson**: Comprehensive testing doesn't just improve code quality—it exposes and helps fix organizational quality issues including development processes, quality standards, user empathy, and production readiness.
+
+## 📊 Automated User Journey Monitoring ✅ NEW
+
+### Production Monitoring System (December 6, 2024)
+Building on our critical testing insights, we've implemented comprehensive automated monitoring that continuously validates critical user flows in production.
+
+**What it monitors**:
+- **Landing page health** (every 5 minutes): Core site availability and key elements
+- **Opportunities discovery** (every 10 minutes): Core business functionality  
+- **Authentication flows** (every 15 minutes): User registration/login flows
+- **API health endpoints** (every 2 minutes): System infrastructure status
+
+**Features**:
+- **Real-time alerting** when user journeys break
+- **Performance tracking** with automatic scoring (Good/Needs Improvement/Poor)
+- **Visual dashboard** at `/monitoring` for real-time status
+- **API control** for management and health checks
+- **Environment-aware** (automatically enabled in production)
+
+### Monitoring Commands
+```bash
+# Test monitoring system
+npm run monitor:test                # Validate monitoring locally
+
+# Control monitoring
+npm run monitor:start              # Start continuous monitoring
+npm run monitor:stop               # Stop monitoring  
+npm run monitor:status             # Check current status
+npm run monitor:health-check       # Run immediate health check
+```
+
+### Monitoring Dashboard
+Access the real-time monitoring dashboard at **`/monitoring`** to:
+- View current monitoring status and active monitors
+- Control start/stop of automated monitoring
+- Run immediate health checks across all journeys
+- See detailed performance metrics and response times
+- Track user journey success rates over time
+
+### Alert System Architecture
+- **Consecutive Failure Threshold**: Configurable per journey (2-3 failures trigger alert)
+- **Performance Scoring**: Automatic classification based on response time thresholds
+- **Webhook Integration**: Supports external alert systems (Slack, PagerDuty, etc.)
+- **Structured Logging**: Machine-readable monitoring data for analytics
+- **Environment Variables**: 
+  ```bash
+  ENABLE_USER_JOURNEY_MONITORING=true  # Enable in development
+  MONITORING_WEBHOOK_URL=...           # Alert webhook endpoint
+  ```
+
+### Implementation Details
+- **Core Library**: `lib/monitoring/user-journey-monitor.ts`
+- **Scheduler**: `lib/monitoring/scheduler.ts` 
+- **API Endpoints**: `/api/monitoring/journey`, `/api/monitoring/control`
+- **Dashboard**: `app/(dashboard)/monitoring/page.tsx`
+- **Auto-start**: Integrated into `instrumentation.ts` for production deployment
+
+This system ensures that critical user flows remain functional 24/7 and provides immediate notification when issues arise, implementing the key lesson from our comprehensive testing: **monitor what users actually experience, not just what code does**.
+
 ---
 
-**Last Updated**: December 6, 2024 - Added Personalized Medical NAICS Matching System
+**Last Updated**: December 6, 2024 - Added Automated User Journey Monitoring System

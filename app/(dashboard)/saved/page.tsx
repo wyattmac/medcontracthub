@@ -11,7 +11,8 @@ import { SavedOpportunitiesContainer } from '@/components/dashboard/saved/saved-
 import { SectionErrorBoundary } from '@/components/ui/error-boundary'
 
 export default async function SavedOpportunitiesPage() {
-  const supabase = createServerComponentClient<Database>({ cookies })
+  const cookieStore = await cookies()
+  const supabase = createServerComponentClient<Database>({ cookies: () => cookieStore })
 
   // Check authentication
   const {
