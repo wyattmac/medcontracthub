@@ -30,8 +30,8 @@ export const GET = enhancedRouteHandler.GET(
 )
 
 export const POST = enhancedRouteHandler.POST(
-  async ({ body }) => {
-    const { action } = body
+  async ({ sanitizedBody }) => {
+    const { action } = sanitizedBody
     const scheduler = getGlobalScheduler()
 
     switch (action) {

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { formatCurrency, formatDeadline } from '@/lib/sam-gov/utils'
 import { SaveOpportunityButton } from '../opportunities/save-opportunity-button'
 import { EditOpportunityNotesModal } from '../opportunities/edit-opportunity-notes-modal'
+import { AIAnalyzeButton } from '../opportunities/ai-analyze-button'
 import { 
   Calendar, 
   MapPin, 
@@ -145,6 +146,13 @@ function SavedOpportunityCard({
           </div>
 
           <div className="flex items-center gap-2 ml-4">
+            <AIAnalyzeButton
+              opportunityId={opportunity.id}
+              noticeId={opportunity.notice_id}
+              opportunityTitle={opportunity.title}
+              size="sm"
+            />
+            
             <EditOpportunityNotesModal 
               opportunityId={opportunity.id}
               opportunity={{

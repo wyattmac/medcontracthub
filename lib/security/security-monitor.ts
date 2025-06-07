@@ -51,13 +51,27 @@ export enum SecurityEventType {
 }
 
 class SecurityMonitor {
-  private alertThresholds = {
+  private alertThresholds: Record<SecurityEventType, { count: number; window: number }> = {
     [SecurityEventType.FAILED_LOGIN]: { count: 5, window: 15 * 60 * 1000 }, // 5 in 15 min
     [SecurityEventType.RATE_LIMIT_EXCEEDED]: { count: 3, window: 5 * 60 * 1000 }, // 3 in 5 min
     [SecurityEventType.MALICIOUS_FILE_UPLOAD]: { count: 1, window: 60 * 1000 }, // 1 in 1 min
     [SecurityEventType.SQL_INJECTION_ATTEMPT]: { count: 1, window: 60 * 1000 }, // Immediate
     [SecurityEventType.XSS_ATTEMPT]: { count: 1, window: 60 * 1000 }, // Immediate
     [SecurityEventType.PRIVILEGE_ESCALATION]: { count: 1, window: 60 * 1000 }, // Immediate
+    // Default thresholds for other event types
+    [SecurityEventType.ACCOUNT_LOCKOUT]: { count: 3, window: 15 * 60 * 1000 },
+    [SecurityEventType.SUSPICIOUS_LOGIN]: { count: 5, window: 30 * 60 * 1000 },
+    [SecurityEventType.PASSWORD_RESET_ABUSE]: { count: 3, window: 60 * 60 * 1000 },
+    [SecurityEventType.BULK_REQUESTS]: { count: 10, window: 5 * 60 * 1000 },
+    [SecurityEventType.SUSPICIOUS_FILE_TYPE]: { count: 3, window: 10 * 60 * 1000 },
+    [SecurityEventType.OVERSIZED_UPLOAD]: { count: 5, window: 15 * 60 * 1000 },
+    [SecurityEventType.INVALID_API_CALLS]: { count: 10, window: 5 * 60 * 1000 },
+    [SecurityEventType.UNAUTHORIZED_ACCESS]: { count: 3, window: 15 * 60 * 1000 },
+    [SecurityEventType.CONFIGURATION_CHANGE]: { count: 1, window: 60 * 1000 },
+    [SecurityEventType.CRITICAL_ERROR]: { count: 1, window: 60 * 1000 },
+    [SecurityEventType.BULK_DATA_ACCESS]: { count: 5, window: 10 * 60 * 1000 },
+    [SecurityEventType.SENSITIVE_DATA_ACCESS]: { count: 3, window: 15 * 60 * 1000 },
+    [SecurityEventType.DATA_EXPORT_ABUSE]: { count: 2, window: 30 * 60 * 1000 }
   }
 
   /**
@@ -98,47 +112,78 @@ class SecurityMonitor {
    * Store security event in Redis for analysis
    */
   private async storeEventInRedis(event: SecurityEvent): Promise<void> {
-    const redisClient = getRedisClient()
-    if (!redisClient || !redisClient.isReady) return
+    try {
+      const redis = await getRedisClient()
+      if (!redis || !redis.isReady) {
+        apiLogger.warn('Redis not available for security event storage')
+        return
+      }
 
-    const key = `security:events:${event.type}`
-    const eventData = {
-      ...event,
-      timestamp: event.timestamp.toISOString()
+      const key = `security:events:${event.type}`
+      const eventData = {
+        ...event,
+        timestamp: event.timestamp.toISOString()
+      }
+
+      // Store with 24 hour expiration
+      await redis.lpush(key, JSON.stringify(eventData))
+      await redis.expire(key, 24 * 60 * 60)
+      
+      // Keep only last 1000 events per type
+      await redis.ltrim(key, 0, 999)
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown Redis error'
+      apiLogger.error('Failed to store security event in Redis', { 
+        error: errorMessage,
+        eventType: event.type 
+      })
     }
-
-    // Store with 24 hour expiration
-    await redisClient.lpush(key, JSON.stringify(eventData))
-    await redisClient.expire(key, 24 * 60 * 60)
-    
-    // Keep only last 1000 events per type
-    await redisClient.ltrim(key, 0, 999)
   }
 
   /**
    * Check if event should trigger an alert based on frequency
    */
   private async checkAlertThreshold(event: SecurityEvent): Promise<boolean> {
-    const threshold = this.alertThresholds[event.type]
-    if (!threshold) return false
+    try {
+      const threshold = this.alertThresholds[event.type]
+      if (!threshold) return false
 
-    const redisClient = getRedisClient()
-    if (!redisClient || !redisClient.isReady) {
-      // If Redis is not available, alert on critical events
-      return event.severity === 'critical'
-    }
+      const redis = await getRedisClient()
+      if (!redis || !redis.isReady) {
+        // If Redis is not available, alert on critical events
+        return event.severity === 'critical'
+      }
 
-    const key = `security:events:${event.type}`
-    const events = await redisClient.lrange(key, 0, -1)
-    
-    const recentEvents = events
-      .map(e => JSON.parse(e))
+      const key = `security:events:${event.type}`
+      const events = await redis.lrange(key, 0, -1)
+      
+      const recentEvents = events
+        .map((e: string) => {
+          try {
+            return JSON.parse(e) as SecurityEvent
+          } catch (parseError: unknown) {
+            apiLogger.warn('Failed to parse security event from Redis', { error: parseError })
+            return null
+          }
+        })
+        .filter((e): e is SecurityEvent => e !== null)
       .filter(e => {
         const eventTime = new Date(e.timestamp).getTime()
         return Date.now() - eventTime < threshold.window
       })
 
-    return recentEvents.length >= threshold.count
+      return recentEvents.length >= threshold.count
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown threshold check error'
+      apiLogger.error('Failed to check security alert threshold', { 
+        error: errorMessage,
+        eventType: event.type 
+      })
+      // Default to alert on critical events when threshold check fails
+      return event.severity === 'critical'
+    }
   }
 
   /**
@@ -167,9 +212,13 @@ class SecurityMonitor {
    * Analyze patterns to detect sophisticated attacks
    */
   private async analyzeAttackPatterns(event: SecurityEvent): Promise<void> {
-    if (!redisClient || !redisClient.isReady) return
-
     try {
+      const redis = await getRedisClient()
+      if (!redis || !redis.isReady) {
+        apiLogger.warn('Redis not available for attack pattern analysis')
+        return
+      }
+
       // Check for coordinated attacks from multiple IPs
       if (event.ip) {
         await this.checkCoordinatedAttack(event)
@@ -183,8 +232,9 @@ class SecurityMonitor {
         await this.checkSuspiciousUserBehavior(event)
       }
 
-    } catch (error) {
-      apiLogger.error('Failed to analyze attack patterns', error)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown attack pattern analysis error'
+      apiLogger.error('Failed to analyze attack patterns', { error: errorMessage, eventType: event.type })
     }
   }
 
@@ -192,30 +242,43 @@ class SecurityMonitor {
    * Check for coordinated attacks from multiple sources
    */
   private async checkCoordinatedAttack(event: SecurityEvent): Promise<void> {
-    const key = 'security:ips:recent'
-    const now = Date.now()
-    
-    // Track IPs with recent security events
-    await redisClient.zadd(key, now, event.ip!)
-    await redisClient.expire(key, 60 * 60) // 1 hour
-    
-    // Remove old entries (older than 10 minutes)
-    await redisClient.zremrangebyscore(key, 0, now - 10 * 60 * 1000)
-    
-    // Check if multiple IPs are attacking
-    const recentIPs = await redisClient.zcard(key)
-    
-    if (recentIPs >= 5) { // 5 or more IPs in 10 minutes
-      await this.logSecurityEvent({
-        type: SecurityEventType.BULK_REQUESTS,
-        severity: 'high',
-        source: 'security_monitor',
-        details: {
-          reason: 'Coordinated attack detected',
-          uniqueIPs: recentIPs,
-          timeWindow: '10 minutes'
-        },
-        timestamp: new Date()
+    try {
+      const redis = await getRedisClient()
+      if (!redis || !redis.isReady || !event.ip) {
+        return
+      }
+
+      const key = 'security:ips:recent'
+      const now = Date.now()
+      
+      // Track IPs with recent security events
+      await redis.zadd(key, now, event.ip)
+      await redis.expire(key, 60 * 60) // 1 hour
+      
+      // Remove old entries (older than 10 minutes)
+      await redis.zremrangebyscore(key, 0, now - 10 * 60 * 1000)
+      
+      // Check if multiple IPs are attacking
+      const recentIPs = await redis.zcard(key)
+      
+      if (recentIPs >= 5) { // 5 or more IPs in 10 minutes
+        await this.logSecurityEvent({
+          type: SecurityEventType.BULK_REQUESTS,
+          severity: 'high',
+          source: 'security_monitor',
+          details: {
+            reason: 'Coordinated attack detected',
+            uniqueIPs: recentIPs,
+            timeWindow: '10 minutes'
+          },
+          timestamp: new Date()
+        })
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown coordinated attack check error'
+      apiLogger.error('Failed to check coordinated attack', { 
+        error: errorMessage,
+        ip: event.ip 
       })
     }
   }
@@ -224,32 +287,45 @@ class SecurityMonitor {
    * Check for escalating attack patterns
    */
   private async checkEscalatingAttacks(event: SecurityEvent): Promise<void> {
-    const key = `security:escalation:${event.source}`
-    
-    // Track severity escalation
-    await redisClient.lpush(key, event.severity)
-    await redisClient.expire(key, 30 * 60) // 30 minutes
-    await redisClient.ltrim(key, 0, 9) // Keep last 10 events
-    
-    const recentEvents = await redisClient.lrange(key, 0, -1)
-    
-    // Check for escalating severity
-    const hasEscalation = recentEvents.length >= 3 && 
-      recentEvents.includes('critical') &&
-      recentEvents.includes('high') &&
-      recentEvents.includes('medium')
-    
-    if (hasEscalation) {
-      await this.logSecurityEvent({
-        type: SecurityEventType.CRITICAL_ERROR,
-        severity: 'critical',
-        source: 'security_monitor',
-        details: {
-          reason: 'Attack escalation detected',
-          originalSource: event.source,
-          pattern: recentEvents
-        },
-        timestamp: new Date()
+    try {
+      const redis = await getRedisClient()
+      if (!redis || !redis.isReady) {
+        return
+      }
+
+      const key = `security:escalation:${event.source}`
+      
+      // Track severity escalation
+      await redis.lpush(key, event.severity)
+      await redis.expire(key, 30 * 60) // 30 minutes
+      await redis.ltrim(key, 0, 9) // Keep last 10 events
+      
+      const recentEvents = await redis.lrange(key, 0, -1)
+      
+      // Check for escalating severity
+      const hasEscalation = recentEvents.length >= 3 && 
+        recentEvents.includes('critical') &&
+        recentEvents.includes('high') &&
+        recentEvents.includes('medium')
+      
+      if (hasEscalation) {
+        await this.logSecurityEvent({
+          type: SecurityEventType.CRITICAL_ERROR,
+          severity: 'critical',
+          source: 'security_monitor',
+          details: {
+            reason: 'Attack escalation detected',
+            originalSource: event.source,
+            pattern: recentEvents
+          },
+          timestamp: new Date()
+        })
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown escalation check error'
+      apiLogger.error('Failed to check escalating attacks', { 
+        error: errorMessage,
+        source: event.source 
       })
     }
   }
@@ -258,28 +334,41 @@ class SecurityMonitor {
    * Check for suspicious user behavior patterns
    */
   private async checkSuspiciousUserBehavior(event: SecurityEvent): Promise<void> {
-    const key = `security:user:${event.userId}`
-    const now = Date.now()
-    
-    // Track user security events
-    await redisClient.zadd(key, now, event.type)
-    await redisClient.expire(key, 60 * 60) // 1 hour
-    
-    // Check for multiple security events from same user
-    const userEvents = await redisClient.zcard(key)
-    
-    if (userEvents >= 3) { // 3 or more security events in 1 hour
-      await this.logSecurityEvent({
-        type: SecurityEventType.SUSPICIOUS_LOGIN,
-        severity: 'high',
-        source: 'security_monitor',
-        details: {
-          reason: 'Multiple security events from user',
-          userId: event.userId,
-          eventCount: userEvents,
-          timeWindow: '1 hour'
-        },
-        timestamp: new Date()
+    try {
+      const redis = await getRedisClient()
+      if (!redis || !redis.isReady || !event.userId) {
+        return
+      }
+
+      const key = `security:user:${event.userId}`
+      const now = Date.now()
+      
+      // Track user security events
+      await redis.zadd(key, now, event.type)
+      await redis.expire(key, 60 * 60) // 1 hour
+      
+      // Check for multiple security events from same user
+      const userEvents = await redis.zcard(key)
+      
+      if (userEvents >= 3) { // 3 or more security events in 1 hour
+        await this.logSecurityEvent({
+          type: SecurityEventType.SUSPICIOUS_LOGIN,
+          severity: 'high',
+          source: 'security_monitor',
+          details: {
+            reason: 'Multiple security events from user',
+            userId: event.userId,
+            eventCount: userEvents,
+            timeWindow: '1 hour'
+          },
+          timestamp: new Date()
+        })
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown user behavior check error'
+      apiLogger.error('Failed to check suspicious user behavior', { 
+        error: errorMessage,
+        userId: event.userId 
       })
     }
   }
@@ -288,36 +377,54 @@ class SecurityMonitor {
    * Get security event statistics
    */
   async getSecurityStats(hours: number = 24): Promise<any> {
-    if (!redisClient || !redisClient.isReady) {
-      return { error: 'Redis not available' }
-    }
+    try {
+      const redis = await getRedisClient()
+      if (!redis || !redis.isReady) {
+        return { error: 'Redis not available' }
+      }
 
-    const stats: any = {}
-    const cutoff = Date.now() - (hours * 60 * 60 * 1000)
+      const stats: Record<string, any> = {}
+      const cutoff = Date.now() - (hours * 60 * 60 * 1000)
 
-    for (const eventType of Object.values(SecurityEventType)) {
-      const key = `security:events:${eventType}`
-      const events = await redisClient.lrange(key, 0, -1)
-      
-      const recentEvents = events
-        .map(e => JSON.parse(e))
-        .filter(e => new Date(e.timestamp).getTime() > cutoff)
+      for (const eventType of Object.values(SecurityEventType)) {
+        const key = `security:events:${eventType}`
+        const events = await redis.lrange(key, 0, -1)
+        
+        const recentEvents = events
+          .map((e: string) => {
+            try {
+              return JSON.parse(e) as SecurityEvent
+            } catch (parseError: unknown) {
+              apiLogger.warn('Failed to parse security stats event', { error: parseError })
+              return null
+            }
+          })
+          .filter((e): e is SecurityEvent => e !== null)
+          .filter((e: SecurityEvent) => new Date(e.timestamp).getTime() > cutoff)
 
-      stats[eventType] = {
-        total: recentEvents.length,
-        bySeverity: {
-          low: recentEvents.filter(e => e.severity === 'low').length,
-          medium: recentEvents.filter(e => e.severity === 'medium').length,
-          high: recentEvents.filter(e => e.severity === 'high').length,
-          critical: recentEvents.filter(e => e.severity === 'critical').length,
+        stats[eventType] = {
+          total: recentEvents.length,
+          bySeverity: {
+            low: recentEvents.filter((e: SecurityEvent) => e.severity === 'low').length,
+            medium: recentEvents.filter((e: SecurityEvent) => e.severity === 'medium').length,
+            high: recentEvents.filter((e: SecurityEvent) => e.severity === 'high').length,
+            critical: recentEvents.filter((e: SecurityEvent) => e.severity === 'critical').length,
+          }
         }
       }
-    }
 
-    return {
-      timeWindow: `${hours} hours`,
-      stats,
-      generated: new Date().toISOString()
+      return {
+        timeWindow: `${hours} hours`,
+        stats,
+        generated: new Date().toISOString()
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown stats error'
+      apiLogger.error('Failed to get security stats', { error: errorMessage })
+      return { 
+        error: 'Failed to retrieve security statistics',
+        details: errorMessage 
+      }
     }
   }
 }

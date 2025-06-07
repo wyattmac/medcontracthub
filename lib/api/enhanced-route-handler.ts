@@ -17,7 +17,7 @@ import type { User } from '@supabase/supabase-js'
 interface RouteOptions {
   requireAuth?: boolean
   requireAdmin?: boolean
-  rateLimit?: 'api' | 'auth' | 'search' | 'sync' | 'ai'
+  rateLimit?: 'api' | 'auth' | 'search' | 'sync' | 'ai' | 'monitoring'
   validateQuery?: z.ZodSchema
   validateBody?: z.ZodSchema
   requireCSRF?: boolean

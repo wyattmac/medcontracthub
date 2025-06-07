@@ -605,7 +605,7 @@ Format the response as JSON with this structure:
    */
   private cleanProductName(name: string): string {
     // Remove common specification patterns
-    let clean = name
+    const clean = name
       .replace(/\d+\s*(?:gauge|ga|mil)\b/gi, '')
       .replace(/\d+(?:\.\d+)?\s*(?:x|×)\s*\d+(?:\.\d+)?(?:\s*(?:x|×)\s*\d+(?:\.\d+)?)?/gi, '')
       .replace(/\b(?:white|black|blue|green|red|yellow|gray|grey|clear)\b/gi, '')

@@ -41,6 +41,8 @@ export const RATE_LIMITS = {
   ai: { interval: 60 * 60 * 1000, limit: 50 }, // 50 req/hour for AI
   export: { interval: 60 * 60 * 1000, limit: 20 }, // 20 req/hour for exports
   search: { interval: 60 * 1000, limit: 100 }, // 100 req/min for search
+  sync: { interval: 60 * 1000, limit: 30 }, // 30 req/min for sync operations
+  monitoring: { interval: 60 * 1000, limit: 120 }, // 120 req/min for monitoring
 } as const
 
 /**
@@ -155,7 +157,7 @@ async function memoryRateLimit(
   windowStart: number,
   options: RateLimitOptions
 ): Promise<RateLimitResult> {
-  let data = memoryStore.get(key) || { requests: [], lastCleanup: now }
+  const data = memoryStore.get(key) || { requests: [], lastCleanup: now }
   
   // Clean up old requests
   data.requests = data.requests.filter(timestamp => timestamp > windowStart)

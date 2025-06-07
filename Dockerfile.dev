@@ -17,7 +17,7 @@ RUN apk add --no-cache \
 ENV NODE_OPTIONS="--max-old-space-size=8192"
 
 # Set npm timeout for large dependency installations
-RUN npm config set timeout 600000
+RUN npm config set fetch-timeout 600000
 
 # Disable Next.js telemetry
 ENV NEXT_TELEMETRY_DISABLED=1

@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  # MCP Brave Search Server
+  mcp-brave-search:
+    build:
+      context: ./tools/mcp-servers/src/brave-search
+      dockerfile: Dockerfile
+    container_name: mcp-brave-search
+    environment:
+      - BRAVE_API_KEY=${BRAVE_API_KEY}
+    networks:
+      - medcontract-dev
+    restart: unless-stopped
+    volumes:
+      - ./tools/mcp-servers/src/brave-search:/app
+      - /app/node_modules
+    command: npm start
+
+  # MCP Filesystem Server
+  mcp-filesystem:
+    build:
+      context: ./tools/mcp-servers/src/filesystem
+      dockerfile: Dockerfile
+    container_name: mcp-filesystem
+    networks:
+      - medcontract-dev
+    restart: unless-stopped
+    volumes:
+      - ./tools/mcp-servers/src/filesystem:/app
+      - /app/node_modules
+      # Mount the project directory for filesystem access
+      - ./:/workspace:ro
+    command: npm start
+
+  # MCP Git Server
+  mcp-git:
+    build:
+      context: ./tools/mcp-servers/src/git
+      dockerfile: Dockerfile
+    container_name: mcp-git
+    networks:
+      - medcontract-dev
+    restart: unless-stopped
+    volumes:
+      - ./tools/mcp-servers/src/git:/app
+      - ./:/workspace
+      # Mount git config and SSH keys if needed
+      - ~/.gitconfig:/root/.gitconfig:ro
+      - ~/.ssh:/root/.ssh:ro
+    command: python -m mcp_server_git
+
+  # MCP Fetch Server
+  mcp-fetch:
+    build:
+      context: ./tools/mcp-servers/src/fetch
+      dockerfile: Dockerfile
+    container_name: mcp-fetch
+    networks:
+      - medcontract-dev
+    restart: unless-stopped
+    volumes:
+      - ./tools/mcp-servers/src/fetch:/app
+    command: python -m mcp_server_fetch
+
+  # MCP Memory Server
+  mcp-memory:
+    build:
+      context: ./tools/mcp-servers/src/memory
+      dockerfile: Dockerfile
+    container_name: mcp-memory
+    networks:
+      - medcontract-dev
+    restart: unless-stopped
+    volumes:
+      - ./tools/mcp-servers/src/memory:/app
+      - /app/node_modules
+      - mcp_memory_data:/data
+    command: npm start
+
+  # MCP Puppeteer Server
+  mcp-puppeteer:
+    build:
+      context: ./tools/mcp-servers/src/puppeteer
+      dockerfile: Dockerfile
+    container_name: mcp-puppeteer
+    networks:
+      - medcontract-dev
+    restart: unless-stopped
+    volumes:
+      - ./tools/mcp-servers/src/puppeteer:/app
+      - /app/node_modules
+    # Required for Chrome/Chromium
+    cap_add:
+      - SYS_ADMIN
+    command: npm start
+
+  # MCP Everything Server (comprehensive server)
+  mcp-everything:
+    build:
+      context: ./tools/mcp-servers/src/everything
+      dockerfile: Dockerfile
+    container_name: mcp-everything
+    networks:
+      - medcontract-dev
+    restart: unless-stopped
+    volumes:
+      - ./tools/mcp-servers/src/everything:/app
+      - /app/node_modules
+      - ./:/workspace
+    environment:
+      - PORT=8080
+    ports:
+      - "8080:8080"
+    command: npm start
+
+  # MCP Context7 Server
+  mcp-context7:
+    build:
+      context: ./tools/mcp-servers/src/context7
+      dockerfile: Dockerfile
+    container_name: mcp-context7
+    networks:
+      - medcontract-dev
+    restart: unless-stopped
+    volumes:
+      - ./tools/mcp-servers/src/context7:/app
+      - /app/node_modules
+    environment:
+      - UPSTASH_REDIS_REST_URL=${UPSTASH_REDIS_REST_URL}
+      - UPSTASH_REDIS_REST_TOKEN=${UPSTASH_REDIS_REST_TOKEN}
+    command: node index.js
+
+volumes:
+  mcp_memory_data:
+
+networks:
+  medcontract-dev:
+    external: true

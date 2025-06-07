@@ -27,32 +27,48 @@ make dev  # http://localhost:3000 (development)
 
 ### 🔧 Environment Setup
 
-**Core Configuration (`.env.local`):**
+**🔑 Pre-Configured APIs (Ready to Use):**
 ```bash
-# Development Settings
-DEVELOPMENT_AUTH_BYPASS=true    # Bypass auth in development
-NODE_ENV=development
+# Copy the consolidated environment file
+cp .env.consolidated .env.local
 
-# Required API Keys
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE_KEY=your_service_key
-SAM_GOV_API_KEY=your_sam_gov_key
-ANTHROPIC_API_KEY=your_claude_key      # For AI analysis
-MISTRAL_API_KEY=your_mistral_key       # For OCR processing
+# All APIs are pre-configured and working:
+✅ Supabase Database     - Ready for production data
+✅ SAM.gov API          - 1,000 daily calls available  
+✅ Claude AI            - Contract analysis ready
+✅ Mistral OCR          - Document processing ready
+✅ Stripe Payments      - Test mode configured
+✅ Email Delivery       - Resend API active
+✅ Enhanced Search      - Brave Search API active
 
-# Optional Services
-STRIPE_SECRET_KEY=your_stripe_test_key
-RESEND_API_KEY=your_email_key
-BRAVE_SEARCH_API_KEY=your_search_key
+# Critical for development testing:
+DEVELOPMENT_AUTH_BYPASS=true    # Required for OCR workflow testing
 ```
 
-**Multi-environment testing:**
+**🚀 Quick Start Commands:**
 ```bash
-make staging  # http://localhost:3001 (staging build + staging DB)
-make prod     # http://localhost:3002 (production simulation)
+# 1. Setup (one time)
+cp .env.consolidated .env.local     # Local development
+cp .env.consolidated .env           # Docker setup
+
+# 2. Start development
+make dev                           # Docker on port 3000
+
+# 3. Verify everything works
+curl http://localhost:3000/api/health
+npm run lint && npm run type-check
+
+# 4. Alternative environments
+make staging  # Port 3001 (staging build + staging DB)
+make prod     # Port 3002 (production simulation)
 ```
 
-**Prerequisites:** Docker, Docker Compose, 3 Supabase projects (dev, staging, production)
+**Prerequisites:** Docker Desktop 4.0+, Make
+
+**⚠️ Common Issues:**
+- **APIs not working:** `cp .env.consolidated .env && docker-compose restart`
+- **Port 3000 in use:** Use `make staging` (port 3001) instead
+- **TypeScript errors:** Check [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 
 ---
 
@@ -96,6 +112,7 @@ make prod     # http://localhost:3002 (production simulation)
 #### AI-Powered Intelligence
 - **Document OCR** processing with Mistral AI ($0.001/page)
 - **Contract Analysis** with Anthropic Claude for insights
+- **AI Analyze** ✨ NEW - One-click analysis of SAM.gov attachments from saved opportunities
 - **Supplier Discovery** using Brave Search API
 - **Win Probability Scoring** based on company capabilities
 
@@ -111,6 +128,7 @@ make prod     # http://localhost:3002 (production simulation)
 - **Secure Download Proxy** with server-side API key authentication
 - **Simple Document Access** without AI processing when you just need files
 - **Clean File Management** with filename and size display
+- **AI Analyze Button** on saved opportunities for instant attachment analysis
 
 #### Enterprise Dashboard
 - **Virtual Scrolling** for 20k+ opportunities with sub-second load times

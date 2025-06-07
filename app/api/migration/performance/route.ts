@@ -153,14 +153,14 @@ export const POST = enhancedRouteHandler.POST(
         const statement = migrationStatements[i].trim()
         console.log(`Executing statement ${i + 1}/${migrationStatements.length}...`)
 
-        const { data, error } = await supabase
+        const { data: _dummyData, error: _dummyError } = await supabase
           .from('_dummy')
           .select('*')
           .limit(0)
 
         // Use raw SQL execution through Supabase
         try {
-          const { data, error } = await (supabase as any).rpc('exec_sql', {
+          const { data: _execData, error: _execError } = await (supabase as any).rpc('exec_sql', {
             sql: statement
           })
 

@@ -62,7 +62,7 @@ export const POST = routeHandler.POST(
 
 async function performSync(request: NextRequest, user?: any): Promise<NextResponse> {
   const startTime = Date.now()
-  let totalFetched = 0
+  const totalFetched = 0
 
   try {
     syncLogger.info('Starting sync operation', {

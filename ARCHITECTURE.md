@@ -269,6 +269,13 @@ class DocumentProcessor {
     // Mistral AI at $0.001/page with 7-day caching
     // Extracts requirements, deadlines, compliance needs
   }
+  
+  async analyzeAttachments(noticeId: string): Promise<AnalysisResult> {
+    // AI Analyze feature - one-click processing
+    // Downloads SAM.gov attachments automatically
+    // Extracts structured data and medical relevance
+    // Returns comprehensive analysis with scores
+  }
 
   async analyzeContract(content: string): Promise<Analysis> {
     // Claude AI analysis with context optimization
@@ -448,6 +455,7 @@ const opportunityLoader = new DataLoader(async (ids) => {
 - **SAM.gov Responses**: Extended TTL during quota limitations
 - **AI Analysis Results**: Expensive AI processing results cached
 - **OCR Processing Results**: Document analysis cached for 7 days ✨ NEW
+- **SAM.gov Attachment Analysis**: AI Analyze results cached in contract_documents table
 
 ## 🔐 Security Architecture
 
@@ -477,6 +485,7 @@ const limits = {
   auth: '5 req/min',      // Authentication attempts
   ai: '50 req/hour',      // AI processing
   ocr: '20 req/hour',     // OCR document processing ✨ NEW
+  aiAnalyze: '10 req/min', // AI Analyze feature for saved opportunities
   export: '10 req/hour'   // Data exports
 }
 ```

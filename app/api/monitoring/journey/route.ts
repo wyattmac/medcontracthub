@@ -8,11 +8,11 @@ import { createUserJourneyMonitor, CRITICAL_JOURNEYS } from '@/lib/monitoring/us
 import { enhancedRouteHandler } from '@/lib/api/enhanced-route-handler'
 
 export const GET = enhancedRouteHandler.GET(
-  async ({ searchParams }) => {
+  async ({ sanitizedQuery }) => {
     const monitor = createUserJourneyMonitor()
     
-    const journeyName = searchParams.get('journey')
-    const runAll = searchParams.get('all') === 'true'
+    const journeyName = sanitizedQuery?.journey
+    const runAll = sanitizedQuery?.all === 'true'
 
     if (journeyName) {
       // Run specific journey
@@ -63,9 +63,9 @@ export const GET = enhancedRouteHandler.GET(
 )
 
 export const POST = enhancedRouteHandler.POST(
-  async ({ body }) => {
+  async ({ sanitizedBody }) => {
     const monitor = createUserJourneyMonitor()
-    const { journeyNames } = body
+    const { journeyNames } = sanitizedBody
 
     if (!Array.isArray(journeyNames)) {
       return NextResponse.json(

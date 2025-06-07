@@ -152,6 +152,17 @@ export class RateLimitError extends AppError {
   }
 }
 
+export class QuotaExceededError extends AppError {
+  constructor(message: string = 'API quota exceeded', retryAfter?: number, details?: any) {
+    super(
+      ErrorCode.API_RATE_LIMIT,
+      message,
+      429,
+      { retryAfter, ...details }
+    )
+  }
+}
+
 // Error response type for API routes
 export interface IErrorResponse {
   error: {
