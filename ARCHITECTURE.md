@@ -1,6 +1,6 @@
 # MedContractHub Architecture
 
-**Status**: 99% Production Ready | **Database**: 23,300+ Real Opportunities | **TypeScript**: Zero Errors | **Pattern**: Clean Architecture + DDD
+**Status**: 99% Production Ready | **Database**: 23,300+ Real Opportunities | **TypeScript**: Zero Errors | **Pattern**: Clean Architecture + DDD | **OCR**: Enhanced Proposals Integration
 **Last Updated**: December 6, 2024
 
 > 📚 **Related Documentation**: See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for debugging guides and [DEPLOYMENT.md](./DEPLOYMENT.md) for production setup.
@@ -47,7 +47,11 @@ features/
 │   ├── components/       # UI components for this feature
 │   ├── hooks/            # React Query hooks and custom logic
 │   └── types/            # TypeScript types
-├── proposals/            # Proposal management
+├── proposals/            # OCR-enhanced proposal management ✨ NEW
+│   ├── api/              # Proposal creation with document processing
+│   ├── components/       # Mark for Proposal button, document analyzer
+│   ├── hooks/            # OCR processing and proposal workflow hooks
+│   └── types/            # Proposal and document attachment types
 ├── analytics/            # Performance dashboards
 └── settings/             # User preferences and configuration
 ```
@@ -63,7 +67,8 @@ infrastructure/
 ├── api-clients/
 │   ├── sam-gov/          # Federal opportunities API + NAICS matching
 │   ├── stripe/           # Payment processing
-│   └── mistral/          # Document OCR processing
+│   ├── mistral/          # Document OCR processing ✨ NEW
+│   └── anthropic/        # Contract analysis with Claude ✨ NEW
 ├── cache/                # Multi-level caching strategy
 ├── queue/                # Bull.js background job processing
 └── monitoring/           # Sentry error tracking and performance
@@ -255,17 +260,33 @@ class OpportunityService {
 }
 ```
 
-### **AI Domain (Specialized Processing)**
+### **AI Domain (Specialized Processing)** ✨ NEW
 
 ```typescript
-// Cost-optimized AI processing
+// Cost-optimized AI processing with OCR-enhanced proposals
 class DocumentProcessor {
   async processWithOCR(document: Document): Promise<ExtractedData> {
     // Mistral AI at $0.001/page with 7-day caching
+    // Extracts requirements, deadlines, compliance needs
   }
 
   async analyzeContract(content: string): Promise<Analysis> {
     // Claude AI analysis with context optimization
+    // Generates requirement summaries and compliance analysis
+  }
+}
+
+// OCR-Enhanced Proposal Workflow
+class ProposalOCRService {
+  async markForProposal(opportunityId: string): Promise<ProposalData> {
+    // Process SAM.gov documents attached to opportunity
+    // Extract requirements using Mistral OCR
+    // Generate pre-populated proposal form data
+  }
+
+  async analyzeDocuments(documents: Document[]): Promise<RequirementAnalysis> {
+    // Multi-tab analysis: Requirements | Summary | Compliance | Raw Text
+    // Export capabilities and clipboard integration
   }
 }
 ```
@@ -291,7 +312,8 @@ USING (auth.uid() = user_id);
 - `profiles` - Enhanced with medical industry preferences
 - `companies` - **NAICS codes storage**: User-selected medical industry classifications
 - `saved_opportunities` - Match score-based recommendations
-- `proposals` - Ready for user-generated proposals
+- `proposals` - OCR-enhanced proposal creation with document processing ✨ NEW
+- `proposal_documents` - Document attachments with extracted text ✨ NEW
 - `api_usage` - Usage tracking for billing and quota management
 - `reminders` - Deadline notifications and alerts
 
@@ -317,7 +339,7 @@ const emailQueue = new Bull('email-notifications', {
 
 // Job types
 - emailQueue: Notification delivery
-- ocrQueue: Document processing 
+- ocrQueue: Document OCR processing for proposals ✨ NEW
 - syncQueue: SAM.gov data synchronization
 ```
 
@@ -336,6 +358,51 @@ const emailQueue = new Bull('email-notifications', {
 - **Shared Redis**: Namespaced for environment isolation
 - **Health Checks**: Automated monitoring and alerting
 - **Hot Reload**: Development environment with instant updates
+
+### **Consolidated Environment Configuration** ✨ NEW
+
+**Single Source of Truth for Environment Variables**:
+
+```typescript
+// Environment file hierarchy
+.env.consolidated           // Master template with all configuration
+├── .env.local             // Development (copied from consolidated)
+├── .env.staging           // Staging with staging-specific credentials
+└── .env.production        // Production with production credentials
+
+// Legacy files removed during consolidation
+.env, .env.docker.dev      // Deprecated and removed
+```
+
+**Configuration Categories**:
+```bash
+# Development Settings
+NODE_ENV=development
+DEVELOPMENT_AUTH_BYPASS=true    # Critical for OCR testing
+
+# Supabase Configuration (per environment)
+NEXT_PUBLIC_SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+
+# AI Services (OCR Integration)
+ANTHROPIC_API_KEY=...          # Claude for contract analysis
+MISTRAL_API_KEY=...            # Mistral for document OCR
+
+# External APIs
+SAM_GOV_API_KEY=...            # Federal opportunities
+BRAVE_SEARCH_API_KEY=...       # Enhanced search
+RESEND_API_KEY=...             # Email notifications
+
+# Security & Payments
+CSRF_SECRET=...                # CSRF protection
+STRIPE_SECRET_KEY=...          # Payment processing (test keys)
+```
+
+**Benefits**:
+- **Simplified Setup**: Single file copy for new environments
+- **Complete Documentation**: Every variable clearly explained
+- **OCR Integration Ready**: All AI service keys included
+- **Security Best Practices**: Test keys for development, production keys separated
 
 ## 🎯 Performance Optimizations
 
@@ -375,6 +442,7 @@ const opportunityLoader = new DataLoader(async (ids) => {
 - **Rate Limiting**: API request counting and throttling
 - **SAM.gov Responses**: Extended TTL during quota limitations
 - **AI Analysis Results**: Expensive AI processing results cached
+- **OCR Processing Results**: Document analysis cached for 7 days ✨ NEW
 
 ## 🔐 Security Architecture
 
@@ -403,6 +471,7 @@ const limits = {
   api: '10 req/sec',      // General API calls
   auth: '5 req/min',      // Authentication attempts
   ai: '50 req/hour',      // AI processing
+  ocr: '20 req/hour',     // OCR document processing ✨ NEW
   export: '10 req/hour'   // Data exports
 }
 ```
@@ -462,6 +531,8 @@ core/ai/           → ai-processing-service
 
 ### **✅ Strengths**
 - **Production Ready**: Zero critical issues blocking deployment
+- **OCR Integration**: Complete "Mark for Proposal" workflow implemented ✨ NEW
+- **Consolidated Environment**: Single source of truth for all configuration ✨ NEW
 - **Type Safe**: Comprehensive TypeScript coverage
 - **Performance Optimized**: Virtual scrolling, caching, bundle splitting
 - **Error Resilient**: Comprehensive error handling and recovery
@@ -476,14 +547,16 @@ core/ai/           → ai-processing-service
 - **API Standardization**: Some direct fetch calls bypass feature APIs
 
 ### **🎯 Immediate Priorities**
-1. **Fix SAM.gov sync endpoint** - Critical for real data
-2. **Resolve failing auth tests** - Complete test coverage
-3. **Consolidate auth implementations** - Single source of truth
-4. **Standardize API patterns** - All calls through feature APIs
+1. **Test OCR proposal workflow** - Verify complete integration ✨ NEW
+2. **Fix SAM.gov sync endpoint** - Critical for real data
+3. **Resolve failing auth tests** - Complete test coverage
+4. **Consolidate auth implementations** - Single source of truth
+5. **Standardize API patterns** - All calls through feature APIs
 
 ## 🔄 Migration and Evolution Strategy
 
 ### **Phase 1: Current State Optimization (Immediate)**
+- Test and validate OCR proposal workflow end-to-end ✨ NEW
 - Fix SAM.gov sync endpoint
 - Resolve remaining test failures
 - Consolidate duplicate auth implementations
@@ -503,7 +576,7 @@ core/ai/           → ai-processing-service
 
 ---
 
-**Architecture Status**: Production Ready with 99% implementation complete - Personalized Medical NAICS Matching Added
+**Architecture Status**: Production Ready with 99% implementation complete - OCR-Enhanced Proposals + Consolidated Environment Configuration Added
 **Last Updated**: December 6, 2024
 
 ---

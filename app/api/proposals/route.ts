@@ -113,6 +113,14 @@ const createProposalSchema = z.object({
     content: z.string().optional(),
     is_required: z.boolean().optional(),
     max_pages: z.number().positive().optional()
+  })).optional(),
+  attachedDocuments: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    size: z.number(),
+    type: z.string(),
+    url: z.string().optional(),
+    extractedText: z.string().optional()
   })).optional()
 })
 
@@ -191,6 +199,29 @@ export const POST = routeHandler.POST(
 
       if (sectionsError) {
         dbLogger.warn('Error creating proposal sections', sectionsError)
+        // Don't fail the whole request, just log the error
+      }
+    }
+
+    // Store document attachments if provided
+    if (validatedData.attachedDocuments && validatedData.attachedDocuments.length > 0) {
+      const documentsToInsert = validatedData.attachedDocuments.map((doc) => ({
+        proposal_id: proposal.id,
+        document_name: doc.name,
+        document_size: doc.size,
+        document_type: doc.type,
+        document_url: doc.url,
+        extracted_text: doc.extractedText,
+        uploaded_by: user.id,
+        created_at: new Date().toISOString()
+      }))
+
+      const { error: documentsError } = await supabase
+        .from('proposal_documents')
+        .insert(documentsToInsert)
+
+      if (documentsError) {
+        dbLogger.warn('Error storing proposal documents', documentsError)
         // Don't fail the whole request, just log the error
       }
     }

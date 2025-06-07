@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Calendar, Plus, X } from 'lucide-react'
+import { Calendar, Plus, X, Upload, FileText, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,6 +26,16 @@ interface ProposalSection {
   content?: string
   is_required?: boolean
   max_pages?: number
+}
+
+interface AttachedDocument {
+  id: string
+  name: string
+  size: number
+  type: string
+  url?: string
+  extractedText?: string
+  isProcessing?: boolean
 }
 
 interface CreateProposalFormProps {
@@ -94,6 +104,8 @@ export function CreateProposalForm({
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState('')
   const [sections, setSections] = useState<ProposalSection[]>(defaultSections)
+  const [attachedDocuments, setAttachedDocuments] = useState<AttachedDocument[]>([])
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false)
 
   const {
     register,
@@ -144,11 +156,85 @@ export function CreateProposalForm({
     setSections(sections.filter((_, i) => i !== index))
   }
 
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    setIsUploadingDocument(true)
+    
+    for (const file of Array.from(files)) {
+      const documentId = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      
+      // Add document to state immediately
+      const newDocument: AttachedDocument = {
+        id: documentId,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        isProcessing: true
+      }
+      
+      setAttachedDocuments(prev => [...prev, newDocument])
+
+      try {
+        // Upload file for OCR processing
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const response = await fetch('/api/ocr/upload', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to upload document')
+        }
+
+        const result = await response.json()
+        
+        // Update document with OCR results
+        setAttachedDocuments(prev => 
+          prev.map(doc => 
+            doc.id === documentId 
+              ? { 
+                  ...doc, 
+                  url: result.data.publicUrl,
+                  extractedText: result.data.text,
+                  isProcessing: false 
+                }
+              : doc
+          )
+        )
+      } catch (error) {
+        console.error('Document upload failed:', error)
+        // Remove failed document
+        setAttachedDocuments(prev => prev.filter(doc => doc.id !== documentId))
+      }
+    }
+    
+    setIsUploadingDocument(false)
+    // Reset file input
+    event.target.value = ''
+  }
+
+  const removeDocument = (documentId: string) => {
+    setAttachedDocuments(prev => prev.filter(doc => doc.id !== documentId))
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
   const handleFormSubmit = (data: any) => {
     onSubmit({
       ...data,
       tags,
       sections: sections.filter(section => section.title.trim() !== ''),
+      attachedDocuments: attachedDocuments.filter(doc => !doc.isProcessing),
       total_proposed_price: data.total_proposed_price ? parseFloat(data.total_proposed_price) : null,
       win_probability: data.win_probability ? parseFloat(data.win_probability) / 100 : null
     })
@@ -340,6 +426,88 @@ export function CreateProposalForm({
               </div>
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      {/* Document Attachments */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            Document Attachments
+            <div className="flex items-center gap-2">
+              {isUploadingDocument && (
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              )}
+              <Label htmlFor="document-upload" className="cursor-pointer">
+                <Button type="button" size="sm" variant="outline" asChild>
+                  <span>
+                    <Upload className="h-4 w-4 mr-1" />
+                    Upload Documents
+                  </span>
+                </Button>
+              </Label>
+              <input
+                id="document-upload"
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                onChange={handleDocumentUpload}
+                className="hidden"
+                disabled={isUploadingDocument}
+              />
+            </div>
+          </CardTitle>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Upload documents for OCR processing. Supported formats: PDF, Word, images (JPG, PNG), TXT
+          </p>
+        </CardHeader>
+        <CardContent>
+          {attachedDocuments.length === 0 ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>No documents attached</p>
+              <p className="text-xs">Upload documents to extract text and requirements</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {attachedDocuments.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium text-sm">{doc.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {formatFileSize(doc.size)}
+                        {doc.isProcessing && (
+                          <span className="ml-2 text-blue-600">Processing OCR...</span>
+                        )}
+                        {doc.extractedText && (
+                          <span className="ml-2 text-green-600">
+                            ✓ Text extracted ({doc.extractedText.length} chars)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {doc.isProcessing && (
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                    )}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeDocument(doc.id)}
+                      className="text-red-600 hover:text-red-700"
+                      disabled={doc.isProcessing}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -4,25 +4,46 @@
 
 > 🏆 **Production Ready** | 23,300+ Live Opportunities | Zero TypeScript Errors | Enterprise Architecture
 
-Transform government contracting with intelligent opportunity discovery, automated document processing, and AI-powered supplier matching.
+Transform government contracting with intelligent opportunity discovery, automated document processing, AI-powered supplier matching, and OCR-enhanced proposal creation.
 
 ---
 
 ## 🚀 Quick Start (Docker + Supabase)
 
-**MedContractHub uses Docker with multi-environment Supabase for all development:**
+**MedContractHub uses Docker with consolidated environment configuration:**
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/wyattmac/medcontracthub.git
 cd medcontracthub
 
-# 2. Configure environment (requires 3 Supabase projects)
-cp .env.example .env.local
-# Edit .env.local with your Supabase development project credentials
+# 2. Configure environment
+cp .env.consolidated .env.local
+# Edit .env.local with your API keys and credentials
 
 # 3. Start Docker development environment
 make dev  # http://localhost:3000 (development)
+```
+
+### 🔧 Environment Setup
+
+**Core Configuration (`.env.local`):**
+```bash
+# Development Settings
+DEVELOPMENT_AUTH_BYPASS=true    # Bypass auth in development
+NODE_ENV=development
+
+# Required API Keys
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_service_key
+SAM_GOV_API_KEY=your_sam_gov_key
+ANTHROPIC_API_KEY=your_claude_key      # For AI analysis
+MISTRAL_API_KEY=your_mistral_key       # For OCR processing
+
+# Optional Services
+STRIPE_SECRET_KEY=your_stripe_test_key
+RESEND_API_KEY=your_email_key
+BRAVE_SEARCH_API_KEY=your_search_key
 ```
 
 **Multi-environment testing:**
@@ -52,6 +73,7 @@ make prod     # http://localhost:3002 (production simulation)
 
 ### **📖 Feature Documentation**
 - **[NAICS_MATCHING_SYSTEM.md](./NAICS_MATCHING_SYSTEM.md)** - Medical industry classification system
+- **[OCR_PROPOSAL_SYSTEM.md](#ocr-proposal-integration)** - OCR-powered proposal creation workflow
 
 ---
 
@@ -76,6 +98,13 @@ make prod     # http://localhost:3002 (production simulation)
 - **Contract Analysis** with Anthropic Claude for insights
 - **Supplier Discovery** using Brave Search API
 - **Win Probability Scoring** based on company capabilities
+
+#### OCR-Enhanced Proposals ✨ NEW
+- **"Mark for Proposal"** button on each opportunity
+- **Automated Document Processing** extracts requirements from SAM.gov documents
+- **AI Requirement Analysis** identifies compliance needs, deadlines, and specifications
+- **Pre-populated Proposal Forms** with opportunity data and extracted requirements
+- **Document Analyzer** with tabbed interface (Requirements/Summary/Compliance/Raw Text)
 
 #### Enterprise Dashboard
 - **Virtual Scrolling** for 20k+ opportunities with sub-second load times
@@ -190,6 +219,70 @@ make dev               # Development (port 3000)
 make staging          # Staging (port 3001)
 make prod            # Production (port 3002)
 make health-check    # Verify all services
+```
+
+---
+
+## 📄 OCR Proposal Integration
+
+### **Workflow Overview**
+1. **Discover Opportunities** - Browse SAM.gov opportunities with AI matching
+2. **Mark for Proposal** - Click the blue "Mark for Proposal" button on any opportunity  
+3. **OCR Processing** - System automatically processes attached contract documents
+4. **AI Analysis** - Extract requirements, deadlines, compliance needs, and specifications
+5. **Create Proposal** - Pre-populated form with opportunity data and extracted requirements
+
+### **Key Components**
+
+#### `MarkForProposalButton` Component
+```typescript
+// Location: components/dashboard/opportunities/mark-for-proposal-button.tsx
+// Features:
+- Trigger OCR processing modal
+- Display processing progress and results
+- Navigate to pre-populated proposal form
+```
+
+#### `ProposalDocumentAnalyzer` Component  
+```typescript
+// Location: components/dashboard/proposals/proposal-document-analyzer.tsx
+// Features:
+- Tabbed interface: Requirements | Summary | Compliance | Raw Text
+- AI-powered requirement extraction
+- Export functionality for analysis results
+- Copy-to-clipboard features
+```
+
+#### Enhanced Proposal Form
+```typescript
+// Location: components/dashboard/proposals/create-proposal-form.tsx
+// Features:
+- Document upload section with drag-and-drop
+- Real-time OCR processing with progress indicators
+- File validation and security checks
+- Integration with existing proposal workflow
+```
+
+### **API Endpoints**
+- `POST /api/ocr/upload` - Upload and process documents with OCR
+- `POST /api/ocr/process-optimized` - Process opportunity documents
+- `POST /api/proposals` - Create proposal with attached documents
+- `GET /api/opportunities/{id}` - Fetch opportunity with document links
+
+### **Database Schema**
+```sql
+-- New table for proposal document attachments
+CREATE TABLE proposal_documents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    proposal_id UUID REFERENCES proposals(id) ON DELETE CASCADE,
+    document_name TEXT NOT NULL,
+    document_size INTEGER NOT NULL,
+    document_type TEXT NOT NULL,
+    document_url TEXT,
+    extracted_text TEXT,
+    uploaded_by UUID NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 ```
 
 ---

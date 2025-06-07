@@ -21,6 +21,8 @@
 - ✅ SAM.gov sync operational (1,002+ opportunities loaded)
 - ✅ Sentry monitoring restored and functional
 - ✅ Performance optimized (11.7s → 1.95s page loads, 83% improvement)
+- ✅ OCR proposal integration with "Mark for Proposal" workflow
+- ✅ Environment files consolidated into single `.env.consolidated` file
 
 ---
 
@@ -55,15 +57,69 @@ make --version
 git clone https://github.com/wyattmac/medcontracthub.git
 cd medcontracthub
 
-# Copy environment configuration
-cp .env.example .env.local
+# Copy consolidated environment configuration
+cp .env.consolidated .env.local
 
-# Edit .env.local with your credentials:
-# - NEXT_PUBLIC_SUPABASE_URL (development project)
-# - NEXT_PUBLIC_SUPABASE_ANON_KEY  
-# - SUPABASE_SERVICE_ROLE_KEY
-# - SAM_GOV_API_KEY
-# - ANTHROPIC_API_KEY (for AI features)
+# Edit .env.local with your credentials - all required keys included:
+# See complete configuration example below
+```
+
+### **Environment Configuration (.env.local)**
+
+**Using the consolidated environment file template:**
+```bash
+# ===========================================
+# DEVELOPMENT SETTINGS
+# ===========================================
+NODE_ENV=development
+DEVELOPMENT_AUTH_BYPASS=true          # Required for testing
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# ===========================================
+# SUPABASE CONFIGURATION (REQUIRED)
+# ===========================================
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=eyJ...your-service-role-key
+SUPABASE_ACCESS_TOKEN=sbp_...your-access-token
+
+# ===========================================
+# AI SERVICES (REQUIRED FOR OCR)
+# ===========================================
+ANTHROPIC_API_KEY=sk-ant-api03-...your-claude-key
+MISTRAL_API_KEY=...your-mistral-key    # For OCR document processing
+
+# ===========================================
+# EXTERNAL APIs (REQUIRED)
+# ===========================================
+SAM_GOV_API_KEY=...your-sam-gov-key
+BRAVE_SEARCH_API_KEY=...your-brave-key  # Optional for enhanced search
+RESEND_API_KEY=re_...your-resend-key    # For email notifications
+
+# ===========================================
+# STRIPE PAYMENT PROCESSING (USE TEST KEYS)
+# ===========================================
+STRIPE_SECRET_KEY=sk_test_...your-test-key
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...your-test-key
+STRIPE_WEBHOOK_SECRET=whsec_...your-webhook-secret
+
+# ===========================================
+# SECURITY (REQUIRED)
+# ===========================================
+CSRF_SECRET=your-unique-32-character-secret-key
+SYNC_TOKEN=your-sync-endpoint-security-token
+
+# ===========================================
+# EMAIL CONFIGURATION
+# ===========================================
+FROM_EMAIL=noreply@yourdomain.com
+FROM_NAME=YourAppName
+
+# ===========================================
+# MONITORING (OPTIONAL)
+# ===========================================
+SENTRY_DSN=https://...your-sentry-dsn
+SENTRY_AUTH_TOKEN=...your-sentry-token
 ```
 
 ### **3. Start Development Environment**
@@ -185,75 +241,44 @@ npm run dev-setup       # Create development user (bypass onboarding)
 npm run db:migrate      # Apply database migrations
 ```
 
-### **Supabase Configuration (Three Projects Required)**
+### **Consolidated Environment Configuration**
 
-**Each development stage connects to a separate Supabase project for complete isolation:**
+**All environment variables are now managed through a single `.env.consolidated` template file that includes:**
 
-#### **1. Development Project (.env.local)**
+#### **Multi-Environment Support**
+- **Development**: Copy `.env.consolidated` to `.env.local` for development
+- **Staging**: Use staging-specific Supabase project credentials  
+- **Production**: Use production-specific Supabase project credentials
+
+#### **OCR Integration Requirements**
 ```bash
-# Development Supabase Project
-NEXT_PUBLIC_SUPABASE_URL=https://your-dev-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...dev-anon-key
-SUPABASE_SERVICE_ROLE_KEY=eyJ...dev-service-role-key
-SUPABASE_ACCESS_TOKEN=sbp_...dev-access-token
+# OCR-Enhanced Proposals require these AI service keys:
+ANTHROPIC_API_KEY=sk-ant-api03-...     # Claude for contract analysis
+MISTRAL_API_KEY=...                    # Mistral for document OCR processing
+
+# Enable OCR features with authentication bypass for development:
+DEVELOPMENT_AUTH_BYPASS=true          # Required for testing OCR workflow
 ```
 
-#### **2. Staging Project (.env.staging)**
+#### **Critical Configuration Notes**
+- **DEVELOPMENT_AUTH_BYPASS=true** - Essential for OCR testing and development
+- **All API keys included** - Single source of truth for all required services
+- **Security tokens provided** - CSRF protection and sync endpoint security
+- **Test Stripe keys** - Safe payment processing testing in development
+- **Complete documentation** - Every environment variable clearly documented
+
+#### **Environment File Management**
 ```bash
-# Staging Supabase Project  
-NEXT_PUBLIC_SUPABASE_URL=https://your-staging-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...staging-anon-key
-SUPABASE_SERVICE_ROLE_KEY=eyJ...staging-service-role-key
-SUPABASE_ACCESS_TOKEN=sbp_...staging-access-token
-```
+# Primary environment file (source of truth)
+.env.consolidated              # Template with all configuration options
 
-#### **3. Production Project (.env.production)**
-```bash
-# Production Supabase Project
-NEXT_PUBLIC_SUPABASE_URL=https://your-prod-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...prod-anon-key
-SUPABASE_SERVICE_ROLE_KEY=eyJ...prod-service-role-key
-SUPABASE_ACCESS_TOKEN=sbp_...prod-access-token
-```
+# Active environment files (created from template)
+.env.local                    # Development environment
+.env.staging                  # Staging environment (when needed)
+.env.production              # Production environment (when needed)
 
-### **Additional Environment Variables**
-
-#### **Required for All Stages**
-```bash
-# Security (CRITICAL - Never use defaults)
-CSRF_SECRET=your_unique_32_character_secret
-
-# Government Data API
-SAM_GOV_API_KEY=your_samgov_api_key
-
-# AI Services
-ANTHROPIC_API_KEY=your_claude_api_key
-
-# Payment Processing (use test keys for dev/staging)
-STRIPE_SECRET_KEY=sk_test_... # or sk_live_... for production
-STRIPE_PUBLISHABLE_KEY=pk_test_... # or pk_live_... for production
-
-# Email Service
-RESEND_API_KEY=re_your_resend_api_key
-
-# Background Job Security
-SYNC_TOKEN=your_sync_endpoint_security_token
-```
-
-#### **Optional Enhancements**
-```bash
-# Enhanced Search
-BRAVE_SEARCH_API_KEY=your_brave_api_key
-
-# Document Processing
-MISTRAL_API_KEY=your_mistral_api_key
-
-# Monitoring & Debugging
-SENTRY_DSN=https://your-sentry-dsn
-ENABLE_USER_JOURNEY_MONITORING=true
-
-# Redis (Docker provides local Redis automatically)
-REDIS_URL=redis://localhost:6379  # Only needed for external Redis
+# Legacy files (removed during consolidation)
+.env, .env.docker.dev        # No longer used
 ```
 
 ---
@@ -396,6 +421,61 @@ Use consistent gradient themes across the application:
 - **OCR queue**: Document processing pipeline (`ocrQueue`)
 - **Sync queue**: SAM.gov data synchronization (`syncQueue`)
 - **Worker process**: `npm run worker:dev` for development
+
+### **OCR-Enhanced Proposals Integration** ✨ NEW
+
+**Complete workflow for AI-powered proposal creation with document processing:**
+
+#### **Components Architecture**
+```typescript
+// Mark for Proposal Button (opportunities page)
+components/dashboard/opportunities/mark-for-proposal-button.tsx
+- Triggers OCR processing for opportunity documents
+- Shows progress modal with processing status
+- Navigates to pre-populated proposal form
+
+// Enhanced Proposal Form (proposals/new page)  
+components/dashboard/proposals/create-proposal-form.tsx
+- Document upload section with drag-and-drop
+- Real-time OCR processing integration
+- File validation and progress indicators
+
+// Proposal Document Analyzer (comprehensive analysis)
+components/dashboard/proposals/proposal-document-analyzer.tsx
+- Tabbed interface: Requirements | Summary | Compliance | Raw Text
+- AI-powered requirement extraction with Claude
+- Export functionality and copy-to-clipboard features
+```
+
+#### **API Endpoints for OCR**
+```bash
+POST /api/ocr/upload                    # Upload documents for processing
+POST /api/ocr/process-optimized         # Process opportunity documents  
+POST /api/proposals                     # Create proposal with attachments
+GET  /api/opportunities/[id]            # Fetch opportunity with documents
+```
+
+#### **Database Schema Updates**
+```sql
+-- Added proposal_documents table for OCR attachments
+-- See migration: supabase/migrations/011_proposal_documents_table.sql
+-- Includes RLS policies and proper foreign key relationships
+```
+
+#### **Development Workflow**
+```bash
+# Required environment variables for OCR
+ANTHROPIC_API_KEY=sk-ant-api03-...     # Claude AI for analysis
+MISTRAL_API_KEY=...                    # Mistral for OCR processing
+DEVELOPMENT_AUTH_BYPASS=true          # Essential for testing
+
+# Test OCR integration
+1. Start development environment: make dev
+2. Navigate to opportunities page: http://localhost:3000/opportunities
+3. Click "Mark for Proposal" on any opportunity
+4. Upload documents and verify OCR processing
+5. Review extracted requirements in tabbed interface
+```
 
 ---
 

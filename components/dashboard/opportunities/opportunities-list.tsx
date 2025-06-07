@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, formatDeadline } from '@/lib/sam-gov/utils'
 import { SaveOpportunityButton } from './save-opportunity-button'
+import { MarkForProposalButton } from './mark-for-proposal-button'
 import { 
   Calendar, 
   MapPin, 
@@ -111,6 +112,10 @@ function OpportunityCard({ opportunity }: { opportunity: OpportunityWithMatch })
           </div>
 
           <div className="flex items-center gap-2 ml-4">
+            <MarkForProposalButton 
+              opportunity={opportunity}
+            />
+            
             <SaveOpportunityButton 
               opportunityId={opportunity.id}
               isSaved={opportunity.isSaved}

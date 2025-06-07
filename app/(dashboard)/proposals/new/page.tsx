@@ -8,7 +8,7 @@ export const metadata = {
 
 interface NewProposalPageProps {
   searchParams: Promise<{ 
-    opportunity_id?: string 
+    opportunityId?: string 
   }>
 }
 
@@ -16,7 +16,7 @@ export default async function NewProposalPage({
   searchParams 
 }: NewProposalPageProps) {
   const params = await searchParams
-  const opportunityId = params.opportunity_id
+  const opportunityId = params.opportunityId
 
   return (
     <div className="container mx-auto px-4 py-6">
