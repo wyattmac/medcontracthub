@@ -447,10 +447,11 @@ components/dashboard/proposals/proposal-document-analyzer.tsx
 - Export functionality and copy-to-clipboard features
 ```
 
-#### **API Endpoints for OCR**
+#### **API Endpoints for SAM.gov Integration**
 ```bash
-POST /api/ocr/upload                    # Upload documents for processing
-POST /api/ocr/process-optimized         # Process opportunity documents  
+GET  /api/sam-gov/attachments           # Get attachment list for opportunity
+POST /api/sam-gov/attachments           # Process attachments with AI
+GET  /api/sam-gov/attachments/download  # Secure download proxy
 POST /api/proposals                     # Create proposal with attachments
 GET  /api/opportunities/[id]            # Fetch opportunity with documents
 ```
@@ -464,17 +465,18 @@ GET  /api/opportunities/[id]            # Fetch opportunity with documents
 
 #### **Development Workflow**
 ```bash
-# Required environment variables for OCR
+# Required environment variables for SAM.gov integration
+SAM_GOV_API_KEY=...                    # SAM.gov API access
 ANTHROPIC_API_KEY=sk-ant-api03-...     # Claude AI for analysis
 MISTRAL_API_KEY=...                    # Mistral for OCR processing
 DEVELOPMENT_AUTH_BYPASS=true          # Essential for testing
 
-# Test OCR integration
+# Test SAM.gov integration
 1. Start development environment: make dev
-2. Navigate to opportunities page: http://localhost:3000/opportunities
-3. Click "Mark for Proposal" on any opportunity
-4. Upload documents and verify OCR processing
-5. Review extracted requirements in tabbed interface
+2. Navigate to opportunity detail page: http://localhost:3000/opportunities/[id]
+3. View "Contract Documents" section for simple downloads
+4. Click "Mark for Proposal" for AI processing
+5. Review extracted requirements and download files
 ```
 
 ---

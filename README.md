@@ -106,6 +106,12 @@ make prod     # http://localhost:3002 (production simulation)
 - **Pre-populated Proposal Forms** with opportunity data and extracted requirements
 - **Document Analyzer** with tabbed interface (Requirements/Summary/Compliance/Raw Text)
 
+#### SAM.gov Document Access ✨ NEW
+- **Direct Download Interface** on opportunity detail pages
+- **Secure Download Proxy** with server-side API key authentication
+- **Simple Document Access** without AI processing when you just need files
+- **Clean File Management** with filename and size display
+
 #### Enterprise Dashboard
 - **Virtual Scrolling** for 20k+ opportunities with sub-second load times
 - **Real-time Analytics** with performance tracking
@@ -264,8 +270,9 @@ make health-check    # Verify all services
 ```
 
 ### **API Endpoints**
-- `POST /api/ocr/upload` - Upload and process documents with OCR
-- `POST /api/ocr/process-optimized` - Process opportunity documents
+- `GET /api/sam-gov/attachments` - Get attachment list for opportunity
+- `POST /api/sam-gov/attachments` - Process attachments with AI
+- `GET /api/sam-gov/attachments/download` - Secure download proxy
 - `POST /api/proposals` - Create proposal with attached documents
 - `GET /api/opportunities/{id}` - Fetch opportunity with document links
 

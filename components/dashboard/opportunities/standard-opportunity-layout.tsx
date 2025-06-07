@@ -7,6 +7,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { OpportunityAttachments } from './opportunity-attachments'
 import { 
   Calendar, 
   MapPin, 
@@ -211,34 +212,11 @@ export function StandardOpportunityLayout({ opportunity }: StandardOpportunityLa
             </CardContent>
           </Card>
 
-          {/* Links & Documents */}
-          {opportunity.resource_links && opportunity.resource_links.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ExternalLink className="h-5 w-5 text-blue-600" />
-                  Documents & Links
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {opportunity.resource_links.map((link: any, index: number) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">{link.description || `Document ${index + 1}`}</p>
-                        <p className="text-sm text-gray-600">{link.url}</p>
-                      </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={link.url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* SAM.gov Attachments */}
+          <OpportunityAttachments 
+            noticeId={opportunity.notice_id || opportunity.solicitation_number || opportunity.id}
+            opportunityTitle={opportunity.title}
+          />
         </div>
 
         {/* Sidebar */}

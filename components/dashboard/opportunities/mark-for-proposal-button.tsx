@@ -17,91 +17,111 @@ interface MarkForProposalButtonProps {
   opportunity: Opportunity
 }
 
-interface OCRProcessingResult {
+interface SAMAttachmentResult {
   success: boolean
-  message: string
-  documentsProcessed: number
-  documentsCached: number
-  totalRequirements: number
-  totalCost: number
-  savedCost: number
-  results: Array<{
-    documentId: string
-    fileName: string
-    cached: boolean
-    requirementsFound: number
-    processingTimeMs: number
-    cost: number
-  }>
+  data: {
+    noticeId: string
+    attachments: Array<{
+      filename: string
+      extractedText: string
+      processingSuccess: boolean
+      fileSize: number
+      error?: string
+    }>
+    requirements: {
+      contractNumber?: string
+      deadline?: string
+      contactEmail?: string
+      totalValue?: string
+      submissionRequirements: string[]
+      technicalRequirements: string[]
+      complianceRequirements: string[]
+    }
+    summary: string
+    processedAt: string
+  }
+  error?: string
 }
 
 export function MarkForProposalButton({ opportunity }: MarkForProposalButtonProps) {
   const [showDialog, setShowDialog] = useState(false)
-  const [processingResult, setProcessingResult] = useState<OCRProcessingResult | null>(null)
+  const [processingResult, setProcessingResult] = useState<SAMAttachmentResult | null>(null)
   const { toast } = useToast()
   const router = useRouter()
 
-  const processDocumentsMutation = useMutation({
+  const processSAMAttachmentsMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/ocr/process-optimized', {
+      // Use notice_id from opportunity for SAM.gov API
+      const noticeId = opportunity.notice_id || opportunity.id
+      
+      const response = await fetch('/api/sam-gov/attachments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          opportunityId: opportunity.id,
-          priority: 5,
-          skipCache: false,
-          maxRetries: 3
+          noticeId,
+          maxAttachments: 5,
+          includeRequirements: true
         })
       })
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to process documents')
+        throw new Error(error.message || 'Failed to process SAM.gov attachments')
       }
 
-      return response.json() as Promise<OCRProcessingResult>
+      return response.json() as Promise<SAMAttachmentResult>
     },
     onSuccess: (data) => {
       setProcessingResult(data)
       
       if (data.success) {
+        const successfulAttachments = data.data.attachments.filter(a => a.processingSuccess).length
+        const totalRequirements = 
+          data.data.requirements.submissionRequirements.length +
+          data.data.requirements.technicalRequirements.length +
+          data.data.requirements.complianceRequirements.length
+
         toast({
-          title: 'Documents Processed',
-          description: `Successfully processed ${data.documentsProcessed} documents with ${data.totalRequirements} requirements extracted.`
+          title: 'SAM.gov Documents Processed',
+          description: `Successfully processed ${successfulAttachments} attachments with ${totalRequirements} requirements extracted.`
         })
       } else {
         toast({
           title: 'Processing Complete',
-          description: data.message,
+          description: data.error || 'Processing completed with some issues',
           variant: 'default'
         })
       }
     },
     onError: (error) => {
-      console.error('Document processing failed:', error)
+      console.error('SAM.gov attachment processing failed:', error)
       toast({
         title: 'Processing Failed',
-        description: error.message || 'Failed to process documents',
+        description: error.message || 'Failed to process SAM.gov attachments',
         variant: 'destructive'
       })
     }
   })
 
   const handleMarkForProposal = () => {
-    // Check if opportunity has documents to process
-    const hasDocuments = opportunity.additional_info && 
-      (opportunity.additional_info as any)?.resourceLinks?.length > 0
-
-    if (hasDocuments) {
-      setShowDialog(true)
-    } else {
-      // No documents to process, go directly to proposal creation
-      navigateToProposal()
-    }
+    // Always show dialog for SAM.gov attachment processing
+    // The system will check for attachments via the API
+    setShowDialog(true)
   }
 
   const navigateToProposal = () => {
-    router.push(`/dashboard/proposals/new?opportunityId=${opportunity.id}`)
+    // Pass processing results to proposal form if available
+    const baseUrl = `/dashboard/proposals/new?opportunityId=${opportunity.id}`
+    
+    if (processingResult?.success) {
+      // Store processing results in sessionStorage for proposal form
+      sessionStorage.setItem(
+        `sam_processing_${opportunity.id}`, 
+        JSON.stringify(processingResult.data)
+      )
+    }
+    
+    router.push(baseUrl)
   }
 
   const handleCreateProposal = () => {
@@ -109,8 +129,23 @@ export function MarkForProposalButton({ opportunity }: MarkForProposalButtonProp
     navigateToProposal()
   }
 
-  const documentCount = opportunity.additional_info ? 
-    ((opportunity.additional_info as any)?.resourceLinks?.length || 0) : 0
+  // Get attachment count from processing result or estimate from notice_id
+  const getAttachmentStatus = () => {
+    if (processingResult?.success) {
+      return {
+        count: processingResult.data.attachments.length,
+        processed: processingResult.data.attachments.filter(a => a.processingSuccess).length
+      }
+    }
+    
+    // For SAM.gov opportunities, we'll check dynamically
+    return {
+      count: opportunity.notice_id ? '?' : 0,
+      processed: 0
+    }
+  }
+
+  const attachmentStatus = getAttachmentStatus()
 
   return (
     <>
@@ -144,7 +179,8 @@ export function MarkForProposalButton({ opportunity }: MarkForProposalButtonProp
               <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                 <span className="flex items-center gap-1">
                   <FileText className="w-4 h-4" />
-                  {documentCount} document{documentCount !== 1 ? 's' : ''} available
+                  {attachmentStatus.count} SAM.gov attachment{attachmentStatus.count !== 1 ? 's' : ''} 
+                  {attachmentStatus.processed > 0 && ` (${attachmentStatus.processed} processed)`}
                 </span>
                 <Badge variant="outline" className="text-xs">
                   {opportunity.agency}
@@ -154,15 +190,20 @@ export function MarkForProposalButton({ opportunity }: MarkForProposalButtonProp
                     NAICS {opportunity.naics_code}
                   </Badge>
                 )}
+                {opportunity.notice_id && (
+                  <Badge variant="outline" className="text-xs">
+                    {opportunity.notice_id}
+                  </Badge>
+                )}
               </div>
             </div>
 
             {/* Processing Status */}
-            {processDocumentsMutation.isPending && (
+            {processSAMAttachmentsMutation.isPending && (
               <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20">
                 <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                 <AlertDescription className="text-blue-800 dark:text-blue-200">
-                  Processing documents with AI-powered OCR... This may take a few minutes.
+                  Downloading and processing SAM.gov attachments with AI-powered OCR... This may take a few minutes.
                 </AlertDescription>
               </Alert>
             )}
@@ -177,28 +218,28 @@ export function MarkForProposalButton({ opportunity }: MarkForProposalButtonProp
                     <AlertCircle className="h-4 w-4 text-yellow-600" />
                   )}
                   <AlertDescription className={processingResult.success ? 'text-green-800 dark:text-green-200' : 'text-yellow-800 dark:text-yellow-200'}>
-                    {processingResult.message}
+                    {processingResult.success ? processingResult.data.summary : (processingResult.error || 'Processing completed with issues')}
                   </AlertDescription>
                 </Alert>
 
                 {/* Statistics */}
-                {processingResult.documentsProcessed > 0 && (
+                {processingResult.success && processingResult.data.attachments.length > 0 && (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200">
-                      <div className="text-sm text-blue-600 dark:text-blue-400">Documents Processed</div>
+                      <div className="text-sm text-blue-600 dark:text-blue-400">SAM.gov Attachments</div>
                       <div className="text-2xl font-semibold text-blue-800 dark:text-blue-200">
-                        {processingResult.documentsProcessed}
+                        {processingResult.data.attachments.filter(a => a.processingSuccess).length} / {processingResult.data.attachments.length}
                       </div>
-                      {processingResult.documentsCached > 0 && (
-                        <div className="text-xs text-blue-600 dark:text-blue-400">
-                          {processingResult.documentsCached} from cache
-                        </div>
-                      )}
+                      <div className="text-xs text-blue-600 dark:text-blue-400">
+                        Successfully processed
+                      </div>
                     </div>
                     <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200">
-                      <div className="text-sm text-green-600 dark:text-green-400">Requirements Found</div>
+                      <div className="text-sm text-green-600 dark:text-green-400">Total Requirements</div>
                       <div className="text-2xl font-semibold text-green-800 dark:text-green-200">
-                        {processingResult.totalRequirements}
+                        {processingResult.data.requirements.submissionRequirements.length + 
+                         processingResult.data.requirements.technicalRequirements.length + 
+                         processingResult.data.requirements.complianceRequirements.length}
                       </div>
                       <div className="text-xs text-green-600 dark:text-green-400">
                         Ready for proposal
@@ -207,31 +248,82 @@ export function MarkForProposalButton({ opportunity }: MarkForProposalButtonProp
                   </div>
                 )}
 
+                {/* Requirements Summary */}
+                {processingResult.success && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-200">
+                      <div className="font-medium text-purple-800 dark:text-purple-200 mb-2">
+                        Submission ({processingResult.data.requirements.submissionRequirements.length})
+                      </div>
+                      <ul className="text-purple-700 dark:text-purple-300 space-y-1">
+                        {processingResult.data.requirements.submissionRequirements.slice(0, 3).map((req, i) => (
+                          <li key={i} className="text-xs truncate">• {req}</li>
+                        ))}
+                        {processingResult.data.requirements.submissionRequirements.length > 3 && (
+                          <li className="text-xs text-purple-600">+ {processingResult.data.requirements.submissionRequirements.length - 3} more</li>
+                        )}
+                      </ul>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200">
+                      <div className="font-medium text-blue-800 dark:text-blue-200 mb-2">
+                        Technical ({processingResult.data.requirements.technicalRequirements.length})
+                      </div>
+                      <ul className="text-blue-700 dark:text-blue-300 space-y-1">
+                        {processingResult.data.requirements.technicalRequirements.slice(0, 3).map((req, i) => (
+                          <li key={i} className="text-xs truncate">• {req}</li>
+                        ))}
+                        {processingResult.data.requirements.technicalRequirements.length > 3 && (
+                          <li className="text-xs text-blue-600">+ {processingResult.data.requirements.technicalRequirements.length - 3} more</li>
+                        )}
+                      </ul>
+                    </div>
+                    <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg border border-orange-200">
+                      <div className="font-medium text-orange-800 dark:text-orange-200 mb-2">
+                        Compliance ({processingResult.data.requirements.complianceRequirements.length})
+                      </div>
+                      <ul className="text-orange-700 dark:text-orange-300 space-y-1">
+                        {processingResult.data.requirements.complianceRequirements.slice(0, 3).map((req, i) => (
+                          <li key={i} className="text-xs truncate">• {req}</li>
+                        ))}
+                        {processingResult.data.requirements.complianceRequirements.length > 3 && (
+                          <li className="text-xs text-orange-600">+ {processingResult.data.requirements.complianceRequirements.length - 3} more</li>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
                 {/* Document Details */}
-                {processingResult.results && processingResult.results.length > 0 && (
+                {processingResult.success && processingResult.data.attachments.length > 0 && (
                   <div className="max-h-48 overflow-y-auto border rounded-lg">
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
                         <tr>
-                          <th className="text-left p-2 text-xs font-medium text-gray-600 dark:text-gray-400">Document</th>
+                          <th className="text-left p-2 text-xs font-medium text-gray-600 dark:text-gray-400">Attachment</th>
                           <th className="text-center p-2 text-xs font-medium text-gray-600 dark:text-gray-400">Status</th>
-                          <th className="text-center p-2 text-xs font-medium text-gray-600 dark:text-gray-400">Requirements</th>
+                          <th className="text-center p-2 text-xs font-medium text-gray-600 dark:text-gray-400">Size</th>
+                          <th className="text-center p-2 text-xs font-medium text-gray-600 dark:text-gray-400">Text Length</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y">
-                        {processingResult.results.map((doc) => (
-                          <tr key={doc.documentId} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                            <td className="p-2 font-mono text-xs truncate max-w-48" title={doc.fileName}>
-                              {doc.fileName}
+                        {processingResult.data.attachments.map((attachment, index) => (
+                          <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                            <td className="p-2 font-mono text-xs truncate max-w-32" title={attachment.filename}>
+                              {attachment.filename}
                             </td>
                             <td className="p-2 text-center">
-                              {doc.cached ? (
-                                <Badge variant="secondary" className="text-xs">Cached</Badge>
+                              {attachment.processingSuccess ? (
+                                <Badge variant="default" className="text-xs bg-green-100 text-green-800">Success</Badge>
                               ) : (
-                                <Badge variant="default" className="text-xs">Processed</Badge>
+                                <Badge variant="destructive" className="text-xs">Failed</Badge>
                               )}
                             </td>
-                            <td className="p-2 text-center font-medium">{doc.requirementsFound}</td>
+                            <td className="p-2 text-center text-xs">
+                              {(attachment.fileSize / 1024).toFixed(1)}KB
+                            </td>
+                            <td className="p-2 text-center text-xs">
+                              {attachment.extractedText.length.toLocaleString()}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -241,11 +333,14 @@ export function MarkForProposalButton({ opportunity }: MarkForProposalButtonProp
               </div>
             )}
 
-            {documentCount === 0 && (
-              <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-900/20">
-                <AlertCircle className="h-4 w-4 text-orange-600" />
-                <AlertDescription className="text-orange-800 dark:text-orange-200">
-                  No documents found for this opportunity. You can still create a proposal manually.
+            {!processingResult && !processSAMAttachmentsMutation.isPending && (
+              <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800 dark:text-blue-200">
+                  {opportunity.notice_id 
+                    ? "Process SAM.gov attachments to extract requirements automatically, or create proposal manually."
+                    : "No SAM.gov notice ID found. You can create a proposal manually."
+                  }
                 </AlertDescription>
               </Alert>
             )}
@@ -255,26 +350,26 @@ export function MarkForProposalButton({ opportunity }: MarkForProposalButtonProp
             <Button
               variant="outline"
               onClick={() => setShowDialog(false)}
-              disabled={processDocumentsMutation.isPending}
+              disabled={processSAMAttachmentsMutation.isPending}
             >
               Cancel
             </Button>
             
-            {documentCount > 0 && !processingResult && (
+            {opportunity.notice_id && !processingResult && (
               <Button
-                onClick={() => processDocumentsMutation.mutate()}
-                disabled={processDocumentsMutation.isPending}
+                onClick={() => processSAMAttachmentsMutation.mutate()}
+                disabled={processSAMAttachmentsMutation.isPending}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
-                {processDocumentsMutation.isPending ? (
+                {processSAMAttachmentsMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
+                    Processing SAM.gov...
                   </>
                 ) : (
                   <>
                     <Zap className="mr-2 h-4 w-4" />
-                    Process with OCR
+                    Process SAM.gov Attachments
                   </>
                 )}
               </Button>
@@ -283,7 +378,7 @@ export function MarkForProposalButton({ opportunity }: MarkForProposalButtonProp
             <Button
               onClick={handleCreateProposal}
               className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
-              disabled={processDocumentsMutation.isPending}
+              disabled={processSAMAttachmentsMutation.isPending}
             >
               <Edit3 className="mr-2 h-4 w-4" />
               Create Proposal

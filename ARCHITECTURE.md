@@ -65,7 +65,7 @@ infrastructure/
 │   ├── supabase/         # PostgreSQL with Row Level Security
 │   └── redis/            # Caching and session management
 ├── api-clients/
-│   ├── sam-gov/          # Federal opportunities API + NAICS matching
+│   ├── sam-gov/          # Federal opportunities API + document downloads ✨ NEW
 │   ├── stripe/           # Payment processing
 │   ├── mistral/          # Document OCR processing ✨ NEW
 │   └── anthropic/        # Contract analysis with Claude ✨ NEW
@@ -276,17 +276,22 @@ class DocumentProcessor {
   }
 }
 
-// OCR-Enhanced Proposal Workflow
-class ProposalOCRService {
-  async markForProposal(opportunityId: string): Promise<ProposalData> {
-    // Process SAM.gov documents attached to opportunity
-    // Extract requirements using Mistral OCR
-    // Generate pre-populated proposal form data
+// SAM.gov Attachment Processing Service
+class SAMAttachmentProcessor {
+  async getOpportunityAttachments(noticeId: string): Promise<AttachmentInfo[]> {
+    // Fetch attachment list from SAM.gov API
+    // Return downloadable URLs with metadata
   }
 
-  async analyzeDocuments(documents: Document[]): Promise<RequirementAnalysis> {
-    // Multi-tab analysis: Requirements | Summary | Compliance | Raw Text
-    // Export capabilities and clipboard integration
+  async downloadAttachment(attachmentUrl: string): Promise<ArrayBuffer> {
+    // Download files with API key authentication
+    // Server-side proxy for secure access
+  }
+
+  async processOpportunityForProposal(noticeId: string): Promise<ProposalData> {
+    // Download and process SAM.gov documents
+    // Extract requirements using Mistral OCR and Claude AI
+    // Generate structured requirements for proposals
   }
 }
 ```
