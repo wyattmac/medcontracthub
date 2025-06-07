@@ -1,0 +1,43 @@
+[
+  {
+    "test": "Opportunities page load",
+    "status": "PASS"
+  },
+  {
+    "test": "Search & filters panel",
+    "status": "PASS"
+  },
+  {
+    "test": "Opportunities statistics",
+    "status": "PASS"
+  },
+  {
+    "test": "Search functionality",
+    "status": "PASS"
+  },
+  {
+    "test": "Filter dropdowns",
+    "status": "PASS"
+  },
+  {
+    "test": "Opportunities list display",
+    "status": "PASS"
+  },
+  {
+    "test": "Export functionality",
+    "status": "PASS",
+    "error": "Export may require data to be loaded first"
+  },
+  {
+    "test": "Refresh functionality",
+    "status": "PASS"
+  },
+  {
+    "test": "View toggle",
+    "status": "PASS"
+  },
+  {
+    "test": "Pagination controls",
+    "status": "PASS"
+  }
+]
