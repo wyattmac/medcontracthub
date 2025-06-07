@@ -1,0 +1,28 @@
+[
+  {
+    "test": "Landing page load",
+    "status": "PASS"
+  },
+  {
+    "test": "Mock development login",
+    "status": "PASS"
+  },
+  {
+    "test": "Navigation menu",
+    "status": "PASS"
+  },
+  {
+    "test": "Session persistence",
+    "status": "FAIL",
+    "error": "Navigation timeout of 30000 ms exceeded"
+  },
+  {
+    "test": "User menu display",
+    "status": "PASS"
+  },
+  {
+    "test": "Protected route redirect",
+    "status": "FAIL",
+    "error": "Navigation timeout of 30000 ms exceeded"
+  }
+]
