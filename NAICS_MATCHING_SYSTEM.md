@@ -414,5 +414,9 @@ The matching algorithm is modular and can be enhanced with:
 ---
 
 **Documentation Status**: Complete and Current  
-**Last Updated**: December 6, 2024  
+**Last Updated**: December 6, 2024
+
+---
+
+> **📋 Documentation Rule**: This project maintains exactly 7 documentation files. **No new documentation files may be created.** All documentation updates must be added to existing files: README.md, DEVELOPER_GUIDE.md, ARCHITECTURE.md, DEPLOYMENT.md, TROUBLESHOOTING.md, PRODUCTION_TASKS.md, or NAICS_MATCHING_SYSTEM.md.
 **Next Review**: After user feedback collection (Q1 2025)

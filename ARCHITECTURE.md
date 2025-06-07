@@ -1,7 +1,9 @@
 # MedContractHub Architecture
 
-**Status**: 99% Production Ready | **Database**: 1,002+ Real Opportunities | **TypeScript**: Zero Errors | **Pattern**: Clean Architecture + DDD
+**Status**: 99% Production Ready | **Database**: 23,300+ Real Opportunities | **TypeScript**: Zero Errors | **Pattern**: Clean Architecture + DDD
 **Last Updated**: December 6, 2024
+
+> 📚 **Related Documentation**: See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for debugging guides and [DEPLOYMENT.md](./DEPLOYMENT.md) for production setup.
 
 ## 🏗️ Architectural Overview
 
@@ -503,4 +505,8 @@ core/ai/           → ai-processing-service
 
 **Architecture Status**: Production Ready with 99% implementation complete - Personalized Medical NAICS Matching Added
 **Last Updated**: December 6, 2024
+
+---
+
+> **📋 Documentation Rule**: This project maintains exactly 7 documentation files. **No new documentation files may be created.** All documentation updates must be added to existing files: README.md, DEVELOPER_GUIDE.md, ARCHITECTURE.md, DEPLOYMENT.md, TROUBLESHOOTING.md, PRODUCTION_TASKS.md, or NAICS_MATCHING_SYSTEM.md.
 **Next Review**: Upon completion of immediate priorities

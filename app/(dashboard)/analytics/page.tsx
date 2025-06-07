@@ -19,7 +19,7 @@ export default function AnalyticsPage() {
             <span className="text-lg font-medium">Coming Soon</span>
           </div>
           <p className="text-muted-foreground">
-            We're building an advanced analytics dashboard with comprehensive insights, performance metrics, and AI-powered recommendations.
+            We&apos;re building an advanced analytics dashboard with comprehensive insights, performance metrics, and AI-powered recommendations.
           </p>
           <div className="pt-4">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-full text-sm font-medium">

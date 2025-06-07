@@ -60,9 +60,9 @@ export async function login(formData: FormData) {
     }
     
     redirect('/dashboard')
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle Next.js redirect (not an actual error)
-    if (error?.digest?.includes('NEXT_REDIRECT')) {
+    if (error && typeof error === 'object' && 'digest' in error && typeof error.digest === 'string' && error.digest.includes('NEXT_REDIRECT')) {
       throw error
     }
     console.error('[Login Action] Unexpected error:', error)
@@ -101,9 +101,9 @@ export async function signup(formData: FormData) {
     console.log('[Signup Action] Signup successful for:', data.user?.email)
     revalidatePath('/', 'layout')
     redirect('/onboarding')
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle Next.js redirect (not an actual error)
-    if (error?.digest?.includes('NEXT_REDIRECT')) {
+    if (error && typeof error === 'object' && 'digest' in error && typeof error.digest === 'string' && error.digest.includes('NEXT_REDIRECT')) {
       throw error
     }
     console.error('[Signup Action] Unexpected error:', error)

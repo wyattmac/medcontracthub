@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { notFound, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
 import { StandardOpportunityLayout } from '@/components/dashboard/opportunities/standard-opportunity-layout'
@@ -15,9 +15,9 @@ interface OpportunityDetailWrapperProps {
 export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWrapperProps) {
   const [opportunity, setOpportunity] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [_error, _setError] = useState<string | null>(null)
   const [userNaicsCodes, setUserNaicsCodes] = useState<string[]>(['423450', '339112']) // Default fallback
-  const router = useRouter()
+  const _router = useRouter()
   const supabase = createClient()
 
   // Fetch user's NAICS codes for personalized matching
@@ -36,19 +36,19 @@ export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWra
             .single()
           
           if (profile?.companies) {
-            const companyNaics = (profile.companies as any)?.naics_codes || []
+            const companyNaics = (profile.companies as Record<string, any>)?.naics_codes || []
             if (companyNaics.length > 0) {
               setUserNaicsCodes(companyNaics)
             }
           }
         }
-      } catch (error) {
+      } catch {
         console.log('Could not fetch user NAICS codes, using defaults')
       }
     }
     
     fetchUserNaics()
-  }, [])
+  }, [supabase])
 
   useEffect(() => {
     async function fetchOpportunity() {
@@ -92,15 +92,15 @@ export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWra
             status: 'active',
             notice_type: 'Combined Synopsis/Solicitation',
             classification_code: 'M - Operation of Government-Owned Facility',
-            original_url: 'https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=ada70d6f188c4b3ba8500c859562bbca',
+            original_url: 'https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=mock-notice-id',
             resource_links: [
               {
                 description: 'Full Solicitation Document',
-                url: 'https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=ada70d6f188c4b3ba8500c859562bbca'
+                url: 'https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=mock-notice-id'
               },
               {
                 description: 'Technical Specifications',
-                url: 'https://sam.gov/api/prod/opps/v3/opportunities/resources/files/download?api_key=null&token=ada70d6f188c4b3ba8500c859562bbca&resourcename=Attachment1'
+                url: 'https://sam.gov/api/prod/opps/v3/opportunities/resources/files/download?token=mock-token&resource=attachment1'
               }
             ],
             created_at: new Date().toISOString(),
@@ -180,13 +180,13 @@ export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWra
     )
   }
 
-  if (error) {
+  if (_error) {
     return (
       <Alert variant="destructive" className="max-w-2xl mx-auto mt-8">
         <AlertDescription>
           <div className="space-y-2">
             <p className="font-semibold">Error loading opportunity</p>
-            <p className="text-sm">{error}</p>
+            <p className="text-sm">{_error}</p>
             <div className="mt-4 space-y-2">
               <p className="text-xs text-muted-foreground">Debug info:</p>
               <pre className="text-xs bg-black/10 p-2 rounded overflow-auto">

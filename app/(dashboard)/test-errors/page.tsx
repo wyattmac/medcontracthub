@@ -10,7 +10,7 @@ import { AlertCircle, Bug, Zap, Database, Shield, Globe, RefreshCcw } from 'luci
 
 export default function TestErrorsPage() {
   const [isLoading, setIsLoading] = useState<string | null>(null)
-  const [lastResponse, setLastResponse] = useState<any>(null)
+  const [lastResponse, setLastResponse] = useState<Record<string, unknown> | null>(null)
   const { reportError } = useError()
   
   const testError = async (type: string) => {

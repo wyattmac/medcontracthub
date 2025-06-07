@@ -5,6 +5,8 @@
 
 This document tracks the remaining tasks required to deploy MedContractHub to production.
 
+> 🐛 **Debug Reference**: See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for solutions to known issues and debugging guides.
+
 ## ✅ Recently Completed
 
 ### Critical Infrastructure Fixes
@@ -125,5 +127,9 @@ The application is ready for production deployment when:
 
 ---
 
-**Last Updated:** June 6, 2025  
+**Last Updated:** June 6, 2025
+
+---
+
+> **📋 Documentation Rule**: This project maintains exactly 7 documentation files. **No new documentation files may be created.** All documentation updates must be added to existing files: README.md, DEVELOPER_GUIDE.md, ARCHITECTURE.md, DEPLOYMENT.md, TROUBLESHOOTING.md, PRODUCTION_TASKS.md, or NAICS_MATCHING_SYSTEM.md.
 **Next Review:** Upon completion of critical blockers

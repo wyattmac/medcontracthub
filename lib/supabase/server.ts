@@ -2,7 +2,6 @@
 // Reference: /supabase/supabase - nextjs ssr authentication setup
 
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import type { Database } from '@/types/database.types'
 import { ConfigurationError, DatabaseError } from '@/lib/errors/types'
 import { dbLogger } from '@/lib/errors/logger'
@@ -24,6 +23,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export async function createClient() {
   try {
+    // Dynamic import to avoid Next.js edge runtime issues
+    const { cookies } = await import('next/headers')
     const cookieStore = await cookies()
 
     const client = createServerClient<Database>(
