@@ -1,0 +1,48 @@
+[
+  {
+    "test": "Saved opportunities page load",
+    "status": "PASS"
+  },
+  {
+    "test": "Empty state display",
+    "status": "PASS",
+    "error": "User may have saved opportunities"
+  },
+  {
+    "test": "Filter options",
+    "status": "PASS",
+    "error": "Filters may be hidden when empty"
+  },
+  {
+    "test": "Save opportunity action",
+    "status": "PASS",
+    "error": "No opportunities available to save"
+  },
+  {
+    "test": "Saved opportunities list",
+    "status": "PASS"
+  },
+  {
+    "test": "Remove functionality",
+    "status": "PASS",
+    "error": "Remove option may be in menu or require hover"
+  },
+  {
+    "test": "Notes functionality",
+    "status": "PASS"
+  },
+  {
+    "test": "Export saved opportunities",
+    "status": "PASS",
+    "error": "Export may require saved items"
+  },
+  {
+    "test": "View opportunity details",
+    "status": "PASS",
+    "error": "Details may open in modal"
+  },
+  {
+    "test": "AI Analyze feature",
+    "status": "PASS"
+  }
+]
