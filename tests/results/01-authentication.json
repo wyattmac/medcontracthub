@@ -13,8 +13,7 @@
   },
   {
     "test": "Session persistence",
-    "status": "FAIL",
-    "error": "Navigation timeout of 30000 ms exceeded"
+    "status": "PASS"
   },
   {
     "test": "User menu display",
@@ -22,7 +21,6 @@
   },
   {
     "test": "Protected route redirect",
-    "status": "FAIL",
-    "error": "Navigation timeout of 30000 ms exceeded"
+    "status": "PASS"
   }
 ]
