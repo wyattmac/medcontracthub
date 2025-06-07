@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { AppError, ValidationError, AuthenticationError, ErrorCode } from '@/lib/errors/types'
 import { errorReporter } from '@/lib/errors/error-reporter'
-import { rateLimit, rateLimitConfigs } from '@/lib/rate-limit'
+import { rateLimit, RATE_LIMITS, addRateLimitHeaders } from '@/lib/security/rate-limiter'
 import { sanitizeApiInput } from '@/lib/security/sanitization'
 import { verifyCSRFToken } from '@/lib/security/csrf'
 import { logger } from '@/lib/errors/logger'
@@ -51,16 +51,20 @@ class EnhancedRouteHandler {
       
       // Rate limiting
       if (options.rateLimit) {
-        const config = rateLimitConfigs[options.rateLimit]
-        const { success, remaining, reset } = await rateLimit(request, config)
+        const config = RATE_LIMITS[options.rateLimit]
+        const rateLimitResult = await rateLimit(request, config)
         
-        if (!success) {
-          throw new AppError(
-            ErrorCode.API_RATE_LIMIT,
-            'Too many requests',
-            429,
-            { remaining, reset }
+        if (!rateLimitResult.success) {
+          const response = NextResponse.json(
+            {
+              error: 'Too many requests',
+              message: 'Rate limit exceeded',
+              retryAfter: rateLimitResult.retryAfter
+            },
+            { status: 429 }
           )
+          addRateLimitHeaders(response, rateLimitResult)
+          return response
         }
       }
 

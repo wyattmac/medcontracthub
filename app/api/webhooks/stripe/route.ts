@@ -11,19 +11,37 @@ import { webhookHandlers } from '@/lib/stripe/webhook-handlers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { apiLogger } from '@/lib/errors/logger'
 import { ValidationError, ExternalServiceError } from '@/lib/errors/types'
+import { rateLimit, RATE_LIMITS, addRateLimitHeaders } from '@/lib/security/rate-limiter'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
-  const body = await request.text()
-  const signature = (await headers()).get('stripe-signature')
+  try {
+    // Apply rate limiting for webhook endpoints
+    const rateLimitResult = await rateLimit(request, RATE_LIMITS.webhook)
+    
+    if (!rateLimitResult.success) {
+      const response = NextResponse.json(
+        { error: 'Too many webhook requests' },
+        { status: 429 }
+      )
+      addRateLimitHeaders(response, rateLimitResult)
+      return response
+    }
 
-  if (!signature) {
-    return NextResponse.json(
-      { error: 'Missing stripe-signature header' },
-      { status: 400 }
-    )
+    const body = await request.text()
+    const signature = (await headers()).get('stripe-signature')
+
+    if (!signature) {
+      return NextResponse.json(
+        { error: 'Missing stripe-signature header' },
+        { status: 400 }
+      )
+    }
+  } catch (error) {
+    apiLogger.error('Webhook rate limiting error', error)
+    // Continue processing if rate limiting fails
   }
 
   if (!stripeConfig.webhookSecret) {

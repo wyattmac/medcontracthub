@@ -2,6 +2,7 @@ import { routeHandler } from '@/lib/api/route-handler'
 import { mistralOCR } from '@/lib/ai/mistral-ocr-client'
 import { NextResponse } from 'next/server'
 import { ValidationError } from '@/lib/errors/types'
+import { validateFile, FILE_VALIDATION_CONFIGS } from '@/lib/security/file-validator'
 
 export const POST = routeHandler.POST(
   async ({ request, user, supabase }) => {
@@ -12,16 +13,17 @@ export const POST = routeHandler.POST(
       throw new ValidationError('No file provided')
     }
 
-    // Validate file type
-    const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg']
-    if (!allowedTypes.includes(file.type)) {
-      throw new ValidationError('Invalid file type. Only PDF and image files are supported.')
-    }
-
-    // Validate file size (10MB max)
-    const maxSize = 10 * 1024 * 1024 // 10MB
-    if (file.size > maxSize) {
-      throw new ValidationError('File size exceeds 10MB limit')
+    // Comprehensive file validation with security checks
+    const validationResult = await validateFile(file, FILE_VALIDATION_CONFIGS.upload)
+    
+    if (!validationResult.isValid) {
+      throw new ValidationError(
+        `File validation failed: ${validationResult.securityIssues.join(', ')}`,
+        { 
+          securityIssues: validationResult.securityIssues,
+          detectedType: validationResult.actualMimeType 
+        }
+      )
     }
 
     // Generate unique filename
@@ -98,5 +100,7 @@ export const POST = routeHandler.POST(
   },
   { 
     requireAuth: true,
+    rateLimit: 'upload',
+    requireCSRF: true
   }
 )

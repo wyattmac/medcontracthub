@@ -75,6 +75,12 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const requestId = `mw_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   
+  // SECURITY: Block deployment if auth bypass is enabled in production
+  if (process.env.NODE_ENV === 'production' && process.env.DEVELOPMENT_AUTH_BYPASS === 'true') {
+    logger.error('CRITICAL SECURITY ERROR: Auth bypass enabled in production', { requestId })
+    return new NextResponse('Security configuration error', { status: 503 })
+  }
+  
   // Log request
   logger.debug(`Middleware processing request`, {
     requestId,
@@ -102,11 +108,13 @@ export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   try {
-    // In development, skip all auth checks to prevent SSL issues and speed up requests
-    if (process.env.NODE_ENV === 'development') {
+    // Development mode with explicit bypass flag - NEVER enable in production
+    if (process.env.NODE_ENV === 'development' && process.env.DEVELOPMENT_AUTH_BYPASS === 'true') {
+      logger.warn('DEVELOPMENT MODE: Authentication bypass enabled', { requestId })
       const response = NextResponse.next()
       addSecurityHeaders(response)
       response.headers.set('x-request-id', requestId)
+      response.headers.set('x-development-mode', 'true')
       return response
     }
 
@@ -146,18 +154,16 @@ export async function middleware(request: NextRequest) {
       }
     )
 
-    // Skip auth check entirely during development to prevent SSL issues
-    const authCheck = process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test' 
-      ? { data: { user: null }, error: null }
-      : await Promise.race([
-          supabase.auth.getUser(),
-          new Promise<{ data: { user: null }, error: Error }>((_, reject) => 
-            setTimeout(() => reject(new Error('Auth check timeout')), 2000)
-          )
-        ]).catch(error => {
-          logger.warn('Auth check failed, skipping', { error: error.message, requestId })
-          return { data: { user: null }, error: null }
-        })
+    // Perform auth check with timeout protection
+    const authCheck = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<{ data: { user: null }, error: Error }>((_, reject) => 
+        setTimeout(() => reject(new Error('Auth check timeout')), 5000)
+      )
+    ]).catch(error => {
+      logger.error('Auth check failed', { error: error.message, requestId })
+      return { data: { user: null }, error }
+    })
 
     const { data: { user }, error } = authCheck
 
@@ -173,8 +179,8 @@ export async function middleware(request: NextRequest) {
     const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
     const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
 
-    // Protect dashboard routes - TEMPORARILY DISABLED FOR DEVELOPMENT
-    if (false && isProtectedRoute && !user) {
+    // Protect dashboard routes
+    if (isProtectedRoute && !user) {
       logger.info('Redirecting unauthenticated user to login', { 
         requestId,
         from: pathname 
@@ -187,8 +193,8 @@ export async function middleware(request: NextRequest) {
       return redirectResponse
     }
 
-    // Check if user has completed onboarding - TEMPORARILY DISABLED FOR DEVELOPMENT
-    if (false && user && isProtectedRoute && pathname !== '/onboarding') {
+    // Check if user has completed onboarding
+    if (user && isProtectedRoute && pathname !== '/onboarding') {
       // Fetch user profile to check onboarding status
       const { data: profile, error: profileError } = await supabase
         .from('profiles')

@@ -103,14 +103,14 @@ const nextConfig = {
   
   // ESLint configuration for builds
   eslint: {
-    // Allow production builds to complete with warnings
-    ignoreDuringBuilds: true,
+    // Only allow build warnings in development with explicit flag
+    ignoreDuringBuilds: process.env.NODE_ENV === 'development' && process.env.IGNORE_LINT_ERRORS === 'true',
   },
   
   // TypeScript configuration for builds  
   typescript: {
-    // Allow production builds to complete with type errors
-    ignoreBuildErrors: true,
+    // SECURITY: Never ignore TypeScript errors in production
+    ignoreBuildErrors: process.env.NODE_ENV === 'development' && process.env.IGNORE_TS_ERRORS === 'true',
   },
   
   

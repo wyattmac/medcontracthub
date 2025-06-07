@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
 import { withCache } from '@/lib/sam-gov/cache-strategy'
 import { createCacheKey } from '@/lib/utils/cache'
 import { calculateOpportunityMatch } from '@/lib/sam-gov/utils'
-import { cookies } from 'next/headers'
 
-// Create service role client to bypass RLS
-const serviceSupabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Use authenticated client with proper RLS
 
 export async function GET(request: Request) {
   try {
@@ -21,38 +16,30 @@ export async function GET(request: Request) {
     const q = searchParams.get('q') || ''
     const set_aside = searchParams.get('set_aside') || ''
 
+    // Get authenticated supabase client
+    const supabase = await createClient()
+    
     // Try to get user's NAICS codes for personalized matching
     let userNaicsCodes: string[] = ['423450', '339112'] // Fallback to medical equipment defaults
     
     try {
-      const cookieStore = await cookies()
-      const authCookies = cookieStore.getAll()
+      // Try to get the current user and their company NAICS codes
+      const { data: { user } } = await supabase.auth.getUser()
       
-      if (authCookies.length > 0) {
-        // Create authenticated client to get user's NAICS codes
-        const authSupabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        )
-
-        // Try to get the current user and their company NAICS codes
-        const { data: { session } } = await authSupabase.auth.getSession()
-        
-        if (session?.user) {
-          const { data: profile } = await authSupabase
-            .from('profiles')
-            .select(`
-              company_id,
-              companies!inner(naics_codes)
-            `)
-            .eq('id', session.user.id)
-            .single()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select(`
+            company_id,
+            companies!inner(naics_codes)
+          `)
+          .eq('id', user.id)
+          .single()
           
-          if (profile?.companies) {
-            const companyNaics = (profile.companies as any)?.naics_codes || []
-            if (companyNaics.length > 0) {
-              userNaicsCodes = companyNaics
-            }
+        if (profile?.companies) {
+          const companyNaics = (profile.companies as any)?.naics_codes || []
+          if (companyNaics.length > 0) {
+            userNaicsCodes = companyNaics
           }
         }
       }
@@ -76,7 +63,8 @@ export async function GET(request: Request) {
       'SEARCH_RESULTS',
       async () => {
         // Build query - Order by newest opportunities first
-        let query = serviceSupabase
+        // NOTE: Opportunities table has RLS policy allowing public read access for active opportunities
+        let query = supabase
           .from('opportunities')
           .select('*', { count: 'exact' })
           .order('posted_date', { ascending: false })
@@ -111,25 +99,15 @@ export async function GET(request: Request) {
     // Get user's saved opportunities for isSaved status
     let savedOpportunityIds: string[] = []
     try {
-      const cookieStore = await cookies()
-      const authCookies = cookieStore.getAll()
+      const { data: { user } } = await supabase.auth.getUser()
       
-      if (authCookies.length > 0) {
-        const authSupabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        )
-
-        const { data: { session } } = await authSupabase.auth.getSession()
+      if (user) {
+        const { data: savedOpportunities } = await supabase
+          .from('saved_opportunities')
+          .select('opportunity_id')
+          .eq('user_id', user.id)
         
-        if (session?.user) {
-          const { data: savedOpportunities } = await authSupabase
-            .from('saved_opportunities')
-            .select('opportunity_id')
-            .eq('user_id', session.user.id)
-          
-          savedOpportunityIds = savedOpportunities?.map(s => s.opportunity_id) || []
-        }
+        savedOpportunityIds = savedOpportunities?.map(s => s.opportunity_id) || []
       }
     } catch (error) {
       // Continue without saved status if auth fails

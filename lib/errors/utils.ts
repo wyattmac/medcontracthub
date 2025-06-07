@@ -46,14 +46,20 @@ export function formatErrorResponse(
 export function parseError(error: unknown, requestId?: string): any {
   // Handle AppError instances
   if (error instanceof AppError) {
-    return {
+    const response = {
       code: error.code,
       message: error.message,
-      details: error.details,
       timestamp: error.timestamp,
       requestId,
       statusCode: error.statusCode
+    } as any
+    
+    // Only include details in development or for validation errors
+    if (process.env.NODE_ENV === 'development' || error instanceof ValidationError) {
+      response.details = error.details
     }
+    
+    return response
   }
   
   // Handle Zod validation errors
@@ -106,15 +112,22 @@ export function parseError(error: unknown, requestId?: string): any {
     }
   }
   
-  // Handle unknown errors
-  return {
+  // Handle unknown errors - sanitize details in production
+  const response = {
     code: ErrorCode.UNKNOWN_ERROR,
     message: 'An unexpected error occurred',
-    details: error,
     timestamp: new Date().toISOString(),
     requestId,
     statusCode: 500
+  } as any
+  
+  // Only include error details in development
+  if (process.env.NODE_ENV === 'development') {
+    response.details = error
+    response.stack = error?.stack
   }
+  
+  return response
 }
 
 /**

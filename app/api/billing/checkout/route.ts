@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server'
 import { routeHandler } from '@/lib/api/route-handler'
 import { createCheckoutSession } from '@/lib/stripe/subscription-manager'
+import { logUnauthorizedAccess } from '@/lib/security/security-monitor'
 import { z } from 'zod'
 
 const checkoutSchema = z.object({
@@ -13,7 +14,7 @@ const checkoutSchema = z.object({
 })
 
 export const POST = routeHandler.POST(
-  async ({ user, supabase, sanitizedBody }) => {
+  async ({ user, supabase, sanitizedBody, request }) => {
     const { planId } = sanitizedBody
     
     // Get user email
@@ -24,6 +25,12 @@ export const POST = routeHandler.POST(
       .single()
 
     if (!profile?.email) {
+      // Log unauthorized access attempt
+      await logUnauthorizedAccess(
+        request.headers.get('x-forwarded-for') || 'unknown',
+        'billing_checkout_no_email',
+        user.id
+      )
       throw new Error('User email not found')
     }
 
@@ -38,6 +45,8 @@ export const POST = routeHandler.POST(
   },
   { 
     requireAuth: true,
-    validateBody: checkoutSchema
+    validateBody: checkoutSchema,
+    rateLimit: 'api',
+    requireCSRF: true
   }
 )
