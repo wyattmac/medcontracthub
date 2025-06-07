@@ -1,0 +1,35 @@
+[
+  {
+    "test": "Dashboard page load",
+    "status": "PASS"
+  },
+  {
+    "test": "Stats cards display",
+    "status": "PASS"
+  },
+  {
+    "test": "Recent activity section",
+    "status": "PASS"
+  },
+  {
+    "test": "Reminders widget",
+    "status": "PASS"
+  },
+  {
+    "test": "Quick actions buttons",
+    "status": "PASS"
+  },
+  {
+    "test": "Live metrics indicator",
+    "status": "PASS"
+  },
+  {
+    "test": "Dashboard navigation",
+    "status": "PASS"
+  },
+  {
+    "test": "Responsive dashboard",
+    "status": "FAIL",
+    "error": "Navigation timeout of 30000 ms exceeded"
+  }
+]
