@@ -57,12 +57,15 @@ make --version
 git clone https://github.com/wyattmac/medcontracthub.git
 cd medcontracthub
 
-# Copy consolidated environment configuration
-cp .env.consolidated .env.local
+# ⚠️ CRITICAL: Copy environment config to BOTH locations
+cp .env.consolidated .env.local  # Primary - used by Next.js and Docker
+cp .env.consolidated .env        # Fallback - required for Docker Compose
 
 # Edit .env.local with your credentials - all required keys included:
 # See complete configuration example below
 ```
+
+**Why both files?** Docker Compose reads `.env.local` as configured in `docker-compose.yml`, but may need `.env` as a fallback. Creating both ensures reliable environment variable loading.
 
 ### **🔑 Complete API Configuration Guide**
 
@@ -185,16 +188,24 @@ docker-compose --version            # Should be 2.0+
 # 2. Clone and configure
 git clone <repository>
 cd medcontracthub
-cp .env.consolidated .env.local     # Local development
-cp .env.consolidated .env           # Docker Compose
 
-# 3. Start development environment
+# 3. ⚠️ CRITICAL: Create BOTH environment files
+cp .env.consolidated .env.local     # Primary - Next.js and Docker
+cp .env.consolidated .env           # Fallback - Docker Compose
+
+# 4. Start development environment
 make dev                           # Starts on port 3000
+# OR use: ./easy-docker.sh and select option 1
 
-# 4. Verify everything is working
-curl http://localhost:3000/api/health  # Should return JSON
-docker ps                            # Check containers running
+# 5. Wait ~60 seconds for Next.js compilation, then verify
+curl http://localhost:3000/api/health  # Should return JSON with "status": "healthy"
+docker ps                            # Check all containers are running
 ```
+
+**Docker Environment Files:**
+- **`.env.local`** - Primary configuration file used by Next.js and specified in docker-compose.yml
+- **`.env`** - Fallback file that Docker Compose may use if .env.local fails to load
+- **Both files are required** for reliable Docker operation
 
 **Docker Architecture:**
 ```bash
@@ -237,18 +248,21 @@ export DOCKER_HOST=unix:///var/run/docker.sock
 **1. Environment Variables Not Loading (Most Common)**
 ```bash
 # Problem: "Missing Supabase configuration" errors
-# Root Cause: Docker Compose not reading .env.local
+# Root Cause: Docker Compose needs both .env.local AND .env files
 
-# Solution 1: Create .env file for Docker
-cp .env.consolidated .env
-docker-compose down && docker-compose up --build
+# Solution: Create BOTH environment files
+cp .env.consolidated .env.local  # Primary file
+cp .env.consolidated .env        # Fallback file
 
-# Solution 2: Verify environment variables in container
+# Restart containers to load environment
+docker-compose down && docker-compose up -d --build
+
+# Verify environment variables loaded correctly
 docker exec medcontract-dev env | grep -E "(SUPABASE|API_KEY)"
-# Should show all API keys loaded
+# Should show all API keys with values
 
-# Solution 3: Check docker-compose.yml has env_file
-# File should contain: env_file: [.env]
+# Quick fix if container is already running
+docker restart medcontract-dev
 ```
 
 **2. Port Conflicts**
@@ -305,19 +319,23 @@ typescript: { ignoreBuildErrors: true }
 #### **📊 Docker Health Check Commands**
 ```bash
 # Complete health verification
-make health-check                    # Check all services
-curl http://localhost:3000/api/health # API health
-docker ps                            # Container status
-docker-compose logs --tail=20        # Recent logs
+curl http://localhost:3000/api/health | jq .  # Should return "status": "healthy"
+curl http://localhost:3000/api/opportunities/count | jq .  # Should show count > 0
+docker ps                            # All containers should be running
 
-# WSL-specific commands
+# Container-specific checks
+docker logs medcontract-dev --tail=50  # Check for errors
+docker exec medcontract-dev env | grep SUPABASE  # Verify env vars loaded
+
+# WSL-specific commands (set DOCKER_HOST first)
+export DOCKER_HOST=unix:///var/run/docker.sock
 ./docker-logs.sh app                 # View app logs (WSL-friendly)
 ./docker-logs.sh all                 # View all service logs
 ./check-docker-status.sh             # Container health status
 
-# Performance check
+# Performance monitoring
 docker stats                         # Resource usage
-docker exec medcontracthub-app-1 npm run type-check  # Code quality
+docker exec medcontract-dev npm run type-check  # Code quality
 ```
 
 ### **4. Database Setup**

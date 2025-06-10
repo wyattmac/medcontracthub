@@ -40,6 +40,7 @@
     "test:document-ocr": "tsx scripts/test-mistral-document-ocr.ts",
     "test:ocr": "tsx scripts/test-ocr-processing.ts",
     "test:apis": "tsx scripts/test-apis.ts",
+    "test:ai-proposal": "tsx scripts/test-ai-proposal-production.ts",
     "worker": "tsx scripts/start-worker.ts",
     "worker:dev": "tsx --watch scripts/start-worker.ts",
     "redis:start": "redis-server",

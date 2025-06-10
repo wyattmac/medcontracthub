@@ -1,0 +1,2927 @@
+
+> medcontracthub@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.3.3
+   - Local:        http://localhost:3000
+   - Network:      http://10.255.255.254:3000
+   - Environments: .env.local, .env
+
+ ✓ Starting...
+ ○ Compiling /instrumentation ...
+ ✓ Compiled /instrumentation in 10.8s (2099 modules)
+📊 User journey monitoring disabled (set ENABLE_USER_JOURNEY_MONITORING=true to enable)
+ ✓ Ready in 30.2s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 1815ms (571 modules)
+[2025-06-10T13:25:30.277Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749561930277_6p0uidf84" pathname="/api/health" method="GET"
+ ○ Compiling /api/health ...
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (253kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled /api/health in 31.5s (4273 modules)
+[2025-06-10T13:26:02.691Z] [INFO] [API] Health check started | requestId="health_1749561962691_20wqdy60h"
+[2025-06-10T13:26:03.916Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:03.918Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:03.918Z] [INFO] [API] Redis reconnecting in 50ms
+[2025-06-10T13:26:03.969Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:03.970Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:03.970Z] [INFO] [API] Redis reconnecting in 100ms
+[2025-06-10T13:26:04.073Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:04.074Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:04.075Z] [INFO] [API] Redis reconnecting in 150ms
+[2025-06-10T13:26:04.232Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:04.233Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:04.234Z] [INFO] [API] Redis reconnecting in 200ms
+[2025-06-10T13:26:04.234Z] [ERROR] [API] Redis health check failed
+Error: {
+  "name": "MaxRetriesPerRequestError",
+  "message": "Reached the max retries per request limit (which is 3). Refer to \"maxRetriesPerRequest\" option for details."
+}
+Stack: MaxRetriesPerRequestError: Reached the max retries per request limit (which is 3). Refer to "maxRetriesPerRequest" option for details.
+    at Socket.eval (webpack-internal:///(rsc)/./node_modules/ioredis/built/redis/event_handler.js:182:37)
+    at Object.onceWrapper (node:events:633:26)
+    at Socket.emit (node:events:518:28)
+    at TCP.<anonymous> (node:net:351:12)
+    at TCP.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:04.238Z] [DEBUG] [Database] Created new connection | id="conn_1749561964236_o45fjoxn6"
+[2025-06-10T13:26:04.239Z] [DEBUG] [Database] Created new connection | id="conn_1749561964238_t6bkx6e81"
+[2025-06-10T13:26:04.239Z] [INFO] [Database] Connection pool initialized | minConnections=2
+[2025-06-10T13:26:04.240Z] [INFO] [API] Health check completed | requestId="health_1749561962691_20wqdy60h" status="degraded" responseTime=1549
+ GET /api/health 503 in 33934ms
+[2025-06-10T13:26:04.435Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:04.436Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:04.436Z] [INFO] [API] Redis reconnecting in 250ms
+[2025-06-10T13:26:04.689Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:04.690Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:04.690Z] [INFO] [API] Redis reconnecting in 300ms
+[2025-06-10T13:26:05.005Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:05.007Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:05.007Z] [INFO] [API] Redis reconnecting in 350ms
+[2025-06-10T13:26:05.370Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:05.371Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:05.371Z] [INFO] [API] Redis reconnecting in 400ms
+[2025-06-10T13:26:05.789Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:05.791Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:05.791Z] [INFO] [API] Redis reconnecting in 450ms
+[2025-06-10T13:26:06.258Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:06.258Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:06.259Z] [INFO] [API] Redis reconnecting in 500ms
+[2025-06-10T13:26:06.778Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:06.779Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:06.779Z] [INFO] [API] Redis reconnecting in 550ms
+[2025-06-10T13:26:07.350Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:07.351Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:07.351Z] [INFO] [API] Redis reconnecting in 600ms
+[2025-06-10T13:26:05.710Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:05.711Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:05.712Z] [INFO] [API] Redis reconnecting in 650ms
+[2025-06-10T13:26:06.383Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:06.384Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:06.384Z] [INFO] [API] Redis reconnecting in 700ms
+[2025-06-10T13:26:07.111Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:07.111Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:07.111Z] [INFO] [API] Redis reconnecting in 750ms
+[2025-06-10T13:26:07.870Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:07.871Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:07.871Z] [INFO] [API] Redis reconnecting in 800ms
+[2025-06-10T13:26:08.702Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:08.703Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:08.703Z] [INFO] [API] Redis reconnecting in 850ms
+[2025-06-10T13:26:09.583Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:09.584Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:09.584Z] [INFO] [API] Redis reconnecting in 900ms
+[2025-06-10T13:26:10.503Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:10.504Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:10.504Z] [INFO] [API] Redis reconnecting in 950ms
+[2025-06-10T13:26:11.463Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:11.466Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:11.466Z] [INFO] [API] Redis reconnecting in 1000ms
+[2025-06-10T13:26:12.467Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:12.468Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:12.468Z] [INFO] [API] Redis reconnecting in 1050ms
+[2025-06-10T13:26:13.522Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:13.523Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:13.523Z] [INFO] [API] Redis reconnecting in 1100ms
+[2025-06-10T13:26:14.632Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:14.632Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:14.633Z] [INFO] [API] Redis reconnecting in 1150ms
+[2025-06-10T13:26:15.787Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:15.788Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:15.788Z] [INFO] [API] Redis reconnecting in 1200ms
+[2025-06-10T13:26:16.998Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:16.999Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:16.999Z] [INFO] [API] Redis reconnecting in 1250ms
+[2025-06-10T13:26:18.255Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:18.256Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:18.256Z] [INFO] [API] Redis reconnecting in 1300ms
+[2025-06-10T13:26:19.559Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:19.559Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:19.559Z] [INFO] [API] Redis reconnecting in 1350ms
+[2025-06-10T13:26:20.914Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:20.915Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:20.916Z] [INFO] [API] Redis reconnecting in 1400ms
+[2025-06-10T13:26:22.322Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:22.322Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:22.323Z] [INFO] [API] Redis reconnecting in 1450ms
+[2025-06-10T13:26:23.785Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:23.786Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:23.786Z] [INFO] [API] Redis reconnecting in 1500ms
+[2025-06-10T13:26:25.295Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:25.297Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:25.297Z] [INFO] [API] Redis reconnecting in 1550ms
+[2025-06-10T13:26:26.848Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:26.850Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:26.850Z] [INFO] [API] Redis reconnecting in 1600ms
+[2025-06-10T13:26:28.453Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:28.453Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:28.454Z] [INFO] [API] Redis reconnecting in 1650ms
+[2025-06-10T13:26:30.107Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:30.108Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:30.111Z] [INFO] [API] Redis reconnecting in 1700ms
+[2025-06-10T13:26:31.858Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:31.859Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:31.859Z] [INFO] [API] Redis reconnecting in 1750ms
+[2025-06-10T13:26:33.626Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:33.627Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:33.627Z] [INFO] [API] Redis reconnecting in 1800ms
+[2025-06-10T13:26:33.844Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:33.844Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:33.844Z] [INFO] [API] Redis reconnecting in 1850ms
+[2025-06-10T13:26:35.696Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:35.696Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:35.696Z] [INFO] [API] Redis reconnecting in 1900ms
+[2025-06-10T13:26:37.674Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:37.674Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:37.674Z] [INFO] [API] Redis reconnecting in 1950ms
+[2025-06-10T13:26:39.633Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:39.634Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:39.635Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:26:41.641Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:41.641Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:41.641Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:26:43.644Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:43.645Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:43.645Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:26:45.648Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:45.649Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:45.649Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:26:47.654Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:47.655Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:47.655Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:26:49.663Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:49.664Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:49.665Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:26:51.667Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:51.667Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:51.667Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:26:53.669Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:53.669Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:53.669Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:26:55.671Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:55.671Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:55.671Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:26:57.973Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:26:57.974Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:26:57.974Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:00.070Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:00.071Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:00.071Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:02.072Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:02.072Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:02.073Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:03.273Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:03.274Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:03.274Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:05.290Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:05.291Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:05.291Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:07.311Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:07.312Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:07.312Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:09.317Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:09.318Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:09.318Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:11.319Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:11.319Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:11.319Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:13.325Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:13.325Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:13.325Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:15.327Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:15.327Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:15.329Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:17.328Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:17.329Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:17.329Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:19.332Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:19.333Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:19.333Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:21.336Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:21.337Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:21.337Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:23.340Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:23.340Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:23.340Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:25.342Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:25.342Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:25.342Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:27.347Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:27.348Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:27.349Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:29.350Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:29.351Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:29.351Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:31.354Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:31.355Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:31.355Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:31.926Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:31.926Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:31.926Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:33.928Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:33.929Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:33.929Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:35.936Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:35.936Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:35.937Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:37.948Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:37.948Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:37.948Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:39.949Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:39.949Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:39.950Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:41.957Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:41.958Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:41.958Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:43.960Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:43.960Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:43.961Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:45.964Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:45.964Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:45.964Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:47.972Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:47.973Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:47.973Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:49.977Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:49.977Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:49.978Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:51.984Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:51.984Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:51.984Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:53.987Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:53.987Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:53.987Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:55.990Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:55.990Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:55.991Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:57.997Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:27:57.997Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:27:57.997Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:27:59.999Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:00.000Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:00.000Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:00.539Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:00.539Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:00.539Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:02.542Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:02.542Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:02.543Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:04.549Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:04.549Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:04.549Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:06.552Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:06.553Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:06.553Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:08.562Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:08.563Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:08.563Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:10.565Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:10.565Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:10.565Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:12.566Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:12.566Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:12.567Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:14.575Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:14.576Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:14.576Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:16.582Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:16.583Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:16.583Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:18.587Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:18.587Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:18.587Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:20.589Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:20.590Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:20.590Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:22.593Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:22.593Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:22.594Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:24.637Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:24.638Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:24.638Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:26.651Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:26.651Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:26.652Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:28.658Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:28.659Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:28.660Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:28.359Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:28.359Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:28.360Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:30.366Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:30.367Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:30.367Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:32.371Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:32.372Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:32.372Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:34.378Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:34.379Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:34.379Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:36.382Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:36.382Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:36.383Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:38.386Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:38.387Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:38.387Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:40.390Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:40.390Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:40.391Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:42.394Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:42.395Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:42.395Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:44.405Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:44.405Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:44.406Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:46.411Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:46.411Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:46.411Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:48.429Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:48.429Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:48.430Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:50.465Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:50.466Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:50.466Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:52.476Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:52.477Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:52.477Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:54.479Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:54.480Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:54.480Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:56.499Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:56.500Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:56.501Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:57.047Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:57.048Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:57.048Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:28:59.055Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:28:59.056Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:28:59.056Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:01.060Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:01.061Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:01.061Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:03.064Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:03.065Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:03.065Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:05.083Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:05.084Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:05.085Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:07.117Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:07.117Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:07.117Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:09.124Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:09.124Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:09.125Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:11.126Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:11.127Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:11.127Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:13.189Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:13.190Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:13.193Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:15.325Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:15.326Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:15.326Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:17.333Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:17.333Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:17.333Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:19.336Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:19.336Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:19.336Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:21.362Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:21.363Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:21.363Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:23.397Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:23.399Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:23.400Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:25.421Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:25.422Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:25.422Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:25.697Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:25.698Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:25.698Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:27.699Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:27.700Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:27.700Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:29.711Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:29.712Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:29.712Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:31.717Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:31.718Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:31.718Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:33.721Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:33.721Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:33.722Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:35.726Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:35.726Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:35.727Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:37.730Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:37.731Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:37.733Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:39.749Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:39.750Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:39.750Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:41.766Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:41.766Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:41.767Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:43.773Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:43.774Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:43.775Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:45.777Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:45.778Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:45.778Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:47.783Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:47.783Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:47.784Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:49.799Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:49.800Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:49.800Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:51.802Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:51.803Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:51.803Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:53.813Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:53.814Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:53.814Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:55.115Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:55.115Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:55.116Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:57.121Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:57.122Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:57.123Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:29:59.125Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:29:59.128Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:29:59.128Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:01.139Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:01.139Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:01.140Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:03.155Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:03.156Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:03.156Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:05.160Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:05.160Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:05.160Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:07.165Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:07.166Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:07.166Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:09.169Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:09.170Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:09.170Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:11.181Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:11.182Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:11.182Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:13.194Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:13.195Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:13.195Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:15.197Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:15.198Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:15.198Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:17.199Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:17.200Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:17.202Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:19.218Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:19.219Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:19.219Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:21.233Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:21.233Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:21.233Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:23.248Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:23.248Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:23.250Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:23.756Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:23.757Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:23.757Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:25.763Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:25.763Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:25.763Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:27.771Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:27.772Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:27.773Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:29.793Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:29.793Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:29.793Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:31.796Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:31.796Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:31.797Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:33.800Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:33.801Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:33.803Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:35.804Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:35.805Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:35.805Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:37.808Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:37.809Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:37.809Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:39.814Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:39.815Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:39.817Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:41.817Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:41.817Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:41.818Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:43.829Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:43.829Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:43.829Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:45.830Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:45.831Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:45.834Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:47.834Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:47.835Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:47.835Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:49.838Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:49.839Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:49.840Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:51.851Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:51.852Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:51.854Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:51.713Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:51.714Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:51.714Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:53.716Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:53.716Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:53.716Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:55.734Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:55.734Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:55.735Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:57.740Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:57.741Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:57.742Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:30:59.762Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:30:59.763Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:30:59.763Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:01.780Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:01.780Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:01.780Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:03.782Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:03.783Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:03.783Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:05.784Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:05.785Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:05.785Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:07.790Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:07.790Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:07.790Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:09.792Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:09.792Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:09.792Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:11.804Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:11.804Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:11.805Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:13.805Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:13.805Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:13.805Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:15.820Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:15.820Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:15.821Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:17.826Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:17.826Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:17.827Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:19.830Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:19.830Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:19.830Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:20.101Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:20.101Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:20.101Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:22.102Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:22.102Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:22.102Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:24.138Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:24.139Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:24.141Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:26.145Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:26.145Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:26.146Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:28.158Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:28.159Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:28.159Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:30.163Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:30.163Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:30.165Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:32.169Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:32.169Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:32.169Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:34.190Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:34.191Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:34.191Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:36.196Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:36.196Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:36.196Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:38.210Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:38.211Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:38.211Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:40.225Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:40.226Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:40.226Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:42.232Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:42.232Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:42.233Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:44.244Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:44.244Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:44.244Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:46.246Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:46.246Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:46.246Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:48.260Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:48.260Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:48.261Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:48.408Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:48.409Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:48.409Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:50.412Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:50.413Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:50.413Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:52.416Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:52.416Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:52.417Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:54.424Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:54.424Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:54.424Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:56.439Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:56.440Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:56.440Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:31:58.455Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:31:58.457Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:31:58.457Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:32:00.462Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:32:00.463Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:32:00.463Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:32:02.470Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:32:02.472Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:32:02.473Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:32:04.486Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:32:04.487Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:32:04.488Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:32:06.491Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:32:06.492Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:32:06.492Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:32:08.502Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:32:08.502Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:32:08.503Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:32:10.507Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:32:10.508Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:32:10.508Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:32:12.510Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:32:12.510Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:32:12.510Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:32:14.516Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:32:14.516Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:32:14.516Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:32:16.519Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:32:16.519Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:32:16.519Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:32:17.368Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:32:17.369Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:32:17.369Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:32:19.370Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:32:19.370Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:32:19.371Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:32:21.374Z] [ERROR] [API] Redis connection error
+Error: {
+  "name": "Error",
+  "message": "connect ECONNREFUSED 127.0.0.1:6379",
+  "code": "ECONNREFUSED"
+}
+Stack: Error: connect ECONNREFUSED 127.0.0.1:6379
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+[2025-06-10T13:32:21.375Z] [WARN] [API] Redis connection closed
+[2025-06-10T13:32:21.376Z] [INFO] [API] Redis reconnecting in 2000ms
+[2025-06-10T13:32:23.390Z] [INFO] [API] Redis connected successfully
+[2025-06-10T13:32:23.400Z] [INFO] [API] Redis ready to accept commands
+   Reload env: .env
+ ✓ Compiled in 79ms (2739 modules)
+[2025-06-10T13:47:53.405Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749563273405_8myi8b0vj" pathname="/api/health" method="GET"
+ ○ Compiling /api/health ...
+ ✓ Compiled /api/health in 1411ms (3994 modules)
+[2025-06-10T13:47:55.502Z] [INFO] [API] Health check started | requestId="health_1749563275502_ahgkvns6d"
+[2025-06-10T13:47:55.898Z] [INFO] [API] Redis connected successfully
+[2025-06-10T13:47:55.902Z] [INFO] [API] Redis ready to accept commands
+[2025-06-10T13:47:55.905Z] [DEBUG] [Database] Created new connection | id="conn_1749563275904_07k9pjne9"
+[2025-06-10T13:47:55.906Z] [DEBUG] [Database] Created new connection | id="conn_1749563275905_3r3d08uaf"
+[2025-06-10T13:47:55.906Z] [INFO] [Database] Connection pool initialized | minConnections=2
+[2025-06-10T13:47:55.906Z] [INFO] [API] Health check completed | requestId="health_1749563275502_ahgkvns6d" status="healthy" responseTime=404
+ GET /api/health 200 in 2492ms
+[2025-06-10T13:48:01.389Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749563281389_yvnubhm48" pathname="/api/opportunities/count" method="GET"
+ ○ Compiling /api/opportunities/count ...
+ ✓ Compiled /api/opportunities/count in 872ms (4275 modules)
+ GET /api/opportunities/count 200 in 1601ms
+[2025-06-10T13:48:23.955Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749563303955_3r5c2u4wv" pathname="/api/opportunities/public-search" method="GET"
+ ○ Compiling /api/opportunities/public-search ...
+ ✓ Compiled /api/opportunities/public-search in 1050ms (4281 modules)
+[2025-06-10T13:48:25.149Z] [INFO] [API] Redis connected successfully
+[2025-06-10T13:48:25.151Z] [INFO] [API] Redis ready to accept commands
+[2025-06-10T13:48:25.152Z] [INFO] [API] Cache miss, executing function | key="public-search:{\"limit\":1,\"offset\":0,\"q\":\"\",\"set_aside\":\"\",\"status\":\"active\"}" cacheType="SEARCH_RESULTS"
+ GET /api/opportunities/public-search?limit=1&naics=3391 200 in 2095ms
+[2025-06-10T14:02:26.651Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749564146651_d2n19d5xi" pathname="/api/health" method="GET"
+[2025-06-10T14:02:26.827Z] [INFO] [API] Health check started | requestId="health_1749564146827_u62tl96hh"
+[2025-06-10T14:02:27.132Z] [DEBUG] [Database] Created new connection | id="conn_1749564147130_eaqujg4z3"
+[2025-06-10T14:02:27.134Z] [DEBUG] [Database] Created new connection | id="conn_1749564147133_qh4um0fof"
+[2025-06-10T14:02:27.135Z] [INFO] [Database] Connection pool initialized | minConnections=2
+[2025-06-10T14:02:27.136Z] [INFO] [API] Health check completed | requestId="health_1749564146827_u62tl96hh" status="healthy" responseTime=309
+ GET /api/health 200 in 450ms
+   Reload env: .env.local
+   Reload env: .env
+ ✓ Compiled in 2s (4844 modules)
+[2025-06-10T14:03:39.531Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749564219531_3ip8mj08z" pathname="/api/health" method="GET"
+[2025-06-10T14:03:39.767Z] [INFO] [API] Health check started | requestId="health_1749564219766_xxrd8uy83"
+[2025-06-10T14:03:40.149Z] [INFO] [API] Redis connected successfully
+[2025-06-10T14:03:40.153Z] [INFO] [API] Redis ready to accept commands
+[2025-06-10T14:03:40.155Z] [DEBUG] [Database] Created new connection | id="conn_1749564220154_9z10h8rn8"
+[2025-06-10T14:03:40.156Z] [DEBUG] [Database] Created new connection | id="conn_1749564220156_lpzkud5yo"
+[2025-06-10T14:03:40.156Z] [INFO] [Database] Connection pool initialized | minConnections=2
+[2025-06-10T14:03:40.157Z] [INFO] [API] Health check completed | requestId="health_1749564219766_xxrd8uy83" status="healthy" responseTime=391
+ GET /api/health 200 in 623ms
+[2025-06-10T14:04:05.242Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749564245242_7hkvdj3qb" pathname="/api/proposals/generate" method="POST"
+ ○ Compiling /api/proposals/generate ...
+ ⚠ ./app/api/proposals/generate/route.ts
+Attempted import error: 'withErrorHandler' is not exported from '@/lib/api/error-interceptor' (imported as 'withErrorHandler').
+
+Import trace for requested module:
+./app/api/proposals/generate/route.ts
+
+./app/api/proposals/generate/route.ts
+Attempted import error: 'UnauthorizedError' is not exported from '@/lib/errors/types' (imported as 'UnauthorizedError').
+
+Import trace for requested module:
+./app/api/proposals/generate/route.ts
+ ⨯ TypeError: (0 , _lib_api_error_interceptor__WEBPACK_IMPORTED_MODULE_2__.withErrorHandler) is not a function
+    at eval (app/api/proposals/generate/route.ts:70:37)
+    at <unknown> (rsc)/./app/api/proposals/generate/route.ts (/home/locklearwyatt/projects/medcontracthub/.next/server/app/api/proposals/generate/route.js:22:1)
+    at __webpack_require__ (.next/server/webpack-runtime.js:33:43)
+    at __webpack_require__ (.next/server/webpack-runtime.js:33:43)
+    at __webpack_exec__ (.next/server/app/api/proposals/generate/route.js:677:39)
+    at <unknown> (.next/server/app/api/proposals/generate/route.js:678:400)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:166:21)
+    at <unknown> (.next/server/app/api/proposals/generate/route.js:678:47)
+    at Object.<anonymous> (.next/server/app/api/proposals/generate/route.js:681:3)
+  68 | }
+  69 |
+> 70 | export const POST = withErrorHandler(async (request: NextRequest) => {
+     |                                     ^
+  71 |   const startTime = Date.now()
+  72 |   
+  73 |   // Authenticate user {
+  page: '/api/proposals/generate'
+}
+ ⚠ ./app/api/proposals/generate/route.ts
+Attempted import error: 'withErrorHandler' is not exported from '@/lib/api/error-interceptor' (imported as 'withErrorHandler').
+
+Import trace for requested module:
+./app/api/proposals/generate/route.ts
+
+./app/api/proposals/generate/route.ts
+Attempted import error: 'UnauthorizedError' is not exported from '@/lib/errors/types' (imported as 'UnauthorizedError').
+
+Import trace for requested module:
+./app/api/proposals/generate/route.ts
+ ⚠ ./app/api/proposals/generate/route.ts
+Attempted import error: 'withErrorHandler' is not exported from '@/lib/api/error-interceptor' (imported as 'withErrorHandler').
+
+Import trace for requested module:
+./app/api/proposals/generate/route.ts
+
+./app/api/proposals/generate/route.ts
+Attempted import error: 'UnauthorizedError' is not exported from '@/lib/errors/types' (imported as 'UnauthorizedError').
+
+Import trace for requested module:
+./app/api/proposals/generate/route.ts
+ POST /api/proposals/generate 500 in 6887ms
+[2025-06-10T14:04:32.422Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749564272422_hxm4ngkyi" pathname="/api/proposals/generate" method="POST"
+ ⨯ TypeError: (0 , _lib_api_error_interceptor__WEBPACK_IMPORTED_MODULE_2__.withErrorHandler) is not a function
+    at eval (app/api/proposals/generate/route.ts:70:37)
+    at <unknown> (rsc)/./app/api/proposals/generate/route.ts (/home/locklearwyatt/projects/medcontracthub/.next/server/app/api/proposals/generate/route.js:22:1)
+    at __webpack_require__ (.next/server/webpack-runtime.js:33:43)
+    at __webpack_require__ (.next/server/webpack-runtime.js:33:43)
+    at __webpack_exec__ (.next/server/app/api/proposals/generate/route.js:677:39)
+    at <unknown> (.next/server/app/api/proposals/generate/route.js:678:400)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:166:21)
+    at <unknown> (.next/server/app/api/proposals/generate/route.js:678:47)
+    at Object.<anonymous> (.next/server/app/api/proposals/generate/route.js:681:3)
+  68 | }
+  69 |
+> 70 | export const POST = withErrorHandler(async (request: NextRequest) => {
+     |                                     ^
+  71 |   const startTime = Date.now()
+  72 |   
+  73 |   // Authenticate user {
+  page: '/api/proposals/generate'
+}
+ POST /api/proposals/generate 500 in 603ms
+ ⚠ ./app/api/proposals/generate/route.ts
+Attempted import error: 'UnauthorizedError' is not exported from '@/lib/errors/types' (imported as 'UnauthorizedError').
+
+Import trace for requested module:
+./app/api/proposals/generate/route.ts
+ ✓ Compiled /_error in 485ms (1935 modules)
+[2025-06-10T14:06:36.354Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749564396354_ev46tx33q" pathname="/api/proposals/generate" method="POST"
+ ○ Compiling /api/proposals/generate ...
+ ✓ Compiled /api/proposals/generate in 1549ms (4426 modules)
+🚨 Error: Invalid CSRF token
+  Error Details
+  ┌─────────┬────────────────────────────┐
+  │ (index) │ Values                     │
+  ├─────────┼────────────────────────────┤
+  │ Code    │ 'FORBIDDEN'                │
+  │ Status  │ 403                        │
+  │ Time    │ '2025-06-10T14:06:40.700Z' │
+  └─────────┴────────────────────────────┘
+  Debugging Hint
+  Check error details and stack trace
+  Suggested Actions
+  1. Check browser console for additional errors
+  2. View server logs: docker logs -f medcontract-dev
+  3. Check network tab in browser DevTools
+  Related Files
+  📄 webpack-internal:///(rsc)/./lib/api/enhanced-route-handler.ts:60:27
+  📄 /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:237:21
+  📄 /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:428:24
+  📄 /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:452:13
+  📄 /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/start-server.js:158:13
+  Stack Trace
+  AppError: Invalid CSRF token
+      at EnhancedRouteHandler.handleRequest (webpack-internal:///(rsc)/./lib/api/enhanced-route-handler.ts:60:27)
+      at async AppRouteRouteModule.do (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:34112)
+      at async AppRouteRouteModule.handle (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:41338)
+      at async doRender (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1518:42)
+      at async DevServer.renderToResponseWithComponentsImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1920:28)
+      at async DevServer.renderPageComponent (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:2408:24)
+      at async DevServer.renderToResponseImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:2445:32)
+      at async DevServer.pipeImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1008:25)
+      at async NextNodeServer.handleCatchallRenderRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/next-server.js:305:17)
+      at async DevServer.handleRequestImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:900:17)
+      at async /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/dev/next-dev-server.js:371:20
+      at async Span.traceAsyncFn (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/trace/trace.js:157:20)
+      at async DevServer.handleRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/dev/next-dev-server.js:368:24)
+      at async invokeRender (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:237:21)
+      at async handleRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:428:24)
+      at async requestHandlerImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:452:13)
+      at async Server.requestListener (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/start-server.js:158:13)
+[2025-06-10T14:06:40.708Z] [ERROR] [App] Invalid CSRF token
+Error: {
+  "message": "Invalid CSRF token",
+  "name": "AppError",
+  "code": "FORBIDDEN",
+  "statusCode": 403,
+  "timestamp": "2025-06-10T14:06:40.700Z",
+  "stack": "AppError: Invalid CSRF token\n    at EnhancedRouteHandler.handleRequest (webpack-internal:///(rsc)/./lib/api/enhanced-route-handler.ts:60:27)\n    at async AppRouteRouteModule.do (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:34112)\n    at async AppRouteRouteModule.handle (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:41338)\n    at async doRender (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1518:42)\n    at async DevServer.renderToResponseWithComponentsImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1920:28)\n    at async DevServer.renderPageComponent (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:2408:24)\n    at async DevServer.renderToResponseImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:2445:32)\n    at async DevServer.pipeImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1008:25)\n    at async NextNodeServer.handleCatchallRenderRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/next-server.js:305:17)\n    at async DevServer.handleRequestImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:900:17)\n    at async /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/dev/next-dev-server.js:371:20\n    at async Span.traceAsyncFn (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/trace/trace.js:157:20)\n    at async DevServer.handleRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/dev/next-dev-server.js:368:24)\n    at async invokeRender (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:237:21)\n    at async handleRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:428:24)\n    at async requestHandlerImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:452:13)\n    at async Server.requestListener (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/start-server.js:158:13)",
+  "details": {
+    "hint": "Ensure x-csrf-token header is included"
+  },
+  "url": "http://localhost:3000/api/proposals/generate",
+  "method": "POST",
+  "headers": {
+    "accept": "*/*",
+    "content-length": "2",
+    "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.sam.gov https://api.resend.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+    "content-type": "application/json",
+    "host": "localhost:3000",
+    "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), fullscreen=(self)",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "user-agent": "curl/8.5.0",
+    "x-content-type-options": "nosniff",
+    "x-forwarded-for": "::1",
+    "x-forwarded-host": "localhost:3000",
+    "x-forwarded-port": "3000",
+    "x-forwarded-proto": "http",
+    "x-frame-options": "DENY",
+    "x-xss-protection": "1; mode=block"
+  },
+  "requestId": "api_1749564400698_7gxgvd6x5",
+  "environment": {
+    "nodeEnv": "development",
+    "isBrowser": false,
+    "isServer": true,
+    "userAgent": "Node.js/22"
+  },
+  "globalContext": {
+    "requestId": "api_1749564400698_7gxgvd6x5",
+    "url": "http://localhost:3000/api/proposals/generate",
+    "method": "POST"
+  },
+  "debugging": {
+    "hint": "Check error details and stack trace",
+    "possibleCauses": [],
+    "suggestedActions": [
+      "Check browser console for additional errors",
+      "View server logs: docker logs -f medcontract-dev",
+      "Check network tab in browser DevTools"
+    ],
+    "relatedFiles": [
+      "webpack-internal:///(rsc)/./lib/api/enhanced-route-handler.ts:60:27",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:237:21",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:428:24",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:452:13",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/start-server.js:158:13"
+    ]
+  }
+}
+[2025-06-10T14:06:40.709Z] [ERROR] [App] API request failed
+Error: {
+  "message": "Invalid CSRF token",
+  "code": "FORBIDDEN",
+  "requestId": "api_1749564400698_7gxgvd6x5",
+  "timestamp": "2025-06-10T14:06:40.709Z",
+  "debugging": {
+    "hint": "Check error details and stack trace",
+    "possibleCauses": [],
+    "suggestedActions": [
+      "Check browser console for additional errors",
+      "View server logs: docker logs -f medcontract-dev",
+      "Check network tab in browser DevTools"
+    ],
+    "relatedFiles": [
+      "webpack-internal:///(rsc)/./lib/api/enhanced-route-handler.ts:60:27",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:237:21",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:428:24",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:452:13",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/start-server.js:158:13"
+    ]
+  },
+  "stack": "AppError: Invalid CSRF token\n    at EnhancedRouteHandler.handleRequest (webpack-internal:///(rsc)/./lib/api/enhanced-route-handler.ts:60:27)\n    at async AppRouteRouteModule.do (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:34112)\n    at async AppRouteRouteModule.handle (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:41338)\n    at async doRender (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1518:42)\n    at async DevServer.renderToResponseWithComponentsImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1920:28)\n    at async DevServer.renderPageComponent (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:2408:24)\n    at async DevServer.renderToResponseImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:2445:32)\n    at async DevServer.pipeImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1008:25)\n    at async NextNodeServer.handleCatchallRenderRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/next-server.js:305:17)\n    at async DevServer.handleRequestImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:900:17)\n    at async /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/dev/next-dev-server.js:371:20\n    at async Span.traceAsyncFn (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/trace/trace.js:157:20)\n    at async DevServer.handleRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/dev/next-dev-server.js:368:24)\n    at async invokeRender (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:237:21)\n    at async handleRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:428:24)\n    at async requestHandlerImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:452:13)\n    at async Server.requestListener (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/start-server.js:158:13)",
+  "details": {
+    "hint": "Ensure x-csrf-token header is included"
+  },
+  "duration": 11,
+  "path": "/api/proposals/generate"
+}
+ POST /api/proposals/generate 403 in 4340ms
+[2025-06-10T14:06:48.451Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749564408451_5ub4aflof" pathname="/api/csrf" method="GET"
+ ○ Compiling /api/csrf ...
+ ✓ Compiled /api/csrf in 1684ms (4953 modules)
+[2025-06-10T14:06:51.248Z] [INFO] [API] GET /api/csrf | requestId="req_1749564411244_mh042vwjx" method="GET" path="/api/csrf" query={} headers={"user-agent":"curl/8.5.0","content-type":null,"x-forwarded-for":"::1"}
+[2025-06-10T14:06:51.257Z] [INFO] [API] GET /api/csrf completed | requestId="req_1749564411244_mh042vwjx" status=200 responseTime=13
+ GET /api/csrf 200 in 2803ms
+[2025-06-10T14:07:29.339Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749564449339_zhrxflysi" pathname="/api/opportunities/public-search" method="GET"
+ ○ Compiling /api/opportunities/public-search ...
+ ✓ Compiled /api/opportunities/public-search in 1612ms (4437 modules)
+[2025-06-10T14:07:31.093Z] [INFO] [API] Redis connected successfully
+[2025-06-10T14:07:31.095Z] [INFO] [API] Redis ready to accept commands
+[2025-06-10T14:07:31.096Z] [INFO] [API] Cache miss, executing function | key="public-search:{\"limit\":1,\"offset\":0,\"q\":\"\",\"set_aside\":\"\",\"status\":\"active\"}" cacheType="SEARCH_RESULTS"
+ GET /api/opportunities/public-search?limit=1&naics=3391 200 in 2106ms
+[2025-06-10T14:07:45.454Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749564465454_aq33td0po" pathname="/api/csrf" method="GET"
+[2025-06-10T14:07:46.269Z] [INFO] [API] GET /api/csrf | requestId="req_1749564466267_3oa1rwr17" method="GET" path="/api/csrf" query={} headers={"user-agent":"curl/8.5.0","content-type":null,"x-forwarded-for":"::1"}
+[2025-06-10T14:07:46.272Z] [INFO] [API] GET /api/csrf completed | requestId="req_1749564466267_3oa1rwr17" status=200 responseTime=5
+ GET /api/csrf 200 in 813ms
+[2025-06-10T14:07:46.307Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749564466307_kpbdebb4l" pathname="/api/proposals/generate" method="POST"
+🚨 Error: Authentication required
+  Error Details
+  ┌─────────┬────────────────────────────┐
+  │ (index) │ Values                     │
+  ├─────────┼────────────────────────────┤
+  │ Code    │ 'UNAUTHORIZED'             │
+  │ Status  │ 401                        │
+  │ Time    │ '2025-06-10T14:07:47.019Z' │
+  └─────────┴────────────────────────────┘
+  Debugging Hint
+  Check error details and stack trace
+  Possible Causes
+  1. User not logged in
+  2. Session expired
+  3. Invalid auth token
+  4. Missing authentication headers
+  Suggested Actions
+  1. Check browser console for additional errors
+  2. View server logs: docker logs -f medcontract-dev
+  3. Check network tab in browser DevTools
+  Related Files
+  📄 webpack-internal:///(rsc)/./lib/api/enhanced-route-handler.ts:71:27
+  📄 /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:237:21
+  📄 /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:428:24
+  📄 /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:452:13
+  📄 /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/start-server.js:158:13
+  Stack Trace
+  AuthenticationError: Authentication required
+      at EnhancedRouteHandler.handleRequest (webpack-internal:///(rsc)/./lib/api/enhanced-route-handler.ts:71:27)
+      at async AppRouteRouteModule.do (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:34112)
+      at async AppRouteRouteModule.handle (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:41338)
+      at async doRender (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1518:42)
+      at async DevServer.renderToResponseWithComponentsImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1920:28)
+      at async DevServer.renderPageComponent (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:2408:24)
+      at async DevServer.renderToResponseImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:2445:32)
+      at async DevServer.pipeImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1008:25)
+      at async NextNodeServer.handleCatchallRenderRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/next-server.js:305:17)
+      at async DevServer.handleRequestImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:900:17)
+      at async /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/dev/next-dev-server.js:371:20
+      at async Span.traceAsyncFn (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/trace/trace.js:157:20)
+      at async DevServer.handleRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/dev/next-dev-server.js:368:24)
+      at async invokeRender (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:237:21)
+      at async handleRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:428:24)
+      at async requestHandlerImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:452:13)
+      at async Server.requestListener (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/start-server.js:158:13)
+[2025-06-10T14:07:47.023Z] [ERROR] [App] Authentication required
+Error: {
+  "message": "Authentication required",
+  "name": "AuthenticationError",
+  "code": "UNAUTHORIZED",
+  "statusCode": 401,
+  "timestamp": "2025-06-10T14:07:47.019Z",
+  "stack": "AuthenticationError: Authentication required\n    at EnhancedRouteHandler.handleRequest (webpack-internal:///(rsc)/./lib/api/enhanced-route-handler.ts:71:27)\n    at async AppRouteRouteModule.do (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:34112)\n    at async AppRouteRouteModule.handle (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:41338)\n    at async doRender (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1518:42)\n    at async DevServer.renderToResponseWithComponentsImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1920:28)\n    at async DevServer.renderPageComponent (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:2408:24)\n    at async DevServer.renderToResponseImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:2445:32)\n    at async DevServer.pipeImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1008:25)\n    at async NextNodeServer.handleCatchallRenderRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/next-server.js:305:17)\n    at async DevServer.handleRequestImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:900:17)\n    at async /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/dev/next-dev-server.js:371:20\n    at async Span.traceAsyncFn (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/trace/trace.js:157:20)\n    at async DevServer.handleRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/dev/next-dev-server.js:368:24)\n    at async invokeRender (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:237:21)\n    at async handleRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:428:24)\n    at async requestHandlerImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:452:13)\n    at async Server.requestListener (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/start-server.js:158:13)",
+  "details": {
+    "error": "Auth session missing!",
+    "hint": "Check if user is logged in and session is valid"
+  },
+  "url": "http://localhost:3000/api/proposals/generate",
+  "method": "POST",
+  "headers": {
+    "accept": "*/*",
+    "content-length": "262",
+    "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.sam.gov https://api.resend.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+    "content-type": "application/json",
+    "host": "localhost:3000",
+    "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), fullscreen=(self)",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "user-agent": "curl/8.5.0",
+    "x-content-type-options": "nosniff",
+    "x-csrf-token": "MTc0OTU2NDQ2NjI3MDpiMjdhMTM1ZWEyODRjNDYyODAwNjE5MjNhODhmYTk0YzgzNzliY2Q1NGFlMTA1NjhiNTcxZTQ1YTBkODhhOTg2OjU4NGE4YjU1ZDA4NWE0YmM0NjFkMTU5ZGE0NWM2ZDM0ZWM2ZjYyYTMzNjM1M2RjYjg2YmUzMzllMTdjMzI0Mzg=",
+    "x-forwarded-for": "::1",
+    "x-forwarded-host": "localhost:3000",
+    "x-forwarded-port": "3000",
+    "x-forwarded-proto": "http",
+    "x-frame-options": "DENY",
+    "x-xss-protection": "1; mode=block"
+  },
+  "requestId": "api_1749564467016_ck5armni6",
+  "environment": {
+    "nodeEnv": "development",
+    "isBrowser": false,
+    "isServer": true,
+    "userAgent": "Node.js/22"
+  },
+  "globalContext": {
+    "requestId": "api_1749564467016_ck5armni6",
+    "url": "http://localhost:3000/api/proposals/generate",
+    "method": "POST"
+  },
+  "debugging": {
+    "hint": "Check error details and stack trace",
+    "possibleCauses": [
+      "User not logged in",
+      "Session expired",
+      "Invalid auth token",
+      "Missing authentication headers"
+    ],
+    "suggestedActions": [
+      "Check browser console for additional errors",
+      "View server logs: docker logs -f medcontract-dev",
+      "Check network tab in browser DevTools"
+    ],
+    "relatedFiles": [
+      "webpack-internal:///(rsc)/./lib/api/enhanced-route-handler.ts:71:27",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:237:21",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:428:24",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:452:13",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/start-server.js:158:13"
+    ]
+  }
+}
+[2025-06-10T14:07:47.024Z] [ERROR] [App] API request failed
+Error: {
+  "message": "Authentication required",
+  "code": "UNAUTHORIZED",
+  "requestId": "api_1749564467016_ck5armni6",
+  "timestamp": "2025-06-10T14:07:47.023Z",
+  "debugging": {
+    "hint": "Check error details and stack trace",
+    "possibleCauses": [
+      "User not logged in",
+      "Session expired",
+      "Invalid auth token",
+      "Missing authentication headers"
+    ],
+    "suggestedActions": [
+      "Check browser console for additional errors",
+      "View server logs: docker logs -f medcontract-dev",
+      "Check network tab in browser DevTools"
+    ],
+    "relatedFiles": [
+      "webpack-internal:///(rsc)/./lib/api/enhanced-route-handler.ts:71:27",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:237:21",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:428:24",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:452:13",
+      "/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/start-server.js:158:13"
+    ]
+  },
+  "stack": "AuthenticationError: Authentication required\n    at EnhancedRouteHandler.handleRequest (webpack-internal:///(rsc)/./lib/api/enhanced-route-handler.ts:71:27)\n    at async AppRouteRouteModule.do (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:34112)\n    at async AppRouteRouteModule.handle (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:41338)\n    at async doRender (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1518:42)\n    at async DevServer.renderToResponseWithComponentsImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1920:28)\n    at async DevServer.renderPageComponent (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:2408:24)\n    at async DevServer.renderToResponseImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:2445:32)\n    at async DevServer.pipeImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:1008:25)\n    at async NextNodeServer.handleCatchallRenderRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/next-server.js:305:17)\n    at async DevServer.handleRequestImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/base-server.js:900:17)\n    at async /home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/dev/next-dev-server.js:371:20\n    at async Span.traceAsyncFn (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/trace/trace.js:157:20)\n    at async DevServer.handleRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/dev/next-dev-server.js:368:24)\n    at async invokeRender (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:237:21)\n    at async handleRequest (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:428:24)\n    at async requestHandlerImpl (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/router-server.js:452:13)\n    at async Server.requestListener (/home/locklearwyatt/projects/medcontracthub/node_modules/next/dist/server/lib/start-server.js:158:13)",
+  "details": {
+    "error": "Auth session missing!",
+    "hint": "Check if user is logged in and session is valid"
+  },
+  "duration": 7,
+  "path": "/api/proposals/generate"
+}
+ POST /api/proposals/generate 401 in 707ms
+[2025-06-10T14:08:05.946Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749564485946_0eg5qe6nb" pathname="/api/opportunities/test-no-auth" method="POST"
+ ○ Compiling /api/opportunities/test-no-auth ...
+ ✓ Compiled /api/opportunities/test-no-auth in 1566ms (4961 modules)
+ POST /api/opportunities/test-no-auth 405 in 1851ms
+[2025-06-10T14:08:30.797Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749564510797_e2q0wzf1j" pathname="/" method="GET"
+[2025-06-10T14:08:30.799Z] [INFO] [App] DEVELOPMENT MODE: Using mock authentication | requestId="mw_1749564510797_e2q0wzf1j"
+ ○ Compiling / ...
+ ✓ Compiled / in 21.7s (7731 modules)
+ GET / 307 in 23595ms
+ ✓ Compiled in 2.3s (972 modules)
+ ✓ Compiled in 3.9s (3464 modules)
+ ✓ Compiled in 1270ms (3464 modules)
+ ✓ Compiled in 2.3s (2893 modules)
+[2025-06-10T14:30:30.170Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749565830170_75vwt3hv0" pathname="/api/health" method="GET"
+ ○ Compiling /api/health ...
+ ✓ Compiled /api/health in 2.4s (4040 modules)
+[2025-06-10T14:30:33.256Z] [INFO] [API] Health check started | requestId="health_1749565833256_ghlabt163"
+[2025-06-10T14:30:33.578Z] [INFO] [API] Redis connected successfully
+[2025-06-10T14:30:33.584Z] [INFO] [API] Redis ready to accept commands
+[2025-06-10T14:30:33.588Z] [DEBUG] [Database] Created new connection | id="conn_1749565833586_6cv2y46i0"
+[2025-06-10T14:30:33.589Z] [DEBUG] [Database] Created new connection | id="conn_1749565833588_km4tz1u42"
+[2025-06-10T14:30:33.590Z] [INFO] [Database] Connection pool initialized | minConnections=2
+[2025-06-10T14:30:33.591Z] [INFO] [API] Health check completed | requestId="health_1749565833256_ghlabt163" status="healthy" responseTime=334
+ GET /api/health 200 in 3401ms
+[2025-06-10T14:35:08.148Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749566108148_oqy6pxmhn" pathname="/api/health" method="GET"
+[2025-06-10T14:35:08.283Z] [INFO] [API] Health check started | requestId="health_1749566108283_45adi3r1o"
+[2025-06-10T14:35:08.681Z] [INFO] [API] Health check completed | requestId="health_1749566108283_45adi3r1o" status="healthy" responseTime=398
+ GET /api/health 200 in 490ms
+[2025-06-10T14:35:12.886Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749566112886_b4ef5emow" pathname="/login" method="GET"
+[2025-06-10T14:35:12.888Z] [INFO] [App] DEVELOPMENT MODE: Using mock authentication | requestId="mw_1749566112886_b4ef5emow"
+ ○ Compiling /login ...
+ ✓ Compiled /login in 12.7s (7253 modules)
+ GET /login 200 in 13841ms
+[2025-06-10T14:35:56.289Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749566156289_kqo9mtcpb" pathname="/api/health" method="GET"
+[2025-06-10T14:35:55.223Z] [INFO] [API] Health check started | requestId="health_1749566155223_94o5hzdbw"
+[2025-06-10T14:35:55.463Z] [INFO] [API] Redis connected successfully
+[2025-06-10T14:35:55.468Z] [INFO] [API] Redis ready to accept commands
+[2025-06-10T14:35:55.471Z] [DEBUG] [Database] Created new connection | id="conn_1749566155470_hft0bw5z6"
+[2025-06-10T14:35:55.473Z] [DEBUG] [Database] Created new connection | id="conn_1749566155472_796jms9sz"
+[2025-06-10T14:35:55.473Z] [INFO] [Database] Connection pool initialized | minConnections=2
+[2025-06-10T14:35:55.474Z] [INFO] [API] Health check completed | requestId="health_1749566155223_94o5hzdbw" status="healthy" responseTime=251
+ GET /api/health 200 in -826ms
+[2025-06-10T14:35:56.447Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749566156447_3r8yhdpf3" pathname="/login" method="GET"
+[2025-06-10T14:35:56.449Z] [INFO] [App] DEVELOPMENT MODE: Using mock authentication | requestId="mw_1749566156447_3r8yhdpf3"
+ GET /login 200 in 138ms
+[2025-06-10T14:37:11.337Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749566231337_gemauvgib" pathname="/api/health" method="GET"
+[2025-06-10T14:37:11.374Z] [INFO] [API] Health check started | requestId="health_1749566231374_pjgzzywo1"
+[2025-06-10T14:37:11.603Z] [INFO] [API] Health check completed | requestId="health_1749566231374_pjgzzywo1" status="healthy" responseTime=229
+ GET /api/health 200 in 262ms
+[2025-06-10T14:37:12.949Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749566232949_2gnqhh4gn" pathname="/login" method="GET"
+[2025-06-10T14:37:12.950Z] [INFO] [App] DEVELOPMENT MODE: Using mock authentication | requestId="mw_1749566232949_2gnqhh4gn"
+ GET /login 200 in 229ms
+[2025-06-10T14:37:17.715Z] [DEBUG] [App] Middleware processing request | requestId="mw_1749566237715_k8m9e3rmv" pathname="/dashboard" method="GET"
+[2025-06-10T14:37:17.716Z] [INFO] [App] DEVELOPMENT MODE: Using mock authentication | requestId="mw_1749566237715_k8m9e3rmv"
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 7.7s (7536 modules)
+ GET /dashboard 200 in 8925ms

@@ -3,11 +3,10 @@
  * Generates proposal content using RFP analysis and company profile
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { withErrorHandler } from '@/lib/api/error-interceptor'
-import { createServiceClient } from '@/lib/supabase/server'
-import { UnauthorizedError, ValidationError, NotFoundError } from '@/lib/errors/types'
+import { enhancedRouteHandler } from '@/lib/api/enhanced-route-handler'
+import { ValidationError, NotFoundError } from '@/lib/errors/types'
 import { RFPDocumentProcessor } from '@/lib/ai/rfp-document-processor'
 import { ProposalIntelligenceService } from '@/lib/ai/proposal-intelligence-service'
 import { logger } from '@/lib/errors/logger'
@@ -67,26 +66,18 @@ interface GenerationResponse {
   }
 }
 
-export const POST = withErrorHandler(async (request: NextRequest) => {
-  const startTime = Date.now()
-  
-  // Authenticate user
-  const supabase = createServiceClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  
-  if (authError || !user) {
-    throw new UnauthorizedError('Authentication required')
-  }
-
-  // Parse and validate request
-  const body = await request.json()
-  const validationResult = generateProposalSchema.safeParse(body)
-  
-  if (!validationResult.success) {
-    throw new ValidationError('Invalid request data', {
-      errors: validationResult.error.flatten().fieldErrors
-    })
-  }
+export const POST = enhancedRouteHandler.POST(
+  async ({ user, supabase, sanitizedBody }) => {
+    const startTime = Date.now()
+    
+    // Validate request
+    const validationResult = generateProposalSchema.safeParse(sanitizedBody)
+    
+    if (!validationResult.success) {
+      throw new ValidationError('Invalid request data', {
+        errors: validationResult.error.flatten().fieldErrors
+      })
+    }
 
   const {
     opportunity_id,
@@ -369,12 +360,11 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     })
     throw error
   }
-}, {
+},
+{
   requireAuth: true,
-  rateLimit: {
-    requests: 20,
-    windowMs: 60 * 60 * 1000 // 20 generations per hour
-  }
+  rateLimit: 'ai',
+  validateBody: generateProposalSchema
 })
 
 // Helper functions

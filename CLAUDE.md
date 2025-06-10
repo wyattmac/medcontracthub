@@ -14,25 +14,95 @@ This document provides essential information for AI assistants working with the 
 - **Infrastructure**: Docker, Docker Compose
 - **Architecture**: Clean Architecture + Domain-Driven Design
 
-## Docker Commands Reference
+## 🐳 Docker Setup & Configuration
 
-### Docker Log Visibility for Claude Code
+### Critical Docker Setup Steps
 
-✅ **Confirmed**: Claude Code can successfully read Docker logs in WSL environments. This includes:
-- Application logs (Next.js, API requests, errors)
-- Database logs (PostgreSQL operations)
-- Redis logs (cache operations)
-- Container health status and startup logs
+**⚠️ IMPORTANT**: Follow these steps EXACTLY to ensure Docker works correctly:
 
-### Checking Docker Logs
-
-#### Important WSL Setup
-When using Docker on WSL (Windows Subsystem for Linux), you need to set the Docker host:
+#### 1. **WSL Configuration (Required for Windows Users)**
 ```bash
+# Add to ~/.bashrc for permanent configuration
 export DOCKER_HOST=unix:///var/run/docker.sock
+source ~/.bashrc
 ```
 
-For permanent configuration, add this line to your `~/.bashrc` file.
+#### 2. **Environment Setup (BOTH Files Required)**
+```bash
+# Copy the consolidated environment file to BOTH locations
+cp .env.consolidated .env.local  # Primary - used by Next.js and Docker
+cp .env.consolidated .env        # Fallback - ensures Docker Compose works
+```
+
+**Why both files?** The `docker-compose.yml` is configured to use `.env.local`, but Docker Compose may need `.env` as a fallback in some scenarios.
+
+#### 3. **Start Docker Development**
+```bash
+# Recommended: Use the easy docker script
+./easy-docker.sh
+# Select option 1 for development
+
+# Alternative: Use docker-compose directly
+docker-compose up -d --build
+```
+
+#### 4. **Verify Everything is Working**
+```bash
+# Wait ~60 seconds for Next.js to compile, then:
+
+# Check health endpoint (should return JSON with "status": "healthy")
+curl http://localhost:3000/api/health | jq .
+
+# Verify database has opportunities
+curl http://localhost:3000/api/opportunities/count | jq .
+# Should show: {"count": 23350}
+```
+
+### Common Docker Issues & Solutions
+
+#### "Missing Supabase configuration" Error
+**Problem**: Container logs show missing environment variables  
+**Solution**: 
+1. Ensure BOTH `.env.local` and `.env` exist and contain Supabase credentials
+2. Restart the container: `docker restart medcontract-dev`
+3. If still failing: `docker-compose down && docker-compose up -d --build`
+
+#### Container Shows "Unhealthy" Status
+**Problem**: Health check failing  
+**Solution**:
+1. Wait 60-90 seconds for Next.js compilation
+2. Check logs: `docker logs medcontract-dev --tail=50`
+3. Verify environment files are properly configured
+4. Try health endpoint manually: `curl http://localhost:3000/api/health`
+
+#### Environment Variables Not Loading
+**Problem**: Variables are empty inside container  
+**Solution**:
+```bash
+# Verify files exist
+ls -la .env.local .env
+
+# Check variables in container
+docker exec medcontract-dev env | grep SUPABASE
+
+# Full restart with rebuild
+docker-compose down
+cp .env.consolidated .env.local
+cp .env.consolidated .env
+docker-compose up -d --build
+```
+
+### Docker Container Architecture
+
+**Development Containers:**
+- `medcontract-dev` - Main Next.js application (port 3000)
+- `medcontract-dev-db` - PostgreSQL database (not used with Supabase cloud)
+- `medcontract-dev-redis` - Redis cache (port 6379) - REQUIRED
+- `medcontracthub-bull-board` - Queue monitoring dashboard (port 3001) - Optional
+
+**Important**: The app uses Supabase cloud database, not the local PostgreSQL container.
+
+### Checking Docker Logs
 
 #### Container Logs
 ```bash
@@ -245,11 +315,29 @@ npm run scripts:check-db-state
 
 ## Quick Reference
 
+### Docker Setup (First Time)
+```bash
+# 1. WSL users only
+echo 'export DOCKER_HOST=unix:///var/run/docker.sock' >> ~/.bashrc
+source ~/.bashrc
+
+# 2. All users - create BOTH environment files
+cp .env.consolidated .env.local
+cp .env.consolidated .env
+
+# 3. Start Docker
+./easy-docker.sh  # Choose option 1
+
+# 4. Verify (wait ~60 seconds first)
+curl http://localhost:3000/api/health | jq .
+```
+
 ### Essential Scripts
 ```bash
 # Development
 ./easy-docker.sh              # Start everything
-npm run dev                   # Start Next.js dev server
+docker-compose up -d          # Alternative start
+docker restart medcontract-dev # Restart app only
 
 # Testing
 npm test                      # Run all tests
@@ -260,7 +348,8 @@ npm run scripts:check-db-state # Check database health
 npm run db:migrate            # Run migrations
 
 # Monitoring
-./check-docker-logs.sh        # View all logs
+docker logs medcontract-dev   # View app logs
+./docker-logs.sh app          # WSL-friendly logs
 ./check-docker-status.sh      # Check container health
 ```
 
