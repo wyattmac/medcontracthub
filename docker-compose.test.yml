@@ -1,0 +1,35 @@
+services:
+  # Extends the main app service with test-specific configuration
+  app:
+    extends:
+      file: docker-compose.yml
+      service: app
+    environment:
+      - NODE_ENV=test
+    volumes:
+      # Additional volume for test results
+      - ./test-results:/app/test-results
+
+  # Playwright test runner service
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      - app
+      - postgres
+      - redis
+    environment:
+      - BASE_URL=http://app:3000
+      - NODE_ENV=test
+      - E2E_BASE_URL=http://app:3000
+    volumes:
+      - ./__tests__:/app/__tests__
+      - ./test-results:/app/test-results
+    networks:
+      - medcontract-dev
+    command: ["npm", "run", "test:e2e"]
+
+networks:
+  medcontract-dev:
+    driver: bridge

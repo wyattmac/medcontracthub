@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { format, parseISO, differenceInDays } from 'date-fns'
 
@@ -55,7 +55,6 @@ export function ReminderButton({
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedReminder, setSelectedReminder] = useState<IReminderOption | null>(null)
-  const { toast } = useToast()
 
   // Calculate days remaining if deadline exists
   const daysRemaining = deadline ? differenceInDays(parseISO(deadline), new Date()) : null
@@ -129,12 +128,10 @@ export function ReminderButton({
 
       const result = await response.json()
 
-      toast({
-        title: 'Reminder Sent!',
+      toast.success('Reminder Sent!', {
         description: reminderType === 'immediate' 
           ? 'Email reminder has been sent to your inbox'
-          : `Reminder scheduled for ${result.daysRemaining} days before deadline`,
-        duration: 5000,
+          : `Reminder scheduled for ${result.daysRemaining} days before deadline`
       })
 
       setIsDialogOpen(false)
@@ -142,10 +139,8 @@ export function ReminderButton({
 
     } catch (error) {
       console.error('Failed to send reminder:', error)
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to send reminder',
-        variant: 'destructive',
+      toast.error('Error', {
+        description: error instanceof Error ? error.message : 'Failed to send reminder'
       })
     } finally {
       setIsLoading(false)

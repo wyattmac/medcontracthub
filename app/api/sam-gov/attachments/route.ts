@@ -3,7 +3,7 @@
  * Processes opportunity attachments with OCR for proposal creation
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { enhancedRouteHandler } from '@/lib/api/enhanced-route-handler'
 import { samAttachmentProcessor } from '@/lib/sam-gov/attachment-processor'

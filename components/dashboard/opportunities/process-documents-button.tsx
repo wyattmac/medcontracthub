@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FileText, Loader2, CheckCircle2, AlertCircle, FileSearch, DollarSign } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import { apiClient } from '@/lib/api/client'
 import { formatCurrency } from '@/lib/utils'
 
@@ -24,7 +24,6 @@ export function ProcessDocumentsButton({
 }: IProcessDocumentsButtonProps) {
   const [showDialog, setShowDialog] = useState(false)
   const [results, setResults] = useState<any>(null)
-  const { toast } = useToast()
   const queryClient = useQueryClient()
 
   const processDocuments = useMutation({
@@ -39,9 +38,8 @@ export function ProcessDocumentsButton({
     },
     onSuccess: (data) => {
       setResults(data)
-      toast({
-        title: 'Documents processed successfully',
-        description: `Extracted ${data.totalRequirements} product requirements from ${data.documentsProcessed} documents`,
+      toast.success('Documents processed successfully', {
+        description: `Extracted ${data.totalRequirements} product requirements from ${data.documentsProcessed} documents`
       })
       
       // Invalidate related queries
@@ -53,10 +51,8 @@ export function ProcessDocumentsButton({
       }
     },
     onError: (error: any) => {
-      toast({
-        title: 'Processing failed',
-        description: error.response?.data?.message || 'Failed to process documents',
-        variant: 'destructive',
+      toast.error('Processing failed', {
+        description: error.response?.data?.message || 'Failed to process documents'
       })
     }
   })

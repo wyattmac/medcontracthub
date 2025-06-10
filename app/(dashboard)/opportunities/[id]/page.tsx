@@ -10,9 +10,9 @@ import { OpportunityDetailWrapper } from './opportunity-detail-wrapper'
 export const dynamic = 'force-dynamic'
 
 interface OpportunityDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function OpportunityDetailPage({ params }: OpportunityDetailPageProps) {

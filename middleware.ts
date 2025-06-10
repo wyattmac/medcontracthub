@@ -108,14 +108,19 @@ export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   try {
-    // Development mode with explicit bypass flag - NEVER enable in production
-    if (process.env.NODE_ENV === 'development' && process.env.DEVELOPMENT_AUTH_BYPASS === 'true') {
-      logger.warn('DEVELOPMENT MODE: Authentication bypass enabled', { requestId })
-      const response = NextResponse.next()
-      addSecurityHeaders(response)
-      response.headers.set('x-request-id', requestId)
-      response.headers.set('x-development-mode', 'true')
-      return response
+    // Development mode - check for mock authentication
+    if (process.env.NODE_ENV === 'development') {
+      // Check for mock auth session in cookies
+      const mockAuthCookie = request.cookies.get('mock-auth-session')
+      if (mockAuthCookie || process.env.DEVELOPMENT_AUTH_BYPASS === 'true') {
+        logger.info('DEVELOPMENT MODE: Using mock authentication', { requestId })
+        const response = NextResponse.next()
+        addSecurityHeaders(response)
+        response.headers.set('x-request-id', requestId)
+        response.headers.set('x-development-mode', 'true')
+        response.headers.set('x-mock-auth', 'true')
+        return response
+      }
     }
 
     // Check for required environment variables

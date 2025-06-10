@@ -66,10 +66,16 @@ export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWra
         
         if (!response.ok) {
           const errorText = await response.text()
-          console.error('Error response:', errorText)
+          let errorData
+          try {
+            errorData = JSON.parse(errorText)
+          } catch {
+            errorData = { error: { message: errorText } }
+          }
           
-          // Use mock data for demonstration when API fails
-          console.log('Using mock data for demonstration')
+          // If opportunity not found (404), use mock data for demo
+          if (response.status === 404) {
+            console.log('Opportunity not found, using mock data for demonstration')
           setOpportunity({
             id: opportunityId,
             title: 'Cask and Trailer HIC Transport',
@@ -89,6 +95,7 @@ export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWra
             estimated_value_max: 2000000,
             point_of_contact: 'contracts@dla.mil',
             solicitation_number: 'N4523A5077VLQ0',
+            notice_id: 'e54b2586a1684987bc914475f72aeef1', // Add a valid notice_id for testing
             status: 'active',
             notice_type: 'Combined Synopsis/Solicitation',
             classification_code: 'M - Operation of Government-Owned Facility',
@@ -106,8 +113,43 @@ export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWra
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
-          setLoading(false)
-          return
+            setLoading(false)
+            return
+          } else {
+            // For other errors, log and use mock data
+            console.error('API Error:', errorData)
+            // Still use mock data for demonstration
+            setOpportunity({
+              id: opportunityId,
+              title: 'Medical Equipment and Supplies - VA Hospital',
+              description: 'Comprehensive medical equipment and supplies contract for VA hospital facilities.',
+              naics_code: '423450',
+              naics_description: 'Medical Equipment and Supplies Merchant Wholesalers',
+              agency: 'Department of Veterans Affairs',
+              office: 'VA Medical Center',
+              posted_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+              response_deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+              contract_type: 'Firm Fixed Price',
+              set_aside_type: 'Total Small Business Set-Aside',
+              place_of_performance_city: 'Washington',
+              place_of_performance_state: 'DC',
+              place_of_performance_country: 'United States',
+              estimated_value_min: 1000000,
+              estimated_value_max: 5000000,
+              point_of_contact: 'contracting@va.gov',
+              solicitation_number: 'VA-2024-MED-001',
+              notice_id: 'mock-notice-id',
+              status: 'active',
+              notice_type: 'Sources Sought',
+              classification_code: 'Y - Construction of Structures and Facilities',
+              original_url: 'https://sam.gov/opportunities/123456',
+              resource_links: [],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            setLoading(false)
+            return
+          }
         }
 
         const data = await response.json()
@@ -143,6 +185,7 @@ export function OpportunityDetailWrapper({ opportunityId }: OpportunityDetailWra
           estimated_value_min: 1000000,
           estimated_value_max: 5000000,
           solicitation_number: 'VA-2024-MED-001',
+          notice_id: 'e54b2586a1684987bc914475f72aeef1', // Add a valid notice_id for testing
           status: 'active',
           notice_type: 'Combined Synopsis/Solicitation',
           classification_code: 'Medical Equipment',

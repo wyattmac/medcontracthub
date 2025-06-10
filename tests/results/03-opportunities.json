@@ -13,11 +13,13 @@
   },
   {
     "test": "Search functionality",
-    "status": "PASS"
+    "status": "FAIL",
+    "error": "Search input not found"
   },
   {
     "test": "Filter dropdowns",
-    "status": "PASS"
+    "status": "PASS",
+    "error": "Dropdowns may be custom components"
   },
   {
     "test": "Opportunities list display",

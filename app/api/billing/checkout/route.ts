@@ -1,17 +1,16 @@
 /**
  * Billing Checkout API
  * Create Stripe checkout session for new subscriptions
+ * 
+ * Uses Context7-based Zod validation for type safety
+ * Reference: /zod/zod - v3 schema validation
  */
 
 import { NextResponse } from 'next/server'
 import { routeHandler } from '@/lib/api/route-handler'
 import { createCheckoutSession } from '@/lib/stripe/subscription-manager'
 import { logUnauthorizedAccess } from '@/lib/security/security-monitor'
-import { z } from 'zod'
-
-const checkoutSchema = z.object({
-  planId: z.enum(['starter', 'professional', 'enterprise'])
-})
+import { checkoutRequestSchema } from '@/lib/validation/schemas/billing'
 
 export const POST = routeHandler.POST(
   async ({ user, supabase, sanitizedBody, request }) => {
@@ -45,7 +44,7 @@ export const POST = routeHandler.POST(
   },
   { 
     requireAuth: true,
-    validateBody: checkoutSchema,
+    validateBody: checkoutRequestSchema,
     rateLimit: 'api',
     requireCSRF: true
   }

@@ -1,80 +1,142 @@
-# MedContractHub Puppeteer Tests
+# MedContractHub Test Results
 
-## Test Suite Progress
+This directory contains test screenshots and results from the automated test suite.
 
-### 1. Authentication & User Management ✅ (6/6 passed) 
-- ✅ Landing page load
-- ✅ Mock development login  
-- ✅ Navigation menu
-- ✅ Session persistence (timeout handled gracefully)
-- ✅ User menu display
-- ✅ Protected route redirect (validated for dev mode)
+## Test Migration Notice
 
-**Status**: All authentication tests passing. Timeouts handled appropriately for development mode behavior.
+**Important**: The test suite has been migrated from Puppeteer to Playwright for better integration, performance, and reliability.
 
-### 2. Dashboard Tests ✅ (8/8 passed)
-- ✅ Dashboard page load
-- ✅ Stats cards display (all 4 cards present)
-- ✅ Recent activity section
-- ✅ Reminders widget
-- ✅ Quick actions buttons (Explore Opportunities)
-- ✅ Live metrics indicator
-- ✅ Dashboard navigation to other pages
-- ✅ Responsive behavior (mobile viewport tested)
+## New Test Structure
 
-**Status**: All dashboard tests passing. Responsive design verified on mobile viewport.
-### 3. Opportunities Module ✅ (10/10 passed)
-- ✅ Opportunities page load with title and description
-- ✅ Search & filters panel (NAICS, State, Status filters)
-- ✅ Opportunities statistics (1,247 active, 23 expiring, $2.4B value)
-- ✅ Search functionality (tested with "medical supplies")
-- ✅ Filter dropdowns interactive
-- ✅ Opportunities list display (shows loading state)
-- ✅ Export functionality available
-- ✅ Refresh functionality with button
-- ✅ View toggle controls
-- ✅ Pagination controls
+All tests are now located in the `__tests__` directory at the project root:
 
-**Status**: Opportunities module fully functional. Search works, filters are present, stats display correctly. Export button availability depends on data being loaded.
-### 4. Saved Opportunities ✅ (10/10 passed)
-- ✅ Saved opportunities page load
-- ✅ Empty state display (or existing saved items)
-- ✅ Filter options (may be hidden when empty)
-- ✅ Save opportunity action workflow
-- ✅ Saved opportunities list display
-- ✅ Remove/unsave functionality
-- ✅ Notes functionality present
-- ✅ Export saved opportunities option
-- ✅ View opportunity details links
-- ✅ AI Analyze feature button
-
-**Status**: Saved opportunities functionality verified. Page shows Supabase config error in dev mode but all UI elements and features are present. AI Analyze button successfully integrated.
-### 5. Proposals Management 🔄 (Pending)
-### 6. Analytics Dashboard 🔄 (Pending)
-### 7. Settings & Configuration 🔄 (Pending)
-### 8. AI-Powered Features 🔄 (Pending)
-### 9. Error Handling & Edge Cases 🔄 (Pending)
-### 10. Responsive Design 🔄 (Pending)
-### 11. Performance Metrics 🔄 (Pending)
-### 12. Integration Tests 🔄 (Pending)
-### 13. Accessibility 🔄 (Pending)
-### 14. Security Features 🔄 (Pending)
+```
+__tests__/
+├── e2e/                    # End-to-end tests (Playwright)
+│   ├── auth/              # Authentication flows
+│   │   └── authentication-flow.test.ts
+│   ├── compliance/        # Compliance matrix tests
+│   │   └── compliance-matrix-flow.test.ts
+│   ├── dashboard/         # Dashboard navigation
+│   │   └── dashboard-navigation.test.ts
+│   ├── opportunities/     # Opportunity search and filtering
+│   │   └── opportunities-search.test.ts
+│   ├── proposals/         # Proposal workflow
+│   │   └── proposals-workflow.test.ts
+│   └── saved/             # Saved opportunities
+│       └── saved-opportunities-flow.test.ts
+├── components/            # Component unit tests
+├── api/                   # API route tests
+└── lib/                   # Library unit tests
+```
 
 ## Running Tests
 
+### Run all E2E tests:
 ```bash
-# Run individual test suites
-npx tsx tests/puppeteer/01-authentication.test.ts
-npx tsx tests/puppeteer/02-dashboard.test.ts
-npx tsx tests/puppeteer/03-opportunities.test.ts
-npx tsx tests/puppeteer/04-saved-opportunities.test.ts
-
-# Screenshots are saved to: tests/screenshots/
-# Results are saved to: tests/results/
+npm run test:e2e
 ```
 
-## Test Environment
+### Run specific test suites:
+```bash
+# Run compliance matrix tests
+npm run test:e2e:compliance
 
-- **URL**: http://localhost:3000
-- **Mode**: Development with mock authentication
-- **Browser**: Chromium (headless: false for debugging)
+# Run tests with UI mode (interactive)
+npm run test:e2e:ui
+
+# Run tests in debug mode
+npm run test:e2e:debug
+```
+
+### Run in Docker:
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.test.yml up test
+```
+
+## Test Coverage
+
+### ✅ Completed Test Suites:
+
+1. **Authentication & User Management**
+   - Login/logout flows
+   - Signup process
+   - Protected route handling
+   - Session persistence
+   - Mobile responsive auth
+
+2. **Dashboard Navigation**
+   - Dashboard overview
+   - Navigation between sections
+   - Stats display
+   - Quick actions
+   - Mobile navigation
+
+3. **Opportunities Search & Filter**
+   - Opportunities listing
+   - Search functionality
+   - Filter options
+   - Pagination
+   - Detail view navigation
+   - Mobile layout
+
+4. **Saved Opportunities**
+   - Save/unsave functionality
+   - Notes management
+   - Export capabilities
+   - AI analysis integration
+   - Mobile experience
+
+5. **Proposals Workflow**
+   - Create new proposal
+   - Edit existing proposals
+   - Document generation
+   - Status tracking
+   - Template usage
+   - Mobile form handling
+
+6. **Compliance Matrix**
+   - Extract from RFP
+   - Manual matrix creation
+   - Requirements tracking
+   - Response status updates
+   - Export functionality
+   - Mobile compliance view
+
+## Test Results
+
+Test results are saved to:
+- **Screenshots**: `test-results/*.png`
+- **Reports**: `test-results/e2e-results.json`
+- **HTML Report**: `test-results/index.html`
+
+## Configuration
+
+Tests are configured in:
+- `playwright.config.ts` - Main Playwright configuration
+- `__tests__/e2e/global-setup.ts` - Global test setup
+
+## Best Practices
+
+1. **Page Object Model**: Consider implementing page objects for common interactions
+2. **Test Data**: Use consistent test data fixtures
+3. **Selectors**: Prefer data-testid attributes for stability
+4. **Mobile Testing**: All major flows include mobile viewport tests
+5. **Screenshots**: Capture key states for visual regression tracking
+
+## Debugging
+
+To debug failing tests:
+1. Run with `--debug` flag: `npx playwright test --debug`
+2. Use `--ui` mode for interactive debugging
+3. Check screenshots in `test-results/` directory
+4. Review trace files for detailed execution logs
+
+## CI/CD Integration
+
+Tests run automatically on:
+- Pull requests
+- Pre-merge checks
+- Nightly builds
+
+See `.github/workflows/` for CI configuration.

@@ -3,7 +3,7 @@
  * Endpoint for running user journey checks
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createUserJourneyMonitor, CRITICAL_JOURNEYS } from '@/lib/monitoring/user-journey-monitor'
 import { enhancedRouteHandler } from '@/lib/api/enhanced-route-handler'
 

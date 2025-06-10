@@ -5,7 +5,7 @@
  */
 
 import { getSAMApiClient } from './client'
-import { mistralDocumentOCRClient } from '@/lib/ai/mistral-document-ocr-client'
+import { mistralDocumentOCR } from '@/lib/ai/mistral-document-ocr-client'
 import { logger } from '@/lib/errors/logger'
 
 export interface AttachmentInfo {
@@ -39,7 +39,7 @@ export interface ContractRequirements {
 
 export class SAMAttachmentProcessor {
   private samClient = getSAMApiClient()
-  private mistralClient = mistralDocumentOCRClient
+  private mistralClient = mistralDocumentOCR
 
   /**
    * Get all attachments for a specific opportunity
@@ -340,16 +340,38 @@ export class SAMAttachmentProcessor {
    */
   private extractFilename(url: string, index: number): string {
     try {
-      const urlPath = new URL(url).pathname
-      const filename = urlPath.split('/').pop()
+      const urlObj = new URL(url)
+      const urlPath = urlObj.pathname
+      const segments = urlPath.split('/')
       
-      if (filename && filename.includes('.')) {
-        return filename
+      // Check for filename in the last segment
+      const lastSegment = segments[segments.length - 1]
+      if (lastSegment && lastSegment !== 'download' && lastSegment.includes('.')) {
+        return decodeURIComponent(lastSegment)
       }
       
-      return `attachment_${index + 1}.pdf`
+      // For SAM.gov attachment URLs that end with /download
+      // Try to extract the file ID and create a meaningful name
+      if (segments.includes('files') && segments[segments.length - 1] === 'download') {
+        const fileIdIndex = segments.indexOf('files') + 1
+        if (fileIdIndex < segments.length - 1) {
+          const fileId = segments[fileIdIndex]
+          // Use first 8 characters of file ID for brevity
+          return `SAM_Attachment_${fileId.substring(0, 8)}.pdf`
+        }
+      }
+      
+      // Check for filename in query parameters
+      const filenameParam = urlObj.searchParams.get('filename') || 
+                           urlObj.searchParams.get('name') ||
+                           urlObj.searchParams.get('file')
+      if (filenameParam) {
+        return decodeURIComponent(filenameParam)
+      }
+      
+      return `SAM_Attachment_${index + 1}.pdf`
     } catch {
-      return `attachment_${index + 1}.pdf`
+      return `SAM_Attachment_${index + 1}.pdf`
     }
   }
 

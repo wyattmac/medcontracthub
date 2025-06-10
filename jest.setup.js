@@ -1,7 +1,26 @@
 import '@testing-library/jest-dom'
+import React from 'react'
 
-// Import global mocks before anything else
-import './test-utils/setup/mocks'
+// Make React available globally for tests
+global.React = React
+
+// Set up test environment variables
+process.env.NODE_ENV = 'test'
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key'
+process.env.ANTHROPIC_API_KEY = 'test-anthropic-key'
+process.env.CSRF_SECRET = 'test-csrf-secret'
+process.env.SAM_GOV_API_KEY = 'test-sam-api-key'
+
+// Mock modules before any imports
+jest.mock('@/lib/redis/client', () => require('./__tests__/mocks/redis'))
+jest.mock('@/lib/errors/logger', () => require('./__tests__/mocks/logger'))
+jest.mock('@/lib/utils/cache', () => require('./__tests__/mocks/cache'))
+jest.mock('@/lib/monitoring/sentry', () => require('./__tests__/mocks/sentry'))
+jest.mock('@/lib/supabase/client', () => require('./__tests__/mocks/supabase'))
+jest.mock('@/lib/supabase/server', () => require('./__tests__/mocks/supabase'))
+jest.mock('@/lib/security/csrf', () => require('./__tests__/mocks/csrf'))
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -24,53 +43,21 @@ jest.mock('next/navigation', () => ({
 }))
 
 // Mock NextResponse for API routes
-jest.mock('next/server', () => {
-  const actualNextServer = jest.requireActual('next/server')
-  return {
-    ...actualNextServer,
-    NextResponse: {
-      ...actualNextServer.NextResponse,
-      json: jest.fn((body, init) => {
-        const status = init?.status || 200
-        const headers = new Map()
-        
-        // Add default headers
-        headers.set('content-type', 'application/json')
-        
-        // Add any provided headers
-        if (init?.headers) {
-          Object.entries(init.headers).forEach(([key, value]) => {
-            headers.set(key.toLowerCase(), value)
-          })
-        }
-        
-        return {
-          status,
-          headers: {
-            get: (key) => headers.get(key.toLowerCase()),
-            set: (key, value) => headers.set(key.toLowerCase(), value),
-            has: (key) => headers.has(key.toLowerCase()),
-            forEach: (callback) => headers.forEach((value, key) => callback(value, key))
-          },
-          ok: status >= 200 && status < 300,
-          json: () => Promise.resolve(body),
-          text: () => Promise.resolve(JSON.stringify(body)),
-        }
-      }),
-      redirect: jest.fn((url, status = 302) => ({
-        status,
-        headers: new Map([['location', url]]),
-      })),
-      error: jest.fn(() => ({
-        status: 500,
-        statusText: 'Internal Server Error',
+jest.mock('next/server', () => require('./__tests__/mocks/next-server'))
+
+// Define global mocks
+global.fetch = jest.fn()
+
+// Mock Anthropic AI
+jest.mock('@anthropic-ai/sdk', () => ({
+  default: jest.fn().mockImplementation(() => ({
+    messages: {
+      create: jest.fn(() => Promise.resolve({
+        content: [{ text: 'Mock AI response' }],
       })),
     },
-  }
-})
-
-// Define global mocks before importing modules
-global.jest = require('jest')
+  })),
+}))
 
 // Mock environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
@@ -135,17 +122,52 @@ global.Response = class MockResponse {
   }
 }
 
-global.Headers = class MockHeaders extends Map {
+global.Headers = class MockHeaders {
+  constructor(init) {
+    this._headers = new Map()
+    if (init) {
+      if (typeof init === 'object' && !Array.isArray(init)) {
+        Object.entries(init).forEach(([key, value]) => {
+          this._headers.set(key.toLowerCase(), String(value))
+        })
+      } else if (Array.isArray(init)) {
+        init.forEach(([key, value]) => {
+          this._headers.set(key.toLowerCase(), String(value))
+        })
+      }
+    }
+  }
+  
   get(key) {
-    return super.get(key.toLowerCase())
+    return this._headers.get(key.toLowerCase())
   }
   
   set(key, value) {
-    return super.set(key.toLowerCase(), value)
+    this._headers.set(key.toLowerCase(), String(value))
   }
   
   has(key) {
-    return super.has(key.toLowerCase())
+    return this._headers.has(key.toLowerCase())
+  }
+  
+  delete(key) {
+    return this._headers.delete(key.toLowerCase())
+  }
+  
+  forEach(callback) {
+    this._headers.forEach((value, key) => callback(value, key, this))
+  }
+  
+  entries() {
+    return this._headers.entries()
+  }
+  
+  keys() {
+    return this._headers.keys()
+  }
+  
+  values() {
+    return this._headers.values()
   }
 }
 

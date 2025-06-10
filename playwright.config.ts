@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 /**
  * Playwright Configuration for MedContractHub
- * Comprehensive E2E testing setup for critical user journeys
+ * Optimized for WSL environment
  */
 export default defineConfig({
   // Test directory
@@ -11,7 +11,7 @@ export default defineConfig({
   // Test timeout
   timeout: 30 * 1000,
   expect: {
-    timeout: 5000,
+    timeout: 10000,
   },
   
   // Run tests in files in parallel
@@ -28,9 +28,9 @@ export default defineConfig({
   
   // Reporter to use
   reporter: [
-    ['html'],
-    ['json', { outputFile: 'test-results/e2e-results.json' }],
-    ['junit', { outputFile: 'test-results/e2e-results.xml' }]
+    ['list'],
+    ['html', { open: 'never' }],
+    ['json', { outputFile: 'test-results/e2e-results.json' }]
   ],
   
   // Shared settings for all the projects below
@@ -48,19 +48,28 @@ export default defineConfig({
     video: 'retain-on-failure',
     
     // Global timeout for all actions
-    actionTimeout: 10 * 1000,
+    actionTimeout: 15 * 1000,
     
     // Navigation timeout
     navigationTimeout: 30 * 1000,
+    
+    // Ignore HTTPS errors (useful for local development)
+    ignoreHTTPSErrors: true,
   },
 
-  // Configure projects for major browsers
+  // Configure projects - simplified for WSL
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        // Use system-installed Chrome/Chromium in WSL
+        channel: 'chrome',
+      },
     },
     
+    // Comment out other browsers for now - they can be added back if needed
+    /*
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
@@ -70,25 +79,27 @@ export default defineConfig({
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
     },
+    */
 
-    // Mobile testing
+    // Mobile testing - only if needed
+    /*
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
     },
-    
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    },
+    */
   ],
 
   // Run your local dev server before starting the tests
   webServer: process.env.CI ? undefined : {
     command: 'npm run dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120 * 1000,
+    // Wait for the server to be ready
+    env: {
+      DEVELOPMENT_AUTH_BYPASS: 'true',
+    },
   },
   
   // Global setup

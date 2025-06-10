@@ -60,7 +60,9 @@ export class SAMApiClient {
     // Build query parameters
     Object.entries(defaultParams).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        searchParams.append(key, String(value))
+        // SAM.gov API expects lowercase 'noticeid' not 'noticeId'
+        const paramKey = key === 'noticeId' ? 'noticeid' : key
+        searchParams.append(paramKey, String(value))
       }
     })
 

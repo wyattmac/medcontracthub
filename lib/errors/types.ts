@@ -100,18 +100,24 @@ export class AuthorizationError extends AppError {
 }
 
 export class DatabaseError extends AppError {
+  context?: any
+  
   constructor(
     message: string = 'Database operation failed',
     code: ErrorCode = ErrorCode.DATABASE_QUERY,
     details?: any
   ) {
     super(code, message, 500, details)
+    this.context = details
   }
 }
 
 export class ValidationError extends AppError {
-  constructor(message: string = 'Validation failed', details?: any) {
-    super(ErrorCode.VALIDATION_ERROR, message, 400, details)
+  errors?: any[]
+  
+  constructor(message: string = 'Validation failed', errors?: any) {
+    super(ErrorCode.VALIDATION_ERROR, message, 400, errors)
+    this.errors = Array.isArray(errors) ? errors : errors ? [errors] : []
   }
 }
 

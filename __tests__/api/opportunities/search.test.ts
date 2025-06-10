@@ -4,7 +4,7 @@
  */
 
 // We'll test the route handler directly
-import { routeHandler } from '@/lib/api/route-handler'
+import { GET } from '@/app/api/opportunities/search/route'
 import {
   setupApiTest,
   assertApiResponse,
@@ -53,7 +53,9 @@ describe('/api/opportunities/search', () => {
     mockGetOpportunities.mockResolvedValue({
       data: [createMockOpportunity()],
       count: 1,
-      error: null
+      error: null,
+      status: 200,
+      statusText: 'OK'
     })
     
     mockCalculateMatch.mockReturnValue(85)
@@ -267,7 +269,9 @@ describe('/api/opportunities/search', () => {
       mockGetOpportunities.mockResolvedValue({
         data: [mockOpportunity],
         count: 1,
-        error: null
+        error: null,
+        status: 200,
+        statusText: 'OK'
       })
       mockCalculateMatch.mockReturnValue(92)
 
@@ -300,7 +304,9 @@ describe('/api/opportunities/search', () => {
       mockGetOpportunities.mockResolvedValue({
         data: mockOpportunities,
         count: 3,
-        error: null
+        error: null,
+        status: 200,
+        statusText: 'OK'
       })
 
       // Mock different match scores
@@ -406,8 +412,15 @@ describe('/api/opportunities/search', () => {
     it('should handle database errors gracefully', async () => {
       mockGetOpportunities.mockResolvedValue({
         data: null,
-        count: 0,
-        error: new Error('Database connection failed')
+        count: null,
+        error: {
+          message: 'Database connection failed',
+          details: null,
+          hint: null,
+          code: 'PGRST000'
+        },
+        status: 500,
+        statusText: 'Internal Server Error'
       })
 
       const context = await setupApiTest('GET', '/api/opportunities/search', {
@@ -453,7 +466,9 @@ describe('/api/opportunities/search', () => {
       mockGetOpportunities.mockResolvedValue({
         data: [mockOpportunity],
         count: 25,
-        error: null
+        error: null,
+        status: 200,
+        statusText: 'OK'
       })
 
       const context = await setupApiTest('GET', '/api/opportunities/search?limit=10&offset=0', {

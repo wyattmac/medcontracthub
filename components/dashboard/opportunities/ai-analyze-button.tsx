@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/sam-gov/utils'
 
 interface AIAnalyzeButtonProps {
@@ -66,7 +66,6 @@ export function AIAnalyzeButton({
     results: AttachmentAnalysis[]
   } | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const { toast } = useToast()
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true)
@@ -100,19 +99,16 @@ export function AIAnalyzeButton({
         setAnalysisResults(data)
         
         // Show success toast
-        toast({
-          title: 'Analysis Complete',
-          description: `Successfully analyzed ${data.processed} attachment${data.processed > 1 ? 's' : ''}`,
+        toast.success('Analysis Complete', {
+          description: `Successfully analyzed ${data.processed} attachment${data.processed > 1 ? 's' : ''}`
         })
       }
     } catch (err) {
       console.error('Analysis error:', err)
       setError(err instanceof Error ? err.message : 'Failed to analyze opportunity')
       
-      toast({
-        title: 'Analysis Failed',
-        description: 'Unable to analyze opportunity attachments',
-        variant: 'destructive'
+      toast.error('Analysis Failed', {
+        description: 'Unable to analyze opportunity attachments'
       })
     } finally {
       setIsAnalyzing(false)

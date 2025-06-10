@@ -28,7 +28,8 @@ import {
   Clock,
   AlertTriangle,
   CheckCircle,
-  Plus
+  Plus,
+  ClipboardList
 } from 'lucide-react'
 import { formatDistanceToNow, format, isAfter, isBefore } from 'date-fns'
 import { calculateOpportunityMatch } from '@/lib/sam-gov/utils'
@@ -466,6 +467,17 @@ export function OpportunityDetailContainer({
                   </Button>
                 }
               />
+              
+              {/* Compliance Matrix Button */}
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => router.push(`/opportunities/${opportunity.id}/compliance`)}
+                data-testid="generate-compliance-matrix"
+              >
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Generate Compliance Matrix
+              </Button>
               
               {/* Process Documents Button - Show if opportunity has resource links */}
               {opportunity.additional_info?.resourceLinks?.length > 0 && (

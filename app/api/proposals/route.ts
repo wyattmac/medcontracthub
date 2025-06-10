@@ -3,12 +3,20 @@ import { z } from 'zod'
 import { routeHandler, IRouteContext, createPaginatedResponse } from '@/lib/api/route-handler'
 import { DatabaseError, NotFoundError } from '@/lib/errors/types'
 import { dbLogger } from '@/lib/errors/logger'
+import { 
+  uuidSchema, 
+  limitSchema, 
+  offsetSchema,
+  proposalStatusSchema,
+  ProposalValidator 
+} from '@/lib/validation'
+import { formatZodError } from '@/lib/validation/error-formatter'
 
-// Query validation schemas
+// Query validation schemas using shared schemas
 const getProposalsSchema = z.object({
-  status: z.enum(['draft', 'submitted', 'won', 'lost', 'withdrawn']).optional(),
-  limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('10'),
-  offset: z.string().transform(Number).pipe(z.number().min(0)).default('0')
+  status: proposalStatusSchema.optional(),
+  limit: limitSchema,
+  offset: offsetSchema
 })
 
 export const GET = routeHandler.GET(
@@ -96,38 +104,58 @@ export const GET = routeHandler.GET(
   }
 )
 
-// Create proposal schema
+// Create proposal schema with enhanced validation
 const createProposalSchema = z.object({
-  opportunity_id: z.string().uuid(),
-  title: z.string().min(1).max(255),
+  opportunity_id: uuidSchema,
+  title: z.string().min(1, 'Proposal title is required').max(255, 'Title must be less than 255 characters'),
   solicitation_number: z.string().optional(),
-  submission_deadline: z.string().datetime().optional(),
-  total_proposed_price: z.number().positive().optional(),
-  proposal_summary: z.string().optional(),
-  win_probability: z.number().min(0).max(100).optional(),
-  notes: z.string().optional(),
-  tags: z.array(z.string()).optional(),
+  submission_deadline: z.string().datetime('Invalid deadline format').optional(),
+  total_proposed_price: z.number().positive('Price must be positive').optional(),
+  proposal_summary: z.string().max(2000, 'Summary must be less than 2000 characters').optional(),
+  win_probability: z.number().min(0, 'Probability must be at least 0%').max(100, 'Probability must be at most 100%').optional(),
+  notes: z.string().max(5000, 'Notes must be less than 5000 characters').optional(),
+  tags: z.array(z.string().max(50, 'Tag must be less than 50 characters')).max(20, 'Maximum 20 tags allowed').optional(),
   sections: z.array(z.object({
-    section_type: z.string(),
-    title: z.string(),
+    section_type: z.string().min(1, 'Section type is required'),
+    title: z.string().min(1, 'Section title is required').max(200, 'Title must be less than 200 characters'),
     content: z.string().optional(),
     is_required: z.boolean().optional(),
-    max_pages: z.number().positive().optional()
+    max_pages: z.number().positive('Page limit must be positive').optional()
   })).optional(),
   attachedDocuments: z.array(z.object({
     id: z.string(),
-    name: z.string(),
-    size: z.number(),
-    type: z.string(),
-    url: z.string().optional(),
+    name: z.string().min(1, 'Document name is required'),
+    size: z.number().positive('File size must be positive'),
+    type: z.string().min(1, 'File type is required'),
+    url: z.string().url('Invalid document URL').optional(),
     extractedText: z.string().optional()
-  })).optional()
+  })).max(10, 'Maximum 10 documents allowed').optional()
+}).refine((data) => {
+  // If submission deadline is provided, it must be in the future
+  if (data.submission_deadline) {
+    return new Date(data.submission_deadline) > new Date()
+  }
+  return true
+}, {
+  message: 'Submission deadline must be in the future',
+  path: ['submission_deadline']
 })
 
 export const POST = routeHandler.POST(
   async ({ request, user, supabase }: IRouteContext) => {
     const body = await request.json()
-    const validatedData = createProposalSchema.parse(body)
+    
+    // Use enhanced validation with better error messages
+    let validatedData
+    try {
+      validatedData = createProposalSchema.parse(body)
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const formatted = formatZodError(error)
+        return NextResponse.json(formatted, { status: 400 })
+      }
+      throw error
+    }
 
     // Get user's company ID
     const { data: profile, error: profileError } = await supabase
@@ -145,16 +173,34 @@ export const POST = routeHandler.POST(
       throw new NotFoundError('Company profile')
     }
 
-    // Verify opportunity exists
+    // Verify opportunity exists and get deadline
     const { data: opportunity, error: oppError } = await supabase
       .from('opportunities')
-      .select('id')
+      .select('id, response_deadline')
       .eq('id', validatedData.opportunity_id)
       .single()
 
     if (oppError || !opportunity) {
       throw new NotFoundError('Opportunity')
     }
+
+    // Additional business validation
+    const proposalData = {
+      opportunityId: validatedData.opportunity_id,
+      title: validatedData.title,
+      status: 'draft',
+      sections: validatedData.sections?.map(s => ({
+        id: crypto.randomUUID(),
+        title: s.title,
+        content: s.content || '',
+        wordCount: s.content?.split(/\s+/).length || 0,
+        required: s.is_required || false
+      })) || [],
+      dueDate: validatedData.submission_deadline || opportunity.response_deadline
+    }
+
+    // Validate with business rules
+    await ProposalValidator.validateWithBusinessRules(proposalData)
 
     // Create proposal
     const { data: proposal, error: proposalError } = await supabase

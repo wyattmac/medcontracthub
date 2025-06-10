@@ -1,5 +1,5 @@
 import { Mistral } from '@mistralai/mistralai';
-import { logger } from '@/lib/monitoring/logger';
+import { logger } from '@/lib/errors/logger';
 import type { AttachmentInfo } from '@/lib/sam-gov/attachment-extractor';
 
 export interface ProcessedAttachment {

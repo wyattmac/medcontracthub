@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Calendar, Plus, X, Upload, FileText, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
+import { createProposalFormSchema, type CreateProposalFormData } from '@/lib/validation/schemas/proposal-form'
 
 interface Opportunity {
   id: string
@@ -40,7 +42,7 @@ interface AttachedDocument {
 
 interface CreateProposalFormProps {
   opportunity?: Opportunity
-  onSubmit: (data: any) => void
+  onSubmit: (data: CreateProposalFormData) => void
   isLoading?: boolean
   error?: string
 }
@@ -101,10 +103,7 @@ export function CreateProposalForm({
   isLoading = false, 
   error 
 }: CreateProposalFormProps) {
-  const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState('')
-  const [sections, setSections] = useState<ProposalSection[]>(defaultSections)
-  const [attachedDocuments, setAttachedDocuments] = useState<AttachedDocument[]>([])
   const [isUploadingDocument, setIsUploadingDocument] = useState(false)
 
   const {
@@ -112,33 +111,42 @@ export function CreateProposalForm({
     handleSubmit,
     formState: { errors },
     setValue,
-    watch
-  } = useForm({
+    watch,
+    getValues
+  } = useForm<CreateProposalFormData>({
+    resolver: zodResolver(createProposalFormSchema),
     defaultValues: {
       title: opportunity ? `Proposal for ${opportunity.title}` : '',
       solicitation_number: opportunity?.solicitation_number || '',
       submission_deadline: opportunity?.response_deadline ? 
         new Date(opportunity.response_deadline).toISOString().split('T')[0] : '',
-      total_proposed_price: '',
-      win_probability: '',
+      total_proposed_price: undefined,
+      win_probability: undefined,
       proposal_summary: '',
-      notes: ''
+      notes: '',
+      tags: [],
+      sections: defaultSections,
+      attachedDocuments: []
     }
   })
 
+  const tags = watch('tags')
+  const sections = watch('sections')
+  const attachedDocuments = watch('attachedDocuments')
+
   const addTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags([...tags, newTag.trim()])
+      setValue('tags', [...tags, newTag.trim()])
       setNewTag('')
     }
   }
 
   const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove))
+    setValue('tags', tags.filter(tag => tag !== tagToRemove))
   }
 
   const addSection = () => {
-    setSections([...sections, {
+    setValue('sections', [...sections, {
       section_type: 'other',
       title: '',
       content: '',
@@ -149,11 +157,11 @@ export function CreateProposalForm({
   const updateSection = (index: number, field: keyof ProposalSection, value: any) => {
     const updatedSections = [...sections]
     updatedSections[index] = { ...updatedSections[index], [field]: value }
-    setSections(updatedSections)
+    setValue('sections', updatedSections)
   }
 
   const removeSection = (index: number) => {
-    setSections(sections.filter((_, i) => i !== index))
+    setValue('sections', sections.filter((_, i) => i !== index))
   }
 
   const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,7 +182,7 @@ export function CreateProposalForm({
         isProcessing: true
       }
       
-      setAttachedDocuments(prev => [...prev, newDocument])
+      setValue('attachedDocuments', [...attachedDocuments, newDocument])
 
       try {
         // Upload file for OCR processing
@@ -193,8 +201,8 @@ export function CreateProposalForm({
         const result = await response.json()
         
         // Update document with OCR results
-        setAttachedDocuments(prev => 
-          prev.map(doc => 
+        setValue('attachedDocuments', 
+          getValues('attachedDocuments').map(doc => 
             doc.id === documentId 
               ? { 
                   ...doc, 
@@ -208,7 +216,7 @@ export function CreateProposalForm({
       } catch (error) {
         console.error('Document upload failed:', error)
         // Remove failed document
-        setAttachedDocuments(prev => prev.filter(doc => doc.id !== documentId))
+        setValue('attachedDocuments', getValues('attachedDocuments').filter(doc => doc.id !== documentId))
       }
     }
     
@@ -218,7 +226,7 @@ export function CreateProposalForm({
   }
 
   const removeDocument = (documentId: string) => {
-    setAttachedDocuments(prev => prev.filter(doc => doc.id !== documentId))
+    setValue('attachedDocuments', attachedDocuments.filter(doc => doc.id !== documentId))
   }
 
   const formatFileSize = (bytes: number) => {
@@ -229,15 +237,14 @@ export function CreateProposalForm({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  const handleFormSubmit = (data: any) => {
-    onSubmit({
+  const handleFormSubmit = (data: CreateProposalFormData) => {
+    // Filter out incomplete sections and processing documents
+    const validData = {
       ...data,
-      tags,
-      sections: sections.filter(section => section.title.trim() !== ''),
-      attachedDocuments: attachedDocuments.filter(doc => !doc.isProcessing),
-      total_proposed_price: data.total_proposed_price ? parseFloat(data.total_proposed_price) : null,
-      win_probability: data.win_probability ? parseFloat(data.win_probability) / 100 : null
-    })
+      sections: data.sections.filter(section => section.title.trim() !== ''),
+      attachedDocuments: data.attachedDocuments.filter(doc => !doc.isProcessing)
+    }
+    onSubmit(validData)
   }
 
   return (
@@ -254,8 +261,9 @@ export function CreateProposalForm({
           <Label htmlFor="title">Proposal Title *</Label>
           <Input
             id="title"
-            {...register('title', { required: 'Title is required' })}
+            {...register('title')}
             placeholder="Enter proposal title"
+            className={errors.title ? 'border-red-500' : ''}
           />
           {errors.title && (
             <p className="text-sm text-red-600">{errors.title.message}</p>
@@ -277,7 +285,11 @@ export function CreateProposalForm({
             id="submission_deadline"
             type="date"
             {...register('submission_deadline')}
+            className={errors.submission_deadline ? 'border-red-500' : ''}
           />
+          {errors.submission_deadline && (
+            <p className="text-sm text-red-600">{errors.submission_deadline.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -286,9 +298,13 @@ export function CreateProposalForm({
             id="total_proposed_price"
             type="number"
             step="0.01"
-            {...register('total_proposed_price')}
+            {...register('total_proposed_price', { valueAsNumber: true })}
             placeholder="0.00"
+            className={errors.total_proposed_price ? 'border-red-500' : ''}
           />
+          {errors.total_proposed_price && (
+            <p className="text-sm text-red-600">{errors.total_proposed_price.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -299,9 +315,13 @@ export function CreateProposalForm({
             min="0"
             max="100"
             step="1"
-            {...register('win_probability')}
+            {...register('win_probability', { valueAsNumber: true })}
             placeholder="0-100"
+            className={errors.win_probability ? 'border-red-500' : ''}
           />
+          {errors.win_probability && (
+            <p className="text-sm text-red-600">{errors.win_probability.message}</p>
+          )}
         </div>
       </div>
 
@@ -313,7 +333,11 @@ export function CreateProposalForm({
           {...register('proposal_summary')}
           placeholder="Brief summary of your proposal approach and key value propositions..."
           rows={4}
+          className={errors.proposal_summary ? 'border-red-500' : ''}
         />
+        {errors.proposal_summary && (
+          <p className="text-sm text-red-600">{errors.proposal_summary.message}</p>
+        )}
       </div>
 
       {/* Tags */}
@@ -344,6 +368,9 @@ export function CreateProposalForm({
             Add
           </Button>
         </div>
+        {errors.tags && (
+          <p className="text-sm text-red-600">{errors.tags.message}</p>
+        )}
       </div>
 
       {/* Proposal Sections */}
@@ -356,6 +383,9 @@ export function CreateProposalForm({
               Add Section
             </Button>
           </CardTitle>
+          {errors.sections && (
+            <p className="text-sm text-red-600 mt-2">{errors.sections.message}</p>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           {sections.map((section, index) => (
@@ -519,7 +549,11 @@ export function CreateProposalForm({
           {...register('notes')}
           placeholder="Any additional notes or comments..."
           rows={3}
+          className={errors.notes ? 'border-red-500' : ''}
         />
+        {errors.notes && (
+          <p className="text-sm text-red-600">{errors.notes.message}</p>
+        )}
       </div>
 
       {/* Submit Button */}

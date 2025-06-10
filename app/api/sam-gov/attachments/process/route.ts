@@ -3,7 +3,7 @@ import { enhancedRouteHandler } from '@/lib/api/enhanced-route-handler';
 import { SamGovAttachmentExtractor } from '@/lib/sam-gov/attachment-extractor';
 import { MistralAttachmentProcessor } from '@/lib/ai/mistral-attachment-processor';
 import { createServerClient } from '@/lib/supabase/server';
-import { logger } from '@/lib/monitoring/logger';
+import { logger } from '@/lib/errors/logger';
 import { z } from 'zod';
 
 const ProcessAttachmentsSchema = z.object({
@@ -14,7 +14,7 @@ const ProcessAttachmentsSchema = z.object({
 
 export const POST = enhancedRouteHandler(
   async (req: NextRequest) => {
-    const { noticeIds, analyzeRelevance, extractStructuredData } = 
+    const { noticeIds, analyzeRelevance } = 
       ProcessAttachmentsSchema.parse(await req.json());
 
     // Initialize clients

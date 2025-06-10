@@ -10,7 +10,7 @@ import { TrendingUp, Zap, Database, RefreshCw } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 interface OpportunitiesPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     q?: string
     naics?: string
     state?: string
@@ -18,7 +18,7 @@ interface OpportunitiesPageProps {
     deadline_from?: string
     deadline_to?: string
     page?: string
-  }
+  }>
 }
 
 export default async function OpportunitiesPage({ searchParams }: OpportunitiesPageProps) {

@@ -163,6 +163,10 @@ make prod     # Port 3002 (production simulation)
   - **Development**: Port 3000, hot reload, development Supabase project
   - **Staging**: Port 3001, production build, staging Supabase project  
   - **Production**: Port 3002, full SSL, production Supabase project
+- **WSL Support**: Full Windows Subsystem for Linux (WSL) compatibility
+  - Docker Desktop integration with WSL2
+  - Helper scripts for WSL environments (`docker-logs.sh`)
+  - Automatic Docker host configuration
 - **Database**: Supabase PostgreSQL with Row Level Security (RLS)
 - **Caching**: Redis (containerized) with intelligent TTL strategies
 - **Monitoring**: Sentry integration with user journey tracking
@@ -221,10 +225,16 @@ CSRF_SECRET=your_32_char_secret_key
 
 ### **Development Commands**
 ```bash
-# Development
-make dev                 # Docker development environment (recommended)
+# Development (WSL/Docker)
+./easy-docker.sh        # Quick start Docker environment (WSL-friendly)
+make dev                # Docker development environment
 npm run dev             # Local development server
 npm run worker:dev      # Background job processor
+
+# Docker Logs (WSL)
+./docker-logs.sh app    # View application logs
+./docker-logs.sh all    # View all service logs
+./docker-logs.sh follow # Follow logs in real-time
 
 # Quality Assurance
 npm run lint            # ESLint + Prettier code formatting
@@ -239,6 +249,14 @@ npm run dev-setup      # Create development user account
 
 ### **Multi-Environment Deployment**
 ```bash
+# Three-stage Docker management (WSL-optimized)
+./docker-manage.sh start dev      # Development (port 3000)
+./docker-manage.sh start staging  # Staging (port 3001)  
+./docker-manage.sh start prod     # Production (port 3002)
+./docker-manage.sh status [env]   # Check environment status
+./docker-manage.sh logs [env]     # View environment logs
+
+# Alternative commands
 make dev               # Development (port 3000)
 make staging          # Staging (port 3001)
 make prod            # Production (port 3002)

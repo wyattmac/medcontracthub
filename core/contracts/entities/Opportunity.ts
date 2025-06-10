@@ -3,6 +3,9 @@
  * Core business entity representing a federal contract opportunity
  */
 
+import { opportunityWithComputedSchema, type OpportunityWithComputed } from '@/lib/validation/computed-properties'
+import { z } from 'zod'
+
 export interface IOpportunity {
   id: string
   noticeId: string
@@ -155,5 +158,91 @@ export class Opportunity implements IOpportunity {
       record.match_score,
       record.metadata
     )
+  }
+
+  /**
+   * Create from database record with computed properties
+   * Uses Zod schema for validation and adds computed properties
+   */
+  static fromDatabaseWithComputed(record: any): OpportunityWithComputed {
+    // Transform database record to match schema expectations
+    const transformedRecord = {
+      id: record.id,
+      noticeId: record.notice_id,
+      title: record.title,
+      agency: record.agency,
+      department: record.department,
+      postedDate: record.posted_date,
+      responseDeadline: record.response_deadline,
+      naicsCodes: record.naics_codes || [],
+      setAsideTypes: record.set_aside_types || [],
+      contractType: record.contract_type,
+      valueAmount: record.value_amount,
+      placeOfPerformance: record.place_of_performance,
+      description: record.description,
+      attachments: record.attachments || [],
+      matchScore: record.match_score,
+      active: record.active,
+      metadata: record.metadata,
+      status: record.status || 'active'
+    }
+
+    // Parse with computed properties schema
+    return opportunityWithComputedSchema.parse(transformedRecord)
+  }
+
+  /**
+   * Get urgency level based on deadline
+   */
+  getUrgencyLevel(): 'expired' | 'critical' | 'high' | 'medium' | 'low' {
+    const days = this.daysUntilDeadline()
+    if (days < 0) return 'expired'
+    if (days <= 3) return 'critical'
+    if (days <= 7) return 'high'
+    if (days <= 14) return 'medium'
+    return 'low'
+  }
+
+  /**
+   * Check if opportunity has expired
+   */
+  isExpired(): boolean {
+    return this.daysUntilDeadline() < 0
+  }
+
+  /**
+   * Get formatted deadline with timezone
+   */
+  getFormattedDeadline(): string {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/New_York'
+    })
+    return formatter.format(this.responseDeadline)
+  }
+
+  /**
+   * Check if opportunity matches company set-asides
+   */
+  matchesSetAsides(companyCertifications: string[]): boolean {
+    const certToSetAside: Record<string, string[]> = {
+      'Small Business': ['Small Business', 'Total Small Business'],
+      'WOSB': ['Women-Owned Small Business (WOSB)', 'Total Small Business'],
+      'EDWOSB': ['Economically Disadvantaged WOSB (EDWOSB)', 'Women-Owned Small Business (WOSB)', 'Total Small Business'],
+      'HUBZone': ['HUBZone Small Business', 'Total Small Business'],
+      'SDVOSB': ['Service-Disabled Veteran-Owned Small Business (SDVOSB)', 'Veteran-Owned Small Business (VOSB)', 'Total Small Business'],
+      'VOSB': ['Veteran-Owned Small Business (VOSB)', 'Total Small Business'],
+      '8(a)': ['8(a) Business Development', 'Total Small Business'],
+      'Native American': ['Native American Owned', 'Total Small Business'],
+    }
+
+    return companyCertifications.some(cert => {
+      const eligibleSetAsides = certToSetAside[cert] || []
+      return eligibleSetAsides.some(setAside => this.setAsideTypes.includes(setAside))
+    })
   }
 }

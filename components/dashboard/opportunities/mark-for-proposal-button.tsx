@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { FileText, Loader2, CheckCircle, AlertCircle, Edit3, Zap } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import { Database } from '@/types/database.types'
 
 type Opportunity = Database['public']['Tables']['opportunities']['Row']
@@ -46,7 +46,6 @@ interface SAMAttachmentResult {
 export function MarkForProposalButton({ opportunity }: MarkForProposalButtonProps) {
   const [showDialog, setShowDialog] = useState(false)
   const [processingResult, setProcessingResult] = useState<SAMAttachmentResult | null>(null)
-  const { toast } = useToast()
   const router = useRouter()
 
   const processSAMAttachmentsMutation = useMutation({
@@ -81,24 +80,19 @@ export function MarkForProposalButton({ opportunity }: MarkForProposalButtonProp
           data.data.requirements.technicalRequirements.length +
           data.data.requirements.complianceRequirements.length
 
-        toast({
-          title: 'SAM.gov Documents Processed',
+        toast.success('SAM.gov Documents Processed', {
           description: `Successfully processed ${successfulAttachments} attachments with ${totalRequirements} requirements extracted.`
         })
       } else {
-        toast({
-          title: 'Processing Complete',
-          description: data.error || 'Processing completed with some issues',
-          variant: 'default'
+        toast.info('Processing Complete', {
+          description: data.error || 'Processing completed with some issues'
         })
       }
     },
     onError: (error) => {
       console.error('SAM.gov attachment processing failed:', error)
-      toast({
-        title: 'Processing Failed',
-        description: error.message || 'Failed to process SAM.gov attachments',
-        variant: 'destructive'
+      toast.error('Processing Failed', {
+        description: error.message || 'Failed to process SAM.gov attachments'
       })
     }
   })

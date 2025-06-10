@@ -11,17 +11,33 @@ import { DatabaseError, NotFoundError } from '@/lib/errors/types'
 import { dbLogger } from '@/lib/errors/logger'
 import { searchCache, createCacheKey } from '@/lib/utils/cache'
 import { getSAMQuotaManager } from '@/lib/sam-gov/quota-manager'
+import { 
+  stateSchema, 
+  opportunityStatusSchema, 
+  dateSchema, 
+  limitSchema, 
+  offsetSchema 
+} from '@/lib/validation/shared-schemas'
 
-// Query validation schema
+// Query validation schema using shared schemas
 const searchQuerySchema = z.object({
   q: z.string().optional(),
   naics: z.string().optional(),
-  state: z.string().length(2).optional(),
-  status: z.enum(['active', 'awarded', 'cancelled', 'expired']).optional(),
-  deadline_from: z.string().datetime().optional(),
-  deadline_to: z.string().datetime().optional(),
-  limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('25'),
-  offset: z.string().transform(Number).pipe(z.number().min(0)).default('0')
+  state: stateSchema.optional(),
+  status: opportunityStatusSchema.optional(),
+  deadline_from: dateSchema.optional(),
+  deadline_to: dateSchema.optional(),
+  limit: limitSchema,
+  offset: offsetSchema
+}).refine((data) => {
+  // If both deadline dates are provided, ensure 'to' is after 'from'
+  if (data.deadline_from && data.deadline_to) {
+    return new Date(data.deadline_to) >= new Date(data.deadline_from)
+  }
+  return true
+}, {
+  message: 'Deadline end date must be after or equal to start date',
+  path: ['deadline_to']
 })
 
 export const GET = routeHandler.GET(

@@ -198,10 +198,38 @@ docker ps                            # Check containers running
 
 **Docker Architecture:**
 ```bash
-# MedContractHub uses 3 containers:
-medcontract-dev        # Next.js app (port 3000)
-medcontract-dev-db     # PostgreSQL (port 5432) 
-medcontract-dev-redis  # Redis cache (port 6379)
+# MedContractHub uses a three-stage Docker setup:
+
+# Development Environment (Port 3000)
+medcontract-dev-app         # Next.js app with hot reload
+medcontract-dev-postgres    # PostgreSQL (port 5432) 
+medcontract-dev-redis       # Redis cache (port 6379)
+medcontract-dev-bull        # Queue dashboard (port 3003)
+
+# Staging Environment (Port 3001)
+medcontract-staging-app     # Production build
+medcontract-staging-postgres # PostgreSQL (port 5433)
+medcontract-staging-redis   # Redis cache (port 6380)
+medcontract-staging-worker  # Background job processor
+
+# Production Environment (Port 3002/80/443)
+medcontract-prod-nginx      # Nginx reverse proxy (80/443)
+medcontract-prod-app        # Optimized production build
+medcontract-prod-redis      # Redis cache (port 6381)
+medcontract-prod-worker     # Background job processor
+```
+
+#### **🐧 WSL (Windows Subsystem for Linux) Setup**
+
+If you're using Docker on WSL, you need to configure the Docker host:
+
+```bash
+# Add to your ~/.bashrc for permanent configuration
+export DOCKER_HOST=unix:///var/run/docker.sock
+
+# Or use the provided helper scripts
+./easy-docker.sh        # WSL-friendly Docker startup
+./docker-logs.sh app    # WSL-friendly log viewer
 ```
 
 #### **⚠️ Docker Troubleshooting Guide**
@@ -282,9 +310,14 @@ curl http://localhost:3000/api/health # API health
 docker ps                            # Container status
 docker-compose logs --tail=20        # Recent logs
 
+# WSL-specific commands
+./docker-logs.sh app                 # View app logs (WSL-friendly)
+./docker-logs.sh all                 # View all service logs
+./check-docker-status.sh             # Container health status
+
 # Performance check
 docker stats                         # Resource usage
-docker exec medcontract-dev npm run type-check  # Code quality
+docker exec medcontracthub-app-1 npm run type-check  # Code quality
 ```
 
 ### **4. Database Setup**
@@ -932,6 +965,27 @@ time curl -s "http://localhost:3000/api/opportunities/public-search?limit=5"
 - **Immediate issues**: Check [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 - **Architecture questions**: Reference [ARCHITECTURE.md](./ARCHITECTURE.md)
 - **Production concerns**: Review [PRODUCTION_TASKS.md](./PRODUCTION_TASKS.md)
+
+---
+
+## 📚 Documentation Resources
+
+### Context7
+**Always use Context7 for up-to-date, version-specific documentation**. Context7 provides current documentation for all major libraries used in this project.
+
+Common Context7 queries:
+- "Use Context7 to check latest Next.js 15 app router patterns"
+- "Look up Supabase auth documentation in Context7"
+- "Find Zod v3 validation examples in Context7"
+- "Check Context7 for React Hook Form with Zod integration"
+- "Get Stripe webhook patterns from Context7"
+- "Look up Tailwind CSS v3 utilities in Context7"
+
+### Why Context7?
+- **Version-specific**: Get documentation for the exact version you're using
+- **Up-to-date**: Always current, unlike static documentation
+- **Comprehensive**: Includes code examples and best practices
+- **Integrated**: Available directly in your development workflow
 
 ---
 

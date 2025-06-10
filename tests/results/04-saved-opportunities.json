@@ -43,6 +43,7 @@
   },
   {
     "test": "AI Analyze feature",
-    "status": "PASS"
+    "status": "PASS",
+    "error": "AI Analyze may require saved items with attachments"
   }
 ]

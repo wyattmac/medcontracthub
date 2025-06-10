@@ -385,3 +385,57 @@ export function generateOpportunitySlug(opportunity: OpportunityRow): string {
     .replace(/^-+|-+$/g, '')
     .substring(0, 50)}`
 }
+
+/**
+ * Normalize NAICS code to standard format
+ */
+export function normalizeNAICSCode(code: string): string {
+  // Remove any non-numeric characters and ensure 6 digits
+  const cleaned = code.replace(/\D/g, '')
+  return cleaned.padEnd(6, '0').substring(0, 6)
+}
+
+/**
+ * Build search filters for database queries
+ */
+export function buildSearchFilters(params: {
+  q?: string
+  naics?: string[]
+  state?: string
+  status?: string
+  deadline_from?: string
+  deadline_to?: string
+  limit?: number
+  offset?: number
+}): any {
+  const filters: any = {}
+  
+  if (params.q) {
+    filters.searchQuery = params.q
+  }
+  
+  if (params.naics && params.naics.length > 0) {
+    filters.naicsCodes = params.naics
+  }
+  
+  if (params.state) {
+    filters.state = params.state
+  }
+  
+  if (params.status) {
+    filters.status = params.status
+  }
+  
+  if (params.deadline_from) {
+    filters.deadlineFrom = params.deadline_from
+  }
+  
+  if (params.deadline_to) {
+    filters.deadlineTo = params.deadline_to
+  }
+  
+  filters.limit = params.limit || 20
+  filters.offset = params.offset || 0
+  
+  return filters
+}

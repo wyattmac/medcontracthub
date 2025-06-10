@@ -50,6 +50,10 @@ export function MockLogin() {
     // Store in localStorage for the mock auth to pick up
     localStorage.setItem('mock-auth-session', JSON.stringify(mockSession))
     localStorage.setItem('mock-auth-user', JSON.stringify(mockUser))
+    
+    // Also set a cookie for middleware to recognize
+    document.cookie = `mock-auth-session=${encodeURIComponent(JSON.stringify(mockSession))}; path=/; max-age=3600`
+    document.cookie = `mock-auth-user=${encodeURIComponent(JSON.stringify(mockUser))}; path=/; max-age=3600`
 
     // Trigger a page reload to initialize the mock session
     window.location.href = '/dashboard'

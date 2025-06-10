@@ -8,7 +8,7 @@ const createJestConfig = nextJest({
 // Add any custom config to be passed to Jest
 const customJestConfig = {
   // Add more setup options before each test is run
-  setupFilesAfterEnv: ['<rootDir>/__tests__/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   
   // Automatically clear mock calls, instances and results before every test
   clearMocks: true,
@@ -98,6 +98,11 @@ const customJestConfig = {
   testMatch: [
     '**/__tests__/**/*.(test|spec).(js|jsx|ts|tsx)',
     '**/*.(test|spec).(js|jsx|ts|tsx)',
+  ],
+  
+  // Exclude E2E tests from Jest (they use Playwright)
+  modulePathIgnorePatterns: [
+    '<rootDir>/__tests__/e2e/',
   ],
   
   // Module file extensions

@@ -3,7 +3,7 @@
  * Proxies attachment downloads with API key authentication
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { enhancedRouteHandler } from '@/lib/api/enhanced-route-handler'
 import { logger } from '@/lib/errors/logger'
@@ -14,7 +14,7 @@ const downloadQuerySchema = z.object({
 })
 
 export const GET = enhancedRouteHandler.GET(
-  async ({ user, sanitizedQuery }) => {
+  async ({ sanitizedQuery }) => {
     const { url, filename } = sanitizedQuery
 
     logger.info('Proxying SAM.gov attachment download', {

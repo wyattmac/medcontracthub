@@ -10,17 +10,27 @@ import {
   NotFoundError,
   DatabaseError
 } from '@/lib/errors/types'
+import { uuidSchema, dateSchema } from '@/lib/validation/shared-schemas'
 
 // Request body validation schema
 const saveOpportunitySchema = z.object({
-  opportunityId: z.string().min(1, 'Opportunity ID is required'),
+  opportunityId: uuidSchema,
   action: z.enum(['save', 'unsave'], {
     errorMap: () => ({ message: 'Invalid action. Must be "save" or "unsave"' })
   }),
-  notes: z.string().nullable().optional(),
-  tags: z.array(z.string()).optional().default([]),
+  notes: z.string().max(2000, 'Notes must be less than 2000 characters').nullable().optional(),
+  tags: z.array(z.string().max(50, 'Tag must be less than 50 characters')).max(20, 'Maximum 20 tags allowed').optional().default([]),
   isPursuing: z.boolean().optional().default(false),
-  reminderDate: z.string().datetime().nullable().optional()
+  reminderDate: dateSchema.nullable().optional()
+}).refine((data) => {
+  // If setting a reminder, it must be in the future
+  if (data.reminderDate && data.action === 'save') {
+    return new Date(data.reminderDate) > new Date()
+  }
+  return true
+}, {
+  message: 'Reminder date must be in the future',
+  path: ['reminderDate']
 })
 
 export const POST = enhancedRouteHandler.POST(

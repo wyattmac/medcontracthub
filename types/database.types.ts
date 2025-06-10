@@ -411,6 +411,173 @@ export type Database = {
           created_at?: string
         }
       }
+      compliance_matrices: {
+        Row: {
+          id: string
+          opportunity_id: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+          title: string
+          rfp_document_url: string | null
+          status: 'draft' | 'in_progress' | 'completed' | 'archived'
+          metadata: any
+        }
+        Insert: {
+          id?: string
+          opportunity_id?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          title: string
+          rfp_document_url?: string | null
+          status?: 'draft' | 'in_progress' | 'completed' | 'archived'
+          metadata?: any
+        }
+        Update: {
+          id?: string
+          opportunity_id?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          title?: string
+          rfp_document_url?: string | null
+          status?: 'draft' | 'in_progress' | 'completed' | 'archived'
+          metadata?: any
+        }
+      }
+      compliance_requirements: {
+        Row: {
+          id: string
+          matrix_id: string
+          section: 'L' | 'M' | 'C' | 'Other'
+          requirement_number: string
+          requirement_text: string
+          requirement_type: 'submission' | 'evaluation' | 'technical' | 'administrative' | 'past_performance' | 'pricing' | null
+          page_reference: string | null
+          is_mandatory: boolean
+          parent_requirement_id: string | null
+          sort_order: number
+          extracted_metadata: any
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          matrix_id: string
+          section: 'L' | 'M' | 'C' | 'Other'
+          requirement_number: string
+          requirement_text: string
+          requirement_type?: 'submission' | 'evaluation' | 'technical' | 'administrative' | 'past_performance' | 'pricing' | null
+          page_reference?: string | null
+          is_mandatory?: boolean
+          parent_requirement_id?: string | null
+          sort_order?: number
+          extracted_metadata?: any
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          matrix_id?: string
+          section?: 'L' | 'M' | 'C' | 'Other'
+          requirement_number?: string
+          requirement_text?: string
+          requirement_type?: 'submission' | 'evaluation' | 'technical' | 'administrative' | 'past_performance' | 'pricing' | null
+          page_reference?: string | null
+          is_mandatory?: boolean
+          parent_requirement_id?: string | null
+          sort_order?: number
+          extracted_metadata?: any
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      users: {
+        Row: {
+          id: string
+          company_id: string | null
+          email: string
+          full_name: string | null
+          phone: string | null
+          title: string | null
+          role: 'admin' | 'user'
+          avatar_url: string | null
+          is_active: boolean
+          onboarding_completed: boolean
+          email_notifications: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          company_id?: string | null
+          email: string
+          full_name?: string | null
+          phone?: string | null
+          title?: string | null
+          role?: 'admin' | 'user'
+          avatar_url?: string | null
+          is_active?: boolean
+          onboarding_completed?: boolean
+          email_notifications?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          company_id?: string | null
+          email?: string
+          full_name?: string | null
+          phone?: string | null
+          title?: string | null
+          role?: 'admin' | 'user'
+          avatar_url?: string | null
+          is_active?: boolean
+          onboarding_completed?: boolean
+          email_notifications?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      compliance_responses: {
+        Row: {
+          id: string
+          requirement_id: string
+          proposal_section: string | null
+          response_status: 'not_started' | 'in_progress' | 'completed' | 'not_applicable' | 'deferred'
+          response_location: string | null
+          assigned_to: string | null
+          notes: string | null
+          completed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          requirement_id: string
+          proposal_section?: string | null
+          response_status?: 'not_started' | 'in_progress' | 'completed' | 'not_applicable' | 'deferred'
+          response_location?: string | null
+          assigned_to?: string | null
+          notes?: string | null
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          requirement_id?: string
+          proposal_section?: string | null
+          response_status?: 'not_started' | 'in_progress' | 'completed' | 'not_applicable' | 'deferred'
+          response_location?: string | null
+          assigned_to?: string | null
+          notes?: string | null
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {}
     Functions: {}

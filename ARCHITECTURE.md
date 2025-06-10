@@ -5,6 +5,8 @@
 
 > 📚 **Related Documentation**: See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for debugging guides and [DEPLOYMENT.md](./DEPLOYMENT.md) for production setup.
 
+> 🔍 **Documentation Note**: Always use Context7 for up-to-date, version-specific documentation when implementing new features or troubleshooting. Context7 provides current documentation for all libraries used in this project.
+
 ## 🏗️ Architectural Overview
 
 MedContractHub implements **Clean Architecture with Domain-Driven Design (DDD)**, using Next.js 15 as the delivery mechanism. The system is designed for **enterprise-scale federal contracting** with sophisticated caching, error handling, and multi-environment deployment.

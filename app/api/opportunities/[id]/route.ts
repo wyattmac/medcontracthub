@@ -54,6 +54,15 @@ export async function GET(
 
     if (error) {
       console.error('Database error:', error)
+      
+      // Handle "no rows returned" as a 404
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: { message: 'Opportunity not found' } },
+          { status: 404 }
+        )
+      }
+      
       return NextResponse.json(
         { 
           error: { 

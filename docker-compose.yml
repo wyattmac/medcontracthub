@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build:
@@ -10,10 +8,11 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - .env
+      - .env.local
     environment:
       - NEXT_TELEMETRY_DISABLED=1
       - NODE_OPTIONS=--max-old-space-size=8192
+      - REDIS_URL=redis://redis:6379
     volumes:
       # Bind mount source code for hot-reload
       - .:/app

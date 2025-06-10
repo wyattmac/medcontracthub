@@ -3,8 +3,8 @@
  * Tests the SAM.gov API integration service
  */
 
-import { SamGovClient } from '@/lib/sam-gov/client'
-import { SamGovQuotaManager } from '@/lib/sam-gov/quota-manager'
+import { SAMApiClient, getSAMApiClient } from '@/lib/sam-gov/client'
+import { getSAMQuotaManager } from '@/lib/sam-gov/quota-manager'
 
 // Mock external dependencies
 jest.mock('@/lib/redis/client', () => ({
@@ -15,7 +15,9 @@ jest.mock('@/lib/redis/client', () => ({
     exists: jest.fn(),
     incr: jest.fn(),
     expire: jest.fn()
-  }
+  },
+  isRedisAvailable: jest.fn(() => false),
+  getRedisClient: jest.fn(() => null)
 }))
 
 jest.mock('@/lib/errors/logger', () => ({
@@ -32,8 +34,8 @@ global.fetch = jest.fn()
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>
 
 describe('SAM.gov Client Service', () => {
-  let client: SamGovClient
-  let quotaManager: SamGovQuotaManager
+  let client: SAMApiClient
+  let quotaManager: ReturnType<typeof getSAMQuotaManager>
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -41,8 +43,8 @@ describe('SAM.gov Client Service', () => {
     // Set up environment
     process.env.SAM_GOV_API_KEY = 'test-api-key'
     
-    client = new SamGovClient()
-    quotaManager = new SamGovQuotaManager()
+    client = getSAMApiClient()
+    quotaManager = getSAMQuotaManager()
   })
 
   afterEach(() => {

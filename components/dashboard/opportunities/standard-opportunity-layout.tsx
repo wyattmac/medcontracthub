@@ -214,7 +214,7 @@ export function StandardOpportunityLayout({ opportunity }: StandardOpportunityLa
 
           {/* SAM.gov Attachments */}
           <OpportunityAttachments 
-            noticeId={opportunity.notice_id || opportunity.solicitation_number || opportunity.id}
+            noticeId={opportunity.notice_id || opportunity.noticeId || opportunity.solicitation_number || opportunity.id}
             opportunityTitle={opportunity.title}
           />
         </div>

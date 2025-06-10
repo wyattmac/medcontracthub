@@ -1,0 +1,12 @@
+# Docker WSL Configuration Helper
+# Add this to your ~/.bashrc or source it when needed
+
+# Fix for WSL Docker Desktop integration
+export DOCKER_HOST=unix:///var/run/docker.sock
+
+# Alias for docker-compose to always use the correct host
+alias dc='DOCKER_HOST=unix:///var/run/docker.sock docker-compose'
+alias docker='DOCKER_HOST=unix:///var/run/docker.sock docker'
+
+echo "✅ Docker WSL configuration loaded!"
+echo "   You can now use 'docker' and 'dc' (docker-compose) commands"

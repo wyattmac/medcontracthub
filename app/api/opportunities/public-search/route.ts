@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { withCache } from '@/lib/sam-gov/cache-strategy'
 import { createCacheKey } from '@/lib/utils/cache'
 import { calculateOpportunityMatch } from '@/lib/sam-gov/utils'
 
-// Use authenticated client with proper RLS
+// Public search endpoint - uses service client for reading opportunities
 
 export async function GET(request: Request) {
   try {
@@ -16,18 +16,21 @@ export async function GET(request: Request) {
     const q = searchParams.get('q') || ''
     const set_aside = searchParams.get('set_aside') || ''
 
-    // Get authenticated supabase client
-    const supabase = await createClient()
+    // Use service client for reading opportunities (bypasses RLS)
+    const serviceClient = createServiceClient()
+    
+    // Get authenticated client for user-specific data only
+    const authClient = await createClient()
     
     // Try to get user's NAICS codes for personalized matching
     let userNaicsCodes: string[] = ['423450', '339112'] // Fallback to medical equipment defaults
     
     try {
       // Try to get the current user and their company NAICS codes
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await authClient.auth.getUser()
       
       if (user) {
-        const { data: profile } = await supabase
+        const { data: profile } = await authClient
           .from('profiles')
           .select(`
             company_id,
@@ -63,8 +66,8 @@ export async function GET(request: Request) {
       'SEARCH_RESULTS',
       async () => {
         // Build query - Order by newest opportunities first
-        // NOTE: Opportunities table has RLS policy allowing public read access for active opportunities
-        let query = supabase
+        // Using service client to bypass RLS for public opportunity reading
+        let query = serviceClient
           .from('opportunities')
           .select('*', { count: 'exact' })
           .order('posted_date', { ascending: false })
@@ -99,10 +102,10 @@ export async function GET(request: Request) {
     // Get user's saved opportunities for isSaved status
     let savedOpportunityIds: string[] = []
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await authClient.auth.getUser()
       
       if (user) {
-        const { data: savedOpportunities } = await supabase
+        const { data: savedOpportunities } = await authClient
           .from('saved_opportunities')
           .select('opportunity_id')
           .eq('user_id', user.id)

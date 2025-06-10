@@ -1,5 +1,5 @@
 import { SamGovClient } from './client';
-import { logger } from '@/lib/monitoring/logger';
+import { logger } from '@/lib/errors/logger';
 import type { Opportunity } from '@/shared/types/database';
 
 export interface AttachmentInfo {

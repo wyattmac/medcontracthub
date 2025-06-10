@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { FileText, Download, ExternalLink, Loader2, AlertCircle } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 
 interface OpportunityAttachmentsProps {
   noticeId: string
@@ -23,7 +23,6 @@ export function OpportunityAttachments({ noticeId, opportunityTitle }: Opportuni
   const [attachments, setAttachments] = useState<AttachmentInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { toast } = useToast()
 
   useEffect(() => {
     if (noticeId) {
@@ -38,10 +37,22 @@ export function OpportunityAttachments({ noticeId, opportunityTitle }: Opportuni
       setLoading(true)
       setError(null)
       
-      const response = await fetch(`/api/sam-gov/attachments?noticeId=${encodeURIComponent(noticeId)}`)
+      // Always use the no-auth endpoint - it uses the SAM.gov API key from the server
+      const endpoint = `/api/sam-gov/attachments-no-auth?noticeId=${encodeURIComponent(noticeId)}`
+      
+      const response = await fetch(endpoint)
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch attachments: ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        
+        // If it's a 404, the opportunity might not exist in SAM.gov
+        if (response.status === 404) {
+          console.log('Opportunity not found in SAM.gov:', noticeId)
+          setAttachments([])
+          return
+        }
+        
+        throw new Error(errorData.error || `Failed to fetch attachments: ${response.status}`)
       }
       
       const data = await response.json()
@@ -61,22 +72,19 @@ export function OpportunityAttachments({ noticeId, opportunityTitle }: Opportuni
 
   const handleDownload = async (attachment: AttachmentInfo) => {
     try {
-      // Create a server-side download endpoint that adds the API key
-      const downloadUrl = `/api/sam-gov/attachments/download?url=${encodeURIComponent(attachment.url)}&filename=${encodeURIComponent(attachment.filename)}`
+      // Use the public download endpoint that adds the API key server-side
+      const downloadUrl = `/api/sam-gov/attachments/download/public?url=${encodeURIComponent(attachment.url)}&filename=${encodeURIComponent(attachment.filename)}`
       
       // Open in new tab to trigger download
       window.open(downloadUrl, '_blank')
       
-      toast({
-        title: 'Download Started',
+      toast.success('Download Started', {
         description: `Downloading ${attachment.filename}`
       })
     } catch (error) {
       console.error('Download error:', error)
-      toast({
-        title: 'Download Failed',
-        description: 'Failed to download attachment',
-        variant: 'destructive'
+      toast.error('Download Failed', {
+        description: 'Failed to download attachment'
       })
     }
   }
@@ -142,7 +150,12 @@ export function OpportunityAttachments({ noticeId, opportunityTitle }: Opportuni
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              No attachments found for this opportunity.
+              No attachments found for this opportunity. This could mean:
+              <ul className="list-disc list-inside mt-2 text-sm">
+                <li>The opportunity has no attached documents</li>
+                <li>The opportunity is not available in SAM.gov</li>
+                <li>The notice ID ({noticeId}) may be invalid</li>
+              </ul>
             </AlertDescription>
           </Alert>
         )}
@@ -173,8 +186,8 @@ export function OpportunityAttachments({ noticeId, opportunityTitle }: Opportuni
                       <p className="font-medium text-sm truncate" title={attachment.filename}>
                         {attachment.filename}
                       </p>
-                      <p className="text-xs text-gray-600 truncate" title={opportunityTitle}>
-                        {opportunityTitle}
+                      <p className="text-xs text-gray-600 truncate" title={attachment.title || opportunityTitle}>
+                        {attachment.title || opportunityTitle}
                       </p>
                     </div>
                   </div>
