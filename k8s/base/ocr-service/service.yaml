@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ocr-service
+  namespace: medcontracthub
+  labels:
+    app: ocr-service
+    component: microservice
+    tier: backend
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8100"
+spec:
+  type: ClusterIP
+  selector:
+    app: ocr-service
+  ports:
+  - port: 8100
+    targetPort: 8100
+    protocol: TCP
+    name: http
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ocr-service-headless
+  namespace: medcontracthub
+  labels:
+    app: ocr-service
+    component: microservice
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: ocr-service
+  ports:
+  - port: 8100
+    targetPort: 8100
+    protocol: TCP
+    name: http

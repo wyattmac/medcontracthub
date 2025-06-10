@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-replica
+  namespace: medcontracthub
+  labels:
+    app: postgres
+    component: database
+    tier: data
+    role: replica
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres
+    role: replica
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-replica-headless
+  namespace: medcontracthub
+  labels:
+    app: postgres
+    component: database
+    tier: data
+    role: replica
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: postgres
+    role: replica
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres

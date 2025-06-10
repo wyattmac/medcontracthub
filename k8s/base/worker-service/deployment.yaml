@@ -1,0 +1,224 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-service
+  namespace: medcontracthub
+  labels:
+    app: worker-service
+    version: v1
+    component: microservice
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: worker-service
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: worker-service
+        version: v1
+        component: microservice
+        tier: backend
+      annotations:
+        sidecar.istio.io/inject: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: worker-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: worker-service
+        image: localhost:5001/worker-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9090
+          name: metrics
+          protocol: TCP
+        env:
+        - name: SERVICE_NAME
+          value: "worker-service"
+        - name: NODE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: environment
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: log_level
+        - name: METRICS_PORT
+          value: "9090"
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: redis_url
+        - name: REDIS_QUEUE_PREFIX
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: redis_queue_prefix
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: worker-service-secrets
+              key: redis-password
+              optional: true
+        - name: WORKER_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: worker_config
+        - name: QUEUE_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: queue_config
+        - name: RETRY_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: retry_config
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: postgres_host
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: postgres_port
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: postgres_db
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: worker-service-secrets
+              key: postgres-password
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: kafka_bootstrap_servers
+        - name: KAFKA_PRODUCER_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: kafka_producer_config
+        - name: S3_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: s3_config
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: worker-service-secrets
+              key: aws-access-key-id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: worker-service-secrets
+              key: aws-secret-access-key
+        - name: EMAIL_FROM
+          valueFrom:
+            secretKeyRef:
+              name: worker-service-secrets
+              key: email-from
+        - name: RESEND_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: worker-service-secrets
+              key: resend-api-key
+        - name: MISTRAL_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: worker-service-secrets
+              key: mistral-api-key
+        - name: SAM_GOV_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: worker-service-secrets
+              key: sam-gov-api-key
+        - name: JAEGER_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: JAEGER_AGENT_PORT
+          value: "6831"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: metrics
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: metrics
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: temp-storage
+          mountPath: /tmp
+        - name: job-storage
+          mountPath: /data/jobs
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - |
+                # Graceful shutdown
+                echo "Starting graceful shutdown..."
+                # Signal worker to stop accepting new jobs
+                kill -TERM 1
+                # Wait for current jobs to complete (max 30s)
+                sleep 30
+      volumes:
+      - name: temp-storage
+        emptyDir:
+          sizeLimit: 2Gi
+      - name: job-storage
+        emptyDir:
+          sizeLimit: 5Gi
+      terminationGracePeriodSeconds: 45
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - worker-service
+              topologyKey: kubernetes.io/hostname

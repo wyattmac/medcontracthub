@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-service-config
+  namespace: medcontracthub
+  labels:
+    app: ai-service
+    component: microservice
+    tier: ml
+data:
+  environment: "development"
+  log_level: "info"
+  port: "8200"
+  model_cache_dir: "/models"
+  redis_url: "redis://redis-cluster:6379"
+  kafka_bootstrap_servers: "kafka-cluster-kafka-bootstrap:9092"
+  postgres_host: "postgres-primary"
+  postgres_port: "5432"
+  postgres_db: "medcontracthub"
+  weaviate_url: "http://weaviate:8080"
+  
+  # ML Model Configuration
+  model_configs: |
+    {
+      "claude": {
+        "enabled": true,
+        "endpoint": "https://api.anthropic.com/v1",
+        "max_tokens": 4096,
+        "temperature": 0.7
+      },
+      "gpt": {
+        "enabled": true,
+        "endpoint": "https://api.openai.com/v1",
+        "max_tokens": 4096,
+        "temperature": 0.7
+      },
+      "mistral": {
+        "enabled": true,
+        "endpoint": "https://api.mistral.ai/v1",
+        "max_tokens": 4096,
+        "temperature": 0.7
+      },
+      "llama": {
+        "enabled": true,
+        "endpoint": "http://llama-service:8080",
+        "max_tokens": 4096,
+        "temperature": 0.7
+      }
+    }
+  
+  # Feature flags
+  features: |
+    {
+      "proposal_generation": true,
+      "requirement_extraction": true,
+      "compliance_analysis": true,
+      "document_understanding": true,
+      "multi_model_ensemble": true,
+      "continuous_learning": true
+    }
+  
+  # Performance settings
+  performance: |
+    {
+      "max_concurrent_inferences": 10,
+      "inference_timeout_seconds": 300,
+      "cache_ttl_seconds": 3600,
+      "batch_size": 5,
+      "model_warmup": true
+    }

@@ -1,0 +1,245 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-config
+  namespace: medcontracthub
+  labels:
+    app: clickhouse
+    component: database
+    tier: analytics
+data:
+  config.xml: |
+    <clickhouse>
+        <logger>
+            <level>information</level>
+            <log>/var/log/clickhouse-server/clickhouse-server.log</log>
+            <errorlog>/var/log/clickhouse-server/clickhouse-server.err.log</errorlog>
+            <size>1000M</size>
+            <count>10</count>
+        </logger>
+        
+        <http_port>8123</http_port>
+        <tcp_port>9000</tcp_port>
+        <interserver_http_port>9009</interserver_http_port>
+        
+        <listen_host>0.0.0.0</listen_host>
+        
+        <max_connections>4096</max_connections>
+        <keep_alive_timeout>3</keep_alive_timeout>
+        <max_concurrent_queries>100</max_concurrent_queries>
+        
+        <uncompressed_cache_size>8589934592</uncompressed_cache_size>
+        <mark_cache_size>5368709120</mark_cache_size>
+        
+        <path>/var/lib/clickhouse/</path>
+        <tmp_path>/var/lib/clickhouse/tmp/</tmp_path>
+        
+        <users_config>users.xml</users_config>
+        
+        <default_profile>default</default_profile>
+        <default_database>medcontract_analytics</default_database>
+        
+        <timezone>UTC</timezone>
+        
+        <remote_servers>
+            <medcontract_cluster>
+                <shard>
+                    <replica>
+                        <host>clickhouse-0.clickhouse-headless.medcontracthub.svc.cluster.local</host>
+                        <port>9000</port>
+                    </replica>
+                </shard>
+                <shard>
+                    <replica>
+                        <host>clickhouse-1.clickhouse-headless.medcontracthub.svc.cluster.local</host>
+                        <port>9000</port>
+                    </replica>
+                </shard>
+                <shard>
+                    <replica>
+                        <host>clickhouse-2.clickhouse-headless.medcontracthub.svc.cluster.local</host>
+                        <port>9000</port>
+                    </replica>
+                </shard>
+            </medcontract_cluster>
+        </remote_servers>
+        
+        <zookeeper>
+            <node>
+                <host>zookeeper-0.zookeeper-headless.medcontracthub.svc.cluster.local</host>
+                <port>2181</port>
+            </node>
+            <node>
+                <host>zookeeper-1.zookeeper-headless.medcontracthub.svc.cluster.local</host>
+                <port>2181</port>
+            </node>
+            <node>
+                <host>zookeeper-2.zookeeper-headless.medcontracthub.svc.cluster.local</host>
+                <port>2181</port>
+            </node>
+        </zookeeper>
+        
+        <macros>
+            <shard from_env="CLICKHOUSE_SHARD"></shard>
+            <replica from_env="CLICKHOUSE_REPLICA"></replica>
+        </macros>
+        
+        <distributed_ddl>
+            <path>/clickhouse/task_queue/ddl</path>
+        </distributed_ddl>
+        
+        <format_schema_path>/var/lib/clickhouse/format_schemas/</format_schema_path>
+        
+        <query_log>
+            <database>system</database>
+            <table>query_log</table>
+            <partition_by>toYYYYMM(event_date)</partition_by>
+            <flush_interval_milliseconds>7500</flush_interval_milliseconds>
+        </query_log>
+        
+        <metric_log>
+            <database>system</database>
+            <table>metric_log</table>
+            <flush_interval_milliseconds>7500</flush_interval_milliseconds>
+            <collect_interval_milliseconds>1000</collect_interval_milliseconds>
+        </metric_log>
+    </clickhouse>
+  
+  users.xml: |
+    <clickhouse>
+        <users>
+            <default>
+                <password from_env="CLICKHOUSE_DEFAULT_PASSWORD"></password>
+                <networks>
+                    <ip>::/0</ip>
+                </networks>
+                <profile>default</profile>
+                <quota>default</quota>
+            </default>
+            <analytics>
+                <password from_env="CLICKHOUSE_ANALYTICS_PASSWORD"></password>
+                <networks>
+                    <ip>::/0</ip>
+                </networks>
+                <profile>analytics</profile>
+                <quota>analytics</quota>
+            </analytics>
+        </users>
+        
+        <profiles>
+            <default>
+                <max_memory_usage>10000000000</max_memory_usage>
+                <use_uncompressed_cache>0</use_uncompressed_cache>
+                <load_balancing>random</load_balancing>
+            </default>
+            <analytics>
+                <max_memory_usage>20000000000</max_memory_usage>
+                <max_memory_usage_for_user>20000000000</max_memory_usage_for_user>
+                <use_uncompressed_cache>1</use_uncompressed_cache>
+                <load_balancing>round_robin</load_balancing>
+                <max_execution_time>300</max_execution_time>
+            </analytics>
+        </profiles>
+        
+        <quotas>
+            <default>
+                <interval>
+                    <duration>3600</duration>
+                    <queries>1000</queries>
+                    <errors>100</errors>
+                    <result_rows>1000000000</result_rows>
+                    <read_rows>10000000000</read_rows>
+                    <execution_time>3600</execution_time>
+                </interval>
+            </default>
+            <analytics>
+                <interval>
+                    <duration>3600</duration>
+                    <queries>10000</queries>
+                    <errors>1000</errors>
+                    <result_rows>10000000000</result_rows>
+                    <read_rows>100000000000</read_rows>
+                    <execution_time>36000</execution_time>
+                </interval>
+            </analytics>
+        </quotas>
+    </clickhouse>
+  
+  init.sql: |
+    -- Create main analytics database
+    CREATE DATABASE IF NOT EXISTS medcontract_analytics;
+    
+    -- Create tables for analytics
+    CREATE TABLE IF NOT EXISTS medcontract_analytics.opportunity_events
+    (
+        event_id UUID DEFAULT generateUUIDv4(),
+        event_type String,
+        opportunity_id String,
+        user_id String,
+        timestamp DateTime DEFAULT now(),
+        properties String,
+        session_id String,
+        device_info String
+    )
+    ENGINE = MergeTree()
+    PARTITION BY toYYYYMM(timestamp)
+    ORDER BY (timestamp, event_type, opportunity_id);
+    
+    CREATE TABLE IF NOT EXISTS medcontract_analytics.api_metrics
+    (
+        timestamp DateTime DEFAULT now(),
+        endpoint String,
+        method String,
+        status_code UInt16,
+        response_time_ms UInt32,
+        user_id String,
+        request_id String,
+        error_message String
+    )
+    ENGINE = MergeTree()
+    PARTITION BY toYYYYMMDD(timestamp)
+    ORDER BY (timestamp, endpoint, method);
+    
+    CREATE TABLE IF NOT EXISTS medcontract_analytics.user_activity
+    (
+        user_id String,
+        activity_type String,
+        timestamp DateTime DEFAULT now(),
+        duration_seconds UInt32,
+        page_views UInt32,
+        actions_count UInt32,
+        session_id String
+    )
+    ENGINE = MergeTree()
+    PARTITION BY toYYYYMM(timestamp)
+    ORDER BY (timestamp, user_id, activity_type);
+    
+    -- Create materialized views for real-time analytics
+    CREATE MATERIALIZED VIEW IF NOT EXISTS medcontract_analytics.opportunity_views_hourly
+    ENGINE = SummingMergeTree()
+    PARTITION BY toYYYYMMDD(hour)
+    ORDER BY (hour, opportunity_id)
+    AS SELECT
+        toStartOfHour(timestamp) as hour,
+        opportunity_id,
+        count() as views,
+        uniq(user_id) as unique_viewers
+    FROM medcontract_analytics.opportunity_events
+    WHERE event_type = 'view'
+    GROUP BY hour, opportunity_id;
+    
+    CREATE MATERIALIZED VIEW IF NOT EXISTS medcontract_analytics.api_metrics_5min
+    ENGINE = AggregatingMergeTree()
+    PARTITION BY toYYYYMMDD(window_start)
+    ORDER BY (window_start, endpoint, method)
+    AS SELECT
+        toStartOfFiveMinute(timestamp) as window_start,
+        endpoint,
+        method,
+        count() as request_count,
+        avg(response_time_ms) as avg_response_time,
+        quantile(0.95)(response_time_ms) as p95_response_time,
+        quantile(0.99)(response_time_ms) as p99_response_time,
+        countIf(status_code >= 400) as error_count
+    FROM medcontract_analytics.api_metrics
+    GROUP BY window_start, endpoint, method;

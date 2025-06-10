@@ -11,6 +11,15 @@
 
 MedContractHub is an **AI-powered hybrid intelligence platform** implementing **Microservices Architecture with Event-Driven patterns and Domain-Driven Design (DDD)**. The system combines human expertise with artificial intelligence for **enterprise-scale federal contracting**, featuring distributed AI/ML services, real-time collaboration, and advanced analytics.
 
+### 🎯 Platform Components
+
+- **Kubernetes Orchestration**: Production-grade container orchestration with auto-scaling
+- **Microservices**: AI Service, Analytics Service, Realtime Service, Worker Service
+- **Data Infrastructure**: PostgreSQL (primary-replica), Weaviate (vectors), ClickHouse (analytics), Redis Cluster
+- **Event Streaming**: Apache Kafka for distributed messaging and event sourcing
+- **API Gateway**: Kong for service routing, authentication, and rate limiting
+- **Service Mesh**: Istio for observability, security, and traffic management
+
 ### Core Architectural Principles
 
 1. **Microservices Architecture**: Distributed services for scalability and maintainability
@@ -676,22 +685,53 @@ const emailQueue = new Bull('email-notifications', {
 **Service Deployment Strategy**:
 
 ```yaml
-# Kubernetes deployment with auto-scaling
+# Production-grade Kubernetes deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ai-service
+  namespace: medcontracthub
 spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: ai-service
+  replicas: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
   template:
     spec:
       containers:
       - name: ai-service
-        image: medcontracthub/ai-service:latest
+        image: medcontracthub/ai-service:v1.0.0
         resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+        env:
+        - name: MODEL_CACHE_DIR
+          value: "/models"
+        - name: MAX_CONCURRENT_INFERENCES
+          value: "50"
+```
+
+**Kubernetes Infrastructure**:
+- **Multi-Environment**: Development, Staging, Production overlays
+- **Auto-Scaling**: HPA based on CPU, memory, and custom metrics
+- **High Availability**: PodDisruptionBudgets ensure service availability
+- **Service Mesh**: Istio for traffic management and observability
+- **Secrets Management**: Sealed Secrets for encrypted configuration
+- **Ingress**: NGINX with TLS termination and rate limiting
+
+**Deployed Services**:
+1. **AI Service** (Port 8200): Multi-model ML orchestration
+2. **Analytics Service** (Port 8300): Real-time event processing
+3. **Realtime Service** (Port 8400): WebSocket collaboration
+4. **Worker Service**: Background job processing
+5. **API Gateway**: Kong for service routing
+6. **Databases**: PostgreSQL, Weaviate, ClickHouse, Redis Cluster
           requests:
             memory: "1Gi"
             cpu: "500m"

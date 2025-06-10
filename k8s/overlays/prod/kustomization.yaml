@@ -1,0 +1,114 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: medcontract-prod
+
+bases:
+  - ../../base
+
+namePrefix: prod-
+nameSuffix: ""
+
+commonLabels:
+  app.kubernetes.io/instance: production
+  environment: production
+
+replicas:
+  - name: medcontracthub-app
+    count: 5
+  - name: ocr-service
+    count: 5
+  - name: ai-service
+    count: 5
+  - name: analytics-service
+    count: 5
+  - name: realtime-service
+    count: 5
+  - name: worker-service
+    count: 10
+  - name: postgres-replica
+    count: 3
+  - name: weaviate
+    count: 5
+  - name: clickhouse
+    count: 5
+
+images:
+  - name: localhost:5001/medcontracthub-app
+    newName: medcontracthub/app
+    newTag: v1.0.0
+  - name: localhost:5001/ocr-service
+    newName: medcontracthub/ocr-service
+    newTag: v1.0.0
+  - name: localhost:5001/integration-adapter
+    newName: medcontracthub/integration-adapter
+    newTag: v1.0.0
+  - name: localhost:5001/ai-service
+    newName: medcontracthub/ai-service
+    newTag: v1.0.0
+  - name: localhost:5001/analytics-service
+    newName: medcontracthub/analytics-service
+    newTag: v1.0.0
+  - name: localhost:5001/realtime-service
+    newName: medcontracthub/realtime-service
+    newTag: v1.0.0
+  - name: localhost:5001/worker-service
+    newName: medcontracthub/worker-service
+    newTag: v1.0.0
+
+configMapGenerator:
+  - name: environment-config
+    literals:
+      - ENVIRONMENT=production
+      - NODE_ENV=production
+      - LOG_LEVEL=warn
+      - API_BASE_URL=https://medcontracthub.com
+      - WS_BASE_URL=wss://ws.medcontracthub.com
+
+secretGenerator:
+  - name: prod-secrets
+    envs:
+      - secrets-prod.env
+    type: Opaque
+
+patchesStrategicMerge:
+  - deployment-patches.yaml
+  - hpa-patches.yaml
+  - ingress-patches.yaml
+  - pdb-patches.yaml
+  - resource-patches.yaml
+
+patches:
+  # Production resource limits
+  - target:
+      kind: Deployment
+      name: ".*"
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 1Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 500m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 4Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: 2000m
+  
+  # Add pod anti-affinity for production
+  - target:
+      kind: Deployment
+      name: ".*"
+    patch: |-
+      - op: add
+        path: /spec/template/spec/affinity/podAntiAffinity/requiredDuringSchedulingIgnoredDuringExecution
+        value:
+        - labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - $(APP_NAME)
+          topologyKey: kubernetes.io/hostname

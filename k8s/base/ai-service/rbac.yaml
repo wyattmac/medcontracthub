@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ai-service
+  namespace: medcontracthub
+  labels:
+    app: ai-service
+    component: microservice
+    tier: ml
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ai-service-role
+  namespace: medcontracthub
+  labels:
+    app: ai-service
+    component: microservice
+    tier: ml
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ai-service-rolebinding
+  namespace: medcontracthub
+  labels:
+    app: ai-service
+    component: microservice
+    tier: ml
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ai-service-role
+subjects:
+- kind: ServiceAccount
+  name: ai-service
+  namespace: medcontracthub

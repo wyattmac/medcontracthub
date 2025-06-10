@@ -1,0 +1,96 @@
+# Resource patches for production environment
+
+# PostgreSQL Primary - production resources
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-primary
+spec:
+  template:
+    spec:
+      containers:
+      - name: postgres
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "4000m"
+          limits:
+            memory: "16Gi"
+            cpu: "8000m"
+
+# PostgreSQL Replicas - production resources
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-replica
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: postgres
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2000m"
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+
+# Weaviate - production resources
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: weaviate
+spec:
+  replicas: 5
+  template:
+    spec:
+      containers:
+      - name: weaviate
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "4000m"
+          limits:
+            memory: "16Gi"
+            cpu: "8000m"
+
+# ClickHouse - production resources
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clickhouse
+spec:
+  replicas: 5
+  template:
+    spec:
+      containers:
+      - name: clickhouse
+        resources:
+          requests:
+            memory: "16Gi"
+            cpu: "8000m"
+          limits:
+            memory: "32Gi"
+            cpu: "16000m"
+
+# Redis Cluster - production configuration
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-cluster-config
+data:
+  redis.conf: |
+    maxmemory 8gb
+    maxmemory-policy allkeys-lru
+    save 900 1
+    save 300 10
+    save 60 10000
+    appendonly yes
+    appendfsync everysec

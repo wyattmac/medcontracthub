@@ -1,0 +1,82 @@
+# Deployment patches for staging environment
+
+# Main application patches
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medcontracthub-app
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: medcontracthub-app
+        env:
+        - name: NEXT_PUBLIC_API_URL
+          value: "https://staging.medcontracthub.com/api"
+        - name: DATABASE_URL
+          value: "postgresql://postgres:$(POSTGRES_PASSWORD)@staging-postgres-primary:5432/medcontracthub"
+        - name: REDIS_URL
+          value: "redis://staging-redis-cluster:6379"
+
+# AI Service patches
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: ai-service
+        env:
+        - name: MODEL_CACHE_DIR
+          value: "/models-staging"
+        - name: MAX_CONCURRENT_INFERENCES
+          value: "20"
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2000m"
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+
+# Analytics Service patches
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: analytics-service
+        env:
+        - name: CLICKHOUSE_HOST
+          value: "staging-clickhouse"
+        - name: BATCH_SIZE
+          value: "2000"
+
+# Worker Service patches
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-service
+spec:
+  replicas: 5
+  template:
+    spec:
+      containers:
+      - name: worker-service
+        env:
+        - name: WORKER_CONCURRENCY
+          value: "15"
+        - name: MAX_JOBS_PER_WORKER
+          value: "200"

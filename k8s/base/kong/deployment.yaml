@@ -1,0 +1,170 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+  namespace: medcontracthub
+  labels:
+    app: kong
+    component: api-gateway
+    tier: edge
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kong
+  template:
+    metadata:
+      labels:
+        app: kong
+        component: api-gateway
+        tier: edge
+      annotations:
+        sidecar.istio.io/inject: "false"  # Kong handles its own proxy
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8001"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: kong
+      containers:
+      - name: kong
+        image: kong:3.5
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: proxy
+          protocol: TCP
+        - containerPort: 8443
+          name: proxy-ssl
+          protocol: TCP
+        - containerPort: 8001
+          name: admin
+          protocol: TCP
+        - containerPort: 8444
+          name: admin-ssl
+          protocol: TCP
+        env:
+        - name: KONG_DATABASE
+          value: "postgres"
+        - name: KONG_PG_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: kong-config
+              key: postgres_host
+        - name: KONG_PG_PORT
+          value: "5432"
+        - name: KONG_PG_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: kong-config
+              key: postgres_database
+        - name: KONG_PG_USER
+          valueFrom:
+            secretKeyRef:
+              name: kong-secrets
+              key: postgres_user
+        - name: KONG_PG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kong-secrets
+              key: postgres_password
+        - name: KONG_PROXY_ACCESS_LOG
+          value: "/dev/stdout"
+        - name: KONG_PROXY_ERROR_LOG
+          value: "/dev/stderr"
+        - name: KONG_ADMIN_ACCESS_LOG
+          value: "/dev/stdout"
+        - name: KONG_ADMIN_ERROR_LOG
+          value: "/dev/stderr"
+        - name: KONG_ADMIN_LISTEN
+          value: "0.0.0.0:8001, 0.0.0.0:8444 ssl"
+        - name: KONG_PROXY_LISTEN
+          value: "0.0.0.0:8000, 0.0.0.0:8443 ssl http2"
+        - name: KONG_NGINX_WORKER_PROCESSES
+          value: "2"
+        - name: KONG_NGINX_DAEMON
+          value: "off"
+        - name: KONG_PLUGINS
+          value: "bundled,oidc,prometheus"
+        - name: KONG_LOG_LEVEL
+          value: "info"
+        - name: KONG_REAL_IP_HEADER
+          value: "X-Forwarded-For"
+        - name: KONG_TRUSTED_IPS
+          value: "0.0.0.0/0,::/0"
+        - name: KONG_REAL_IP_RECURSIVE
+          value: "on"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: admin
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /status
+            port: admin
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: kong-config-volume
+          mountPath: /etc/kong/declarative
+        - name: kong-plugins
+          mountPath: /usr/local/share/lua/5.1/kong/plugins
+      initContainers:
+      - name: kong-migration
+        image: kong:3.5
+        command: ['kong', 'migrations', 'bootstrap']
+        env:
+        - name: KONG_DATABASE
+          value: "postgres"
+        - name: KONG_PG_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: kong-config
+              key: postgres_host
+        - name: KONG_PG_PORT
+          value: "5432"
+        - name: KONG_PG_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: kong-config
+              key: postgres_database
+        - name: KONG_PG_USER
+          valueFrom:
+            secretKeyRef:
+              name: kong-secrets
+              key: postgres_user
+        - name: KONG_PG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kong-secrets
+              key: postgres_password
+      volumes:
+      - name: kong-config-volume
+        configMap:
+          name: kong-declarative-config
+      - name: kong-plugins
+        emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - kong
+              topologyKey: kubernetes.io/hostname

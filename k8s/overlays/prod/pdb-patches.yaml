@@ -1,0 +1,78 @@
+# PodDisruptionBudget patches for production environment
+
+# AI Service PDB - ensure high availability
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-service-pdb
+spec:
+  minAvailable: 3
+  maxUnavailable: 2
+
+# Analytics Service PDB
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: analytics-service-pdb
+spec:
+  minAvailable: 3
+  maxUnavailable: 40%
+
+# Realtime Service PDB - critical for active connections
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: realtime-service-pdb
+spec:
+  minAvailable: 4
+  maxUnavailable: 1
+
+# Worker Service PDB
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: worker-service-pdb
+spec:
+  minAvailable: 5
+  maxUnavailable: 50%
+
+# Database PDBs
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-primary-pdb
+spec:
+  minAvailable: 1
+  maxUnavailable: 0
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-replica-pdb
+spec:
+  minAvailable: 2
+  maxUnavailable: 1
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: weaviate-pdb
+spec:
+  minAvailable: 3
+  maxUnavailable: 2
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: clickhouse-pdb
+spec:
+  minAvailable: 3
+  maxUnavailable: 2

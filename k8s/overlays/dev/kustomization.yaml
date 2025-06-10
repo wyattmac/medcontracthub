@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: medcontracthub
+
+bases:
+  - ../../base
+
+namePrefix: dev-
+
+commonLabels:
+  environment: development
+  
+patchesStrategicMerge:
+  - deployment-patches.yaml
+  
+configMapGenerator:
+  - name: medcontracthub-config
+    behavior: merge
+    literals:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+      - ENABLE_DEBUG=true
+      - ENABLE_HOT_RELOAD=true
+
+replicas:
+  - name: medcontracthub-app
+    count: 1
+  - name: ocr-service
+    count: 1
+  - name: integration-adapter
+    count: 1
+
+images:
+  - name: localhost:5001/medcontracthub-app
+    newTag: dev
+  - name: localhost:5001/ocr-service
+    newTag: dev
+  - name: localhost:5001/integration-adapter
+    newTag: dev

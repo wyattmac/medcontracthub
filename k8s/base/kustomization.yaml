@@ -1,0 +1,165 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: medcontracthub
+
+resources:
+  # Core namespace
+  - namespace.yaml
+  
+  # PostgreSQL for Kong
+  - kong/postgres-deployment.yaml
+  
+  # Kong API Gateway (applied after PostgreSQL)
+  - kong/configmap.yaml
+  - kong/deployment.yaml
+  - kong/service.yaml
+  - kong/rbac.yaml
+  - kong/kong-plugins.yaml
+  
+  # Redis Cluster
+  - redis/redis-cluster.yaml
+  
+  # Main Application
+  - app/configmap.yaml
+  - app/secret.yaml
+  - app/deployment.yaml
+  
+  # OCR Service
+  - ocr-service/configmap.yaml
+  - ocr-service/secret.yaml
+  - ocr-service/deployment.yaml
+  - ocr-service/service.yaml
+  - ocr-service/hpa.yaml
+  - ocr-service/pdb.yaml
+  - ocr-service/networkpolicy.yaml
+  - ocr-service/rbac.yaml
+  
+  # Integration Adapter
+  - integration-adapter/deployment.yaml
+  
+  # AI Service
+  - ai-service/configmap.yaml
+  - ai-service/secret.yaml
+  - ai-service/pvc.yaml
+  - ai-service/deployment.yaml
+  - ai-service/service.yaml
+  - ai-service/hpa.yaml
+  - ai-service/pdb.yaml
+  - ai-service/networkpolicy.yaml
+  - ai-service/rbac.yaml
+  - ai-service/servicemonitor.yaml
+  - ai-service/istio-virtualservice.yaml
+  
+  # Analytics Service
+  - analytics-service/configmap.yaml
+  - analytics-service/secret.yaml
+  - analytics-service/deployment.yaml
+  - analytics-service/service.yaml
+  - analytics-service/hpa.yaml
+  - analytics-service/pdb.yaml
+  - analytics-service/rbac.yaml
+  - analytics-service/cronjobs.yaml
+  
+  # Realtime Service
+  - realtime-service/configmap.yaml
+  - realtime-service/secret.yaml
+  - realtime-service/statefulset.yaml
+  - realtime-service/service.yaml
+  - realtime-service/hpa.yaml
+  - realtime-service/rbac.yaml
+  
+  # Worker Service
+  - worker-service/configmap.yaml
+  - worker-service/secret.yaml
+  - worker-service/deployment.yaml
+  - worker-service/service.yaml
+  - worker-service/hpa.yaml
+  - worker-service/rbac.yaml
+  
+  # Weaviate Vector Database
+  - weaviate/configmap.yaml
+  - weaviate/secret.yaml
+  - weaviate/statefulset.yaml
+  - weaviate/service.yaml
+  - weaviate/rbac.yaml
+  
+  # ClickHouse Analytics Database
+  - clickhouse/configmap.yaml
+  - clickhouse/secret.yaml
+  - clickhouse/statefulset.yaml
+  - clickhouse/service.yaml
+  - clickhouse/rbac.yaml
+  
+  # PostgreSQL Primary
+  - postgres-primary/configmap.yaml
+  - postgres-primary/secret.yaml
+  - postgres-primary/statefulset.yaml
+  - postgres-primary/service.yaml
+  - postgres-primary/rbac.yaml
+  
+  # PostgreSQL Replicas
+  - postgres-replica/statefulset.yaml
+  - postgres-replica/service.yaml
+  - postgres-replica/rbac.yaml
+  
+  # Ingress
+  - ingress/custom-headers.yaml
+  - ingress/cert-manager.yaml
+  - ingress/ingress.yaml
+  
+  # Monitoring
+  - monitoring/prometheus-config.yaml
+  - monitoring/grafana-dashboards.yaml
+  - monitoring/jaeger-deployment.yaml
+
+commonLabels:
+  app.kubernetes.io/name: medcontracthub
+  app.kubernetes.io/instance: dev
+  app.kubernetes.io/component: backend
+  app.kubernetes.io/part-of: medcontracthub
+  app.kubernetes.io/managed-by: kustomize
+
+configMapGenerator:
+  - name: medcontracthub-version
+    literals:
+      - version=dev
+      - build_date="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+secretGenerator:
+  - name: medcontracthub-secrets
+    envs:
+      - app/secrets.env
+    type: Opaque
+
+images:
+  - name: localhost:5001/medcontracthub-app
+    newTag: latest
+  - name: localhost:5001/ocr-service
+    newTag: latest
+  - name: localhost:5001/integration-adapter
+    newTag: latest
+  - name: localhost:5001/ai-service
+    newTag: latest
+  - name: localhost:5001/analytics-service
+    newTag: latest
+  - name: localhost:5001/realtime-service
+    newTag: latest
+  - name: localhost:5001/worker-service
+    newTag: latest
+
+patches:
+  # Add resource limits to all deployments
+  - target:
+      kind: Deployment
+      name: ".*"
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            memory: 2Gi
+            cpu: 1000m
+          requests:
+            memory: 256Mi
+            cpu: 100m

@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: realtime-service-config
+  namespace: medcontracthub
+  labels:
+    app: realtime-service
+    component: microservice
+    tier: realtime
+data:
+  environment: "development"
+  log_level: "info"
+  port: "8400"
+  metrics_port: "9090"
+  
+  # WebSocket configuration
+  websocket_config: |
+    {
+      "heartbeat_interval": 30,
+      "heartbeat_timeout": 60,
+      "max_connections_per_pod": 10000,
+      "max_message_size": 1048576,
+      "compression": true,
+      "cors_origins": ["*"]
+    }
+  
+  # Redis configuration for pub/sub
+  redis_url: "redis://redis-cluster:6379"
+  redis_channel_prefix: "realtime:"
+  
+  # Session configuration
+  session_config: |
+    {
+      "session_ttl": 86400,
+      "max_sessions_per_user": 5,
+      "sticky_sessions": true,
+      "session_store": "redis"
+    }
+  
+  # Collaboration features
+  collaboration_config: |
+    {
+      "features": {
+        "document_collaboration": true,
+        "proposal_collaboration": true,
+        "compliance_matrix_collaboration": true,
+        "live_cursors": true,
+        "presence_awareness": true,
+        "real_time_comments": true,
+        "activity_feed": true
+      },
+      "permissions": {
+        "require_authentication": true,
+        "rate_limiting": true,
+        "max_collaborators_per_document": 50
+      }
+    }
+  
+  # Kafka configuration for event streaming
+  kafka_bootstrap_servers: "kafka-cluster-kafka-bootstrap:9092"
+  kafka_producer_config: |
+    {
+      "client_id": "realtime-service",
+      "acks": "all",
+      "retries": 3,
+      "batch_size": 16384,
+      "linger_ms": 10,
+      "compression_type": "snappy"
+    }
+  
+  # Scaling configuration
+  scaling_config: |
+    {
+      "autoscale_based_on": "connections",
+      "scale_up_threshold": 8000,
+      "scale_down_threshold": 2000,
+      "connection_drain_timeout": 30
+    }

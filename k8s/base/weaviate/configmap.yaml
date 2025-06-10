@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: weaviate-config
+  namespace: medcontracthub
+  labels:
+    app: weaviate
+    component: database
+    tier: data
+data:
+  conf.yaml: |
+    authentication:
+      anonymous_access:
+        enabled: false
+      oidc:
+        enabled: true
+        issuer: https://medcontracthub.com/auth
+        username_claim: email
+        groups_claim: groups
+        client_id: weaviate-client
+        
+    authorization:
+      admin_list:
+        enabled: true
+        users:
+          - admin@medcontracthub.com
+        
+    query_defaults:
+      limit: 100
+      
+    debug: false
+    
+    telemetry:
+      disabled: true
+    
+    modules:
+      text2vec-openai:
+        enabled: true
+      text2vec-huggingface:
+        enabled: true
+      text2vec-transformers:
+        enabled: false
+      qna-openai:
+        enabled: true
+      generative-openai:
+        enabled: true
+      
+    vector_index:
+      enabled: true
+      
+    persistence:
+      dataPath: "/var/lib/weaviate"

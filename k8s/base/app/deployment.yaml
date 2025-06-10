@@ -1,0 +1,124 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: medcontracthub-app
+  namespace: medcontracthub
+  labels:
+    app: medcontracthub
+    component: app
+spec:
+  type: NodePort
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 31000
+    name: http
+  selector:
+    app: medcontracthub
+    component: app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medcontracthub-app
+  namespace: medcontracthub
+  labels:
+    app: medcontracthub
+    component: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: medcontracthub
+      component: app
+  template:
+    metadata:
+      labels:
+        app: medcontracthub
+        component: app
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/api/metrics"
+    spec:
+      containers:
+      - name: app
+        image: localhost:5001/medcontracthub-app:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=4096"
+        envFrom:
+        - configMapRef:
+            name: medcontracthub-config
+        - secretRef:
+            name: medcontracthub-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: app-cache
+          mountPath: /app/.next/cache
+      volumes:
+      - name: app-cache
+        emptyDir:
+          sizeLimit: 1Gi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: medcontracthub-app-pdb
+  namespace: medcontracthub
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: medcontracthub
+      component: app
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: medcontracthub-app-hpa
+  namespace: medcontracthub
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: medcontracthub-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

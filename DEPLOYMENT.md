@@ -56,19 +56,32 @@ MedContractHub Hybrid Intelligence Platform uses **Kubernetes** orchestration wi
 
 ## ☸️ Kubernetes Deployment
 
-### **Namespace Organization**
+### **Quick Deployment**
 
-#### **Development Cluster**
+#### **Complete Setup Script**
 ```bash
-# Create namespaces
-kubectl create namespace medcontract-dev
-kubectl create namespace medcontract-staging
-kubectl create namespace medcontract-prod
+# Run the complete Kubernetes setup
+./k8s/scripts/setup-complete-k8s.sh
 
-# Apply configurations
-kubectl apply -f k8s/dev/ -n medcontract-dev
-kubectl apply -f k8s/staging/ -n medcontract-staging
-kubectl apply -f k8s/prod/ -n medcontract-prod
+# This will:
+# 1. Create namespaces with Istio injection
+# 2. Install NGINX Ingress with TLS
+# 3. Configure Sealed Secrets
+# 4. Deploy all microservices
+# 5. Set up databases
+# 6. Configure monitoring
+```
+
+#### **Manual Deployment by Environment**
+```bash
+# Deploy to specific environments using Kustomize
+kubectl apply -k k8s/overlays/dev/      # Development
+kubectl apply -k k8s/overlays/staging/  # Staging
+kubectl apply -k k8s/overlays/prod/     # Production
+
+# Verify deployments
+kubectl get all -n medcontracthub
+kubectl get ingress -n medcontracthub
 ```
 
 #### **Service Deployment**

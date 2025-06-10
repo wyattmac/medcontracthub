@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocr-service
+  namespace: medcontracthub
+  labels:
+    app: ocr-service
+    version: v1
+    component: microservice
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ocr-service
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: ocr-service
+        version: v1
+        component: microservice
+        tier: backend
+      annotations:
+        sidecar.istio.io/inject: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8100"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ocr-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: ocr-service
+        image: medcontracthub/ocr-service:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8100
+          name: http
+          protocol: TCP
+        env:
+        - name: SERVICE_NAME
+          value: "ocr-service"
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: ocr-service-config
+              key: environment
+        - name: PORT
+          value: "8100"
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: ocr-service-config
+              key: log_level
+        - name: MISTRAL_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ocr-service-secrets
+              key: mistral-api-key
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ocr-service-config
+              key: redis_url
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          valueFrom:
+            configMapKeyRef:
+              name: ocr-service-config
+              key: kafka_bootstrap_servers
+        - name: JAEGER_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: JAEGER_AGENT_PORT
+          value: "6831"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: temp-storage
+          mountPath: /tmp
+        - name: cache-storage
+          mountPath: /app/cache
+      volumes:
+      - name: temp-storage
+        emptyDir: {}
+      - name: cache-storage
+        emptyDir:
+          sizeLimit: 1Gi
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - ocr-service
+              topologyKey: kubernetes.io/hostname

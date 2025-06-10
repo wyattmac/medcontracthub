@@ -1,0 +1,157 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-primary-config
+  namespace: medcontracthub
+  labels:
+    app: postgres-primary
+    component: database
+    tier: data
+data:
+  postgresql.conf: |
+    # Connection settings
+    listen_addresses = '*'
+    port = 5432
+    max_connections = 200
+    
+    # Memory settings
+    shared_buffers = 2GB
+    effective_cache_size = 8GB
+    maintenance_work_mem = 512MB
+    work_mem = 32MB
+    
+    # Checkpoint settings
+    checkpoint_segments = 32
+    checkpoint_completion_target = 0.9
+    
+    # WAL settings
+    wal_level = replica
+    wal_buffers = 16MB
+    min_wal_size = 1GB
+    max_wal_size = 4GB
+    
+    # Replication settings
+    max_wal_senders = 5
+    wal_keep_segments = 64
+    hot_standby = on
+    hot_standby_feedback = on
+    
+    # Query tuning
+    random_page_cost = 1.1
+    cpu_tuple_cost = 0.01
+    cpu_index_tuple_cost = 0.005
+    cpu_operator_cost = 0.0025
+    
+    # Logging
+    log_destination = 'stderr'
+    logging_collector = on
+    log_directory = 'pg_log'
+    log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+    log_rotation_age = 1d
+    log_rotation_size = 100MB
+    log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+    log_checkpoints = on
+    log_connections = on
+    log_disconnections = on
+    log_lock_waits = on
+    log_temp_files = 0
+    log_autovacuum_min_duration = 0
+    log_error_verbosity = default
+    
+    # Vacuum settings
+    autovacuum = on
+    autovacuum_max_workers = 4
+    autovacuum_naptime = 30s
+    
+    # Security
+    ssl = on
+    ssl_cert_file = '/etc/postgresql/tls/tls.crt'
+    ssl_key_file = '/etc/postgresql/tls/tls.key'
+    
+  pg_hba.conf: |
+    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+    # Allow replication connections from replicas
+    host    replication     replicator      10.0.0.0/8              md5
+    host    replication     replicator      172.16.0.0/12           md5
+    
+    # Allow connections from pods
+    host    all             all             10.0.0.0/8              md5
+    host    all             all             172.16.0.0/12           md5
+    
+    # Local connections
+    local   all             all                                     trust
+    host    all             all             127.0.0.1/32            trust
+    host    all             all             ::1/128                 trust
+    
+  init-db.sh: |
+    #!/bin/bash
+    set -e
+    
+    # Create replication user
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+        CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD '$REPLICATOR_PASSWORD';
+        CREATE DATABASE medcontracthub;
+        
+        \c medcontracthub
+        
+        -- Create schema version table
+        CREATE TABLE IF NOT EXISTS schema_version (
+            version INTEGER PRIMARY KEY,
+            applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        -- Create initial tables
+        CREATE TABLE IF NOT EXISTS users (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            email VARCHAR(255) UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE TABLE IF NOT EXISTS opportunities (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            notice_id VARCHAR(255) UNIQUE NOT NULL,
+            title TEXT NOT NULL,
+            agency VARCHAR(255),
+            posted_date DATE,
+            response_deadline TIMESTAMP,
+            naics_code VARCHAR(20),
+            set_aside_type VARCHAR(100),
+            contract_type VARCHAR(100),
+            place_of_performance JSONB,
+            description TEXT,
+            attachments JSONB,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE TABLE IF NOT EXISTS saved_opportunities (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+            opportunity_id UUID REFERENCES opportunities(id) ON DELETE CASCADE,
+            notes TEXT,
+            saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, opportunity_id)
+        );
+        
+        -- Create indexes
+        CREATE INDEX idx_opportunities_posted_date ON opportunities(posted_date DESC);
+        CREATE INDEX idx_opportunities_response_deadline ON opportunities(response_deadline);
+        CREATE INDEX idx_opportunities_naics_code ON opportunities(naics_code);
+        CREATE INDEX idx_opportunities_agency ON opportunities(agency);
+        CREATE INDEX idx_saved_opportunities_user_id ON saved_opportunities(user_id);
+        
+        -- Create extension for full text search
+        CREATE EXTENSION IF NOT EXISTS pg_trgm;
+        CREATE EXTENSION IF NOT EXISTS btree_gin;
+        
+        -- Create full text search indexes
+        CREATE INDEX idx_opportunities_title_trgm ON opportunities USING gin (title gin_trgm_ops);
+        CREATE INDEX idx_opportunities_description_trgm ON opportunities USING gin (description gin_trgm_ops);
+        
+        -- Grant permissions
+        GRANT CONNECT ON DATABASE medcontracthub TO replicator;
+        GRANT USAGE ON SCHEMA public TO replicator;
+        GRANT SELECT ON ALL TABLES IN SCHEMA public TO replicator;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO replicator;
+    EOSQL

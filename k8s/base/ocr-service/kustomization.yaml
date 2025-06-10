@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: medcontracthub
+
+commonLabels:
+  app.kubernetes.io/name: ocr-service
+  app.kubernetes.io/instance: production
+  app.kubernetes.io/component: microservice
+  app.kubernetes.io/part-of: medcontracthub
+  app.kubernetes.io/managed-by: kustomize
+
+resources:
+- deployment.yaml
+- service.yaml
+- configmap.yaml
+- secret.yaml
+- hpa.yaml
+- rbac.yaml
+- networkpolicy.yaml
+- pdb.yaml
+- istio-virtualservice.yaml
+- servicemonitor.yaml
+
+images:
+- name: medcontracthub/ocr-service
+  newTag: 1.0.0
+
+replicas:
+- name: ocr-service
+  count: 3
+
+configMapGenerator:
+- name: ocr-service-config
+  behavior: merge
+  literals:
+  - environment=production
+
+secretGenerator:
+- name: ocr-service-secrets
+  behavior: replace
+  envs:
+  - secrets.env

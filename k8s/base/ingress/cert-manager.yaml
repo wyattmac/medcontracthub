@@ -1,0 +1,60 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: cert-manager
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@medcontracthub.com
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  namespace: cert-manager
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: admin@medcontracthub.com
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: medcontracthub-tls
+  namespace: medcontracthub
+spec:
+  secretName: medcontracthub-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: medcontracthub.com
+  dnsNames:
+  - medcontracthub.com
+  - "*.medcontracthub.com"
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: medcontracthub-websocket-tls
+  namespace: medcontracthub
+spec:
+  secretName: medcontracthub-websocket-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: ws.medcontracthub.com
+  dnsNames:
+  - ws.medcontracthub.com

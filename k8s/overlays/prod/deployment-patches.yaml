@@ -1,0 +1,142 @@
+# Deployment patches for production environment
+
+# Main application patches
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medcontracthub-app
+spec:
+  replicas: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  template:
+    spec:
+      containers:
+      - name: medcontracthub-app
+        env:
+        - name: NEXT_PUBLIC_API_URL
+          value: "https://medcontracthub.com/api"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: prod-database-url
+              key: url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: prod-redis-url
+              key: url
+
+# AI Service patches
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+spec:
+  replicas: 5
+  template:
+    spec:
+      containers:
+      - name: ai-service
+        env:
+        - name: MODEL_CACHE_DIR
+          value: "/models-prod"
+        - name: MAX_CONCURRENT_INFERENCES
+          value: "50"
+        - name: ENABLE_GPU
+          value: "true"
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "4000m"
+            nvidia.com/gpu: "1"
+          limits:
+            memory: "16Gi"
+            cpu: "8000m"
+            nvidia.com/gpu: "1"
+      nodeSelector:
+        node.kubernetes.io/instance-type: p3.2xlarge
+
+# Analytics Service patches
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+spec:
+  replicas: 5
+  template:
+    spec:
+      containers:
+      - name: analytics-service
+        env:
+        - name: CLICKHOUSE_HOST
+          value: "prod-clickhouse"
+        - name: BATCH_SIZE
+          value: "5000"
+        - name: ENABLE_REAL_TIME_ANALYTICS
+          value: "true"
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2000m"
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+
+# Realtime Service patches (StatefulSet)
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: realtime-service
+spec:
+  replicas: 5
+  template:
+    spec:
+      containers:
+      - name: realtime-service
+        env:
+        - name: MAX_CONNECTIONS_PER_POD
+          value: "20000"
+        - name: ENABLE_REDIS_CLUSTER
+          value: "true"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+
+# Worker Service patches
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-service
+spec:
+  replicas: 10
+  template:
+    spec:
+      containers:
+      - name: worker-service
+        env:
+        - name: WORKER_CONCURRENCY
+          value: "25"
+        - name: MAX_JOBS_PER_WORKER
+          value: "500"
+        - name: ENABLE_PRIORITY_QUEUE
+          value: "true"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"

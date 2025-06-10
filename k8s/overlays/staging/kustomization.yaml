@@ -1,0 +1,89 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: medcontract-staging
+
+bases:
+  - ../../base
+
+namePrefix: staging-
+nameSuffix: ""
+
+commonLabels:
+  app.kubernetes.io/instance: staging
+  environment: staging
+
+replicas:
+  - name: medcontracthub-app
+    count: 3
+  - name: ocr-service
+    count: 3
+  - name: ai-service
+    count: 3
+  - name: analytics-service
+    count: 3
+  - name: realtime-service
+    count: 3
+  - name: worker-service
+    count: 5
+  - name: postgres-replica
+    count: 2
+  - name: weaviate
+    count: 3
+  - name: clickhouse
+    count: 3
+
+images:
+  - name: localhost:5001/medcontracthub-app
+    newTag: staging
+  - name: localhost:5001/ocr-service
+    newTag: staging
+  - name: localhost:5001/integration-adapter
+    newTag: staging
+  - name: localhost:5001/ai-service
+    newTag: staging
+  - name: localhost:5001/analytics-service
+    newTag: staging
+  - name: localhost:5001/realtime-service
+    newTag: staging
+  - name: localhost:5001/worker-service
+    newTag: staging
+
+configMapGenerator:
+  - name: environment-config
+    literals:
+      - ENVIRONMENT=staging
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - API_BASE_URL=https://staging.medcontracthub.com
+      - WS_BASE_URL=wss://ws-staging.medcontracthub.com
+
+secretGenerator:
+  - name: staging-secrets
+    envs:
+      - secrets-staging.env
+    type: Opaque
+
+patchesStrategicMerge:
+  - deployment-patches.yaml
+  - hpa-patches.yaml
+  - ingress-patches.yaml
+
+patches:
+  # Increase resource limits for staging
+  - target:
+      kind: Deployment
+      name: ".*"
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 512Mi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 250m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 2Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: 1000m

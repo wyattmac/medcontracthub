@@ -1,0 +1,144 @@
+# Helm values for NGINX Ingress Controller
+controller:
+  name: nginx-ingress-controller
+  image:
+    registry: k8s.gcr.io
+    image: ingress-nginx/controller
+    tag: "v1.9.5"
+  
+  # Service configuration
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+      service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: "*"
+  
+  # Config for the controller
+  config:
+    # Basic settings
+    use-forwarded-headers: "true"
+    compute-full-forwarded-for: "true"
+    use-proxy-protocol: "true"
+    
+    # SSL/TLS settings
+    ssl-protocols: "TLSv1.2 TLSv1.3"
+    ssl-ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
+    ssl-prefer-server-ciphers: "true"
+    ssl-session-cache: "true"
+    ssl-session-cache-size: "10m"
+    ssl-session-timeout: "10m"
+    
+    # Security headers
+    add-headers: "medcontracthub/custom-headers"
+    hide-headers: "Server,X-Powered-By"
+    
+    # Rate limiting
+    limit-req-status-code: "429"
+    limit-conn-status-code: "429"
+    
+    # Timeouts
+    proxy-connect-timeout: "30"
+    proxy-send-timeout: "300"
+    proxy-read-timeout: "300"
+    proxy-body-size: "100m"
+    client-body-buffer-size: "1m"
+    
+    # WebSocket support
+    proxy-websocket-timeout: "3600"
+    
+    # Performance
+    worker-processes: "auto"
+    worker-cpu-affinity: "auto"
+    max-worker-connections: "16384"
+    
+    # Logging
+    log-format-upstream: '$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $request_length $request_time [$proxy_upstream_name] [$proxy_alternative_upstream_name] $upstream_addr $upstream_response_length $upstream_response_time $upstream_status $req_id'
+    
+    # CORS
+    enable-cors: "true"
+    cors-allow-origin: "*"
+    cors-allow-credentials: "true"
+    
+    # Compression
+    enable-brotli: "true"
+    brotli-level: "4"
+    brotli-types: "text/html text/css text/plain text/javascript application/javascript application/x-javascript application/json application/xml+rss"
+    gzip-level: "5"
+    gzip-types: "application/atom+xml application/javascript application/x-javascript application/json application/rss+xml application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/svg+xml image/x-icon text/css text/plain text/x-component"
+  
+  # Resource limits
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  
+  # Autoscaling
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  
+  # Pod disruption budget
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+  
+  # Metrics
+  metrics:
+    enabled: true
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "10254"
+  
+  # Admission webhooks
+  admissionWebhooks:
+    enabled: true
+    patch:
+      enabled: true
+      image:
+        registry: k8s.gcr.io
+        image: ingress-nginx/kube-webhook-certgen
+        tag: v20220916-gd32f8c343
+  
+  # Default backend
+  defaultBackend:
+    enabled: true
+    image:
+      registry: k8s.gcr.io
+      image: defaultbackend-amd64
+      tag: "1.5"
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
+
+# TCP services configuration
+tcp:
+  8080: "medcontracthub/kong-proxy:80"  # Kong API Gateway
+
+# UDP services configuration
+udp: {}
+
+# RBAC
+rbac:
+  create: true
+
+# ServiceAccount
+serviceAccount:
+  create: true
+  name: nginx-ingress
+
+# Security policies
+podSecurityPolicy:
+  enabled: false

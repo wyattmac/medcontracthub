@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: medcontracthub
+  labels:
+    name: medcontracthub
+    istio-injection: enabled
+    environment: production
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: medcontracthub-staging
+  labels:
+    name: medcontracthub-staging
+    istio-injection: enabled
+    environment: staging
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: medcontracthub-dev
+  labels:
+    name: medcontracthub-dev
+    istio-injection: enabled
+    environment: development
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    name: monitoring
+    istio-injection: disabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-system
+  labels:
+    name: istio-system

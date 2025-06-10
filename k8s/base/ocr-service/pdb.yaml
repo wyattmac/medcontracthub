@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ocr-service-pdb
+  namespace: medcontracthub
+  labels:
+    app: ocr-service
+    component: availability
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: ocr-service
+  unhealthyPodEvictionPolicy: AlwaysAllow

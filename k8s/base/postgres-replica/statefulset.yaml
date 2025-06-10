@@ -1,0 +1,158 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-replica
+  namespace: medcontracthub
+  labels:
+    app: postgres
+    component: database
+    tier: data
+    role: replica
+spec:
+  serviceName: postgres-replica-headless
+  replicas: 2
+  selector:
+    matchLabels:
+      app: postgres
+      role: replica
+  template:
+    metadata:
+      labels:
+        app: postgres
+        component: database
+        tier: data
+        role: replica
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: postgres-replica
+      securityContext:
+        fsGroup: 999
+        runAsUser: 999
+        runAsNonRoot: true
+      initContainers:
+      - name: init-replica
+        image: postgres:16-alpine
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+          echo "Setting up PostgreSQL replica..."
+          
+          # Wait for primary to be ready
+          until pg_isready -h postgres-primary -p 5432 -U postgres; do
+            echo "Waiting for primary to be ready..."
+            sleep 2
+          done
+          
+          # Create base backup from primary
+          PGPASSWORD=$REPLICATOR_PASSWORD pg_basebackup \
+            -h postgres-primary \
+            -D /var/lib/postgresql/data/pgdata \
+            -U replicator \
+            -Fp -Xs -R -P
+          
+          # Configure recovery settings
+          cat >> /var/lib/postgresql/data/pgdata/postgresql.auto.conf <<EOF
+          primary_conninfo = 'host=postgres-primary port=5432 user=replicator password=$REPLICATOR_PASSWORD'
+          recovery_target_timeline = 'latest'
+          EOF
+          
+          # Create standby signal file
+          touch /var/lib/postgresql/data/pgdata/standby.signal
+          
+          echo "Replica initialization complete"
+        env:
+        - name: REPLICATOR_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-primary-secrets
+              key: replicator-password
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5432
+          name: postgres
+          protocol: TCP
+        env:
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-primary-secrets
+              key: postgres-password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U postgres
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - |
+              pg_isready -U postgres && \
+              psql -U postgres -c "SELECT pg_is_in_recovery();" | grep -q 't'
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+      - name: postgres-exporter
+        image: prometheuscommunity/postgres-exporter:v0.15.0
+        ports:
+        - containerPort: 9187
+          name: metrics
+        env:
+        - name: DATA_SOURCE_NAME
+          value: "postgresql://postgres:$(POSTGRES_PASSWORD)@localhost:5432/medcontracthub?sslmode=disable"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-primary-secrets
+              key: postgres-password
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      labels:
+        app: postgres
+        role: replica
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: fast-ssd
+      resources:
+        requests:
+          storage: 100Gi

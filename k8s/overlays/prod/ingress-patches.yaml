@@ -1,0 +1,79 @@
+# Ingress patches for production environment
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: medcontracthub-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit-requests: "1000"
+    nginx.ingress.kubernetes.io/rate-limit-connections: "100"
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.3"
+    nginx.ingress.kubernetes.io/enable-modsecurity: "true"
+    nginx.ingress.kubernetes.io/enable-owasp-core-rules: "true"
+    nginx.ingress.kubernetes.io/modsecurity-snippet: |
+      SecRuleEngine On
+      SecRequestBodyAccess On
+      SecResponseBodyAccess On
+      SecRequestBodyLimit 104857600
+      SecRequestBodyNoFilesLimit 1048576
+spec:
+  tls:
+  - hosts:
+    - medcontracthub.com
+    - www.medcontracthub.com
+    - api.medcontracthub.com
+    - ws.medcontracthub.com
+    - analytics.medcontracthub.com
+    secretName: prod-medcontracthub-tls
+  rules:
+  - host: medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prod-kong-proxy
+            port:
+              number: 80
+  - host: www.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prod-kong-proxy
+            port:
+              number: 80
+  - host: api.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prod-kong-proxy
+            port:
+              number: 80
+  - host: ws.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prod-realtime-service
+            port:
+              number: 8400
+  - host: analytics.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prod-analytics-service
+            port:
+              number: 8300

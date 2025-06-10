@@ -1,0 +1,77 @@
+# HPA patches for staging environment
+
+# AI Service HPA
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-service-hpa
+spec:
+  minReplicas: 3
+  maxReplicas: 15
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
+
+# Analytics Service HPA
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: analytics-service-hpa
+spec:
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 65
+
+# Realtime Service HPA
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: realtime-service-hpa
+spec:
+  minReplicas: 3
+  maxReplicas: 25
+  metrics:
+  - type: Pods
+    pods:
+      metric:
+        name: websocket_connections
+      target:
+        type: AverageValue
+        averageValue: "5000"
+
+# Worker Service HPA
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: worker-service-hpa
+spec:
+  minReplicas: 5
+  maxReplicas: 40
+  metrics:
+  - type: Pods
+    pods:
+      metric:
+        name: bull_queue_depth
+      target:
+        type: AverageValue
+        averageValue: "200"

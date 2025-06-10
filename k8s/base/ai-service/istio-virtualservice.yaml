@@ -1,0 +1,84 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: ai-service-vs
+  namespace: medcontracthub
+  labels:
+    app: ai-service
+    component: microservice
+    tier: ml
+spec:
+  hosts:
+  - ai-service
+  - ai-service.medcontracthub.svc.cluster.local
+  http:
+  - match:
+    - headers:
+        x-model-type:
+          exact: claude
+    route:
+    - destination:
+        host: ai-service
+        port:
+          number: 8200
+      weight: 100
+    timeout: 300s
+    retries:
+      attempts: 3
+      perTryTimeout: 100s
+      retryOn: 5xx,reset,connect-failure,refused-stream
+  - match:
+    - headers:
+        x-model-type:
+          exact: gpt
+    route:
+    - destination:
+        host: ai-service
+        port:
+          number: 8200
+      weight: 100
+    timeout: 300s
+    retries:
+      attempts: 3
+      perTryTimeout: 100s
+  - route:
+    - destination:
+        host: ai-service
+        port:
+          number: 8200
+      weight: 100
+    timeout: 300s
+    retries:
+      attempts: 3
+      perTryTimeout: 100s
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: ai-service-dr
+  namespace: medcontracthub
+  labels:
+    app: ai-service
+    component: microservice
+    tier: ml
+spec:
+  host: ai-service.medcontracthub.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 5
+        h2UpgradePolicy: UPGRADE
+    loadBalancer:
+      consistentHash:
+        httpHeaderName: "x-session-id"
+    outlierDetection:
+      consecutiveGatewayErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 50
+      splitExternalLocalOriginErrors: true

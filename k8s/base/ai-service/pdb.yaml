@@ -1,0 +1,15 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-service-pdb
+  namespace: medcontracthub
+  labels:
+    app: ai-service
+    component: microservice
+    tier: ml
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ai-service
+  maxUnavailable: 50%

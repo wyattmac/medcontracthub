@@ -1,0 +1,201 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+  namespace: medcontracthub
+  labels:
+    app: ai-service
+    version: v1
+    component: microservice
+    tier: ml
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ai-service
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: ai-service
+        version: v1
+        component: microservice
+        tier: ml
+      annotations:
+        sidecar.istio.io/inject: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8200"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ai-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: ai-service
+        image: localhost:5001/ai-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8200
+          name: http
+          protocol: TCP
+        - containerPort: 9090
+          name: metrics
+          protocol: TCP
+        env:
+        - name: SERVICE_NAME
+          value: "ai-service"
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: environment
+        - name: PORT
+          value: "8200"
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: log_level
+        - name: MODEL_CACHE_DIR
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: model_cache_dir
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: redis_url
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: kafka_bootstrap_servers
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: postgres_host
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: postgres_port
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: postgres_db
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-service-secrets
+              key: postgres-password
+        - name: WEAVIATE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: weaviate_url
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ai-service-secrets
+              key: anthropic-api-key
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ai-service-secrets
+              key: openai-api-key
+        - name: MISTRAL_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ai-service-secrets
+              key: mistral-api-key
+        - name: HUGGINGFACE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ai-service-secrets
+              key: huggingface-api-key
+        - name: MODEL_CONFIGS
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: model_configs
+        - name: FEATURES
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: features
+        - name: PERFORMANCE
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: performance
+        - name: JAEGER_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: JAEGER_AGENT_PORT
+          value: "6831"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+            nvidia.com/gpu: "0"  # GPU optional, will be ignored if not available
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+            nvidia.com/gpu: "1"  # GPU optional
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: model-cache
+          mountPath: /models
+        - name: temp-storage
+          mountPath: /tmp
+      volumes:
+      - name: model-cache
+        persistentVolumeClaim:
+          claimName: ai-service-model-cache
+      - name: temp-storage
+        emptyDir:
+          sizeLimit: 5Gi
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - ai-service
+              topologyKey: kubernetes.io/hostname
+        # Prefer nodes with GPUs if available
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: accelerator
+                operator: In
+                values:
+                - nvidia-tesla-v100
+                - nvidia-tesla-t4

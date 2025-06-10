@@ -1,0 +1,82 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: ocr-service-vs
+  namespace: medcontracthub
+  labels:
+    app: ocr-service
+    component: traffic-management
+spec:
+  hosts:
+  - ocr-service
+  - ocr-service.medcontracthub.svc.cluster.local
+  http:
+  - match:
+    - headers:
+        x-version:
+          exact: canary
+    route:
+    - destination:
+        host: ocr-service
+        subset: canary
+      weight: 100
+  - route:
+    - destination:
+        host: ocr-service
+        subset: stable
+      weight: 100
+    timeout: 300s
+    retries:
+      attempts: 3
+      perTryTimeout: 100s
+      retryOn: 5xx,reset,connect-failure,refused-stream
+      retryRemoteLocalities: true
+    fault:
+      delay:
+        percentage:
+          value: 0.1
+        fixedDelay: 5s
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: ocr-service-dr
+  namespace: medcontracthub
+  labels:
+    app: ocr-service
+    component: traffic-management
+spec:
+  host: ocr-service.medcontracthub.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 100
+        h2UpgradePolicy: UPGRADE
+        useClientProtocol: true
+    loadBalancer:
+      simple: LEAST_REQUEST
+    outlierDetection:
+      consecutiveErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 50
+      splitExternalLocalOriginErrors: true
+  subsets:
+  - name: stable
+    labels:
+      version: v1
+    trafficPolicy:
+      portLevelSettings:
+      - port:
+          number: 8100
+        loadBalancer:
+          consistentHash:
+            httpHeaderName: x-session-id
+  - name: canary
+    labels:
+      version: canary

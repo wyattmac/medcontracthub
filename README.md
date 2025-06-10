@@ -17,15 +17,16 @@ Combining human expertise with artificial intelligence for transformative govern
 git clone https://github.com/wyattmac/medcontracthub.git
 cd medcontracthub
 
-# 2. Configure Kubernetes cluster
-kubectl create namespace medcontract-dev
-kubectl apply -f k8s/config/
+# 2. Run complete Kubernetes setup
+./k8s/scripts/setup-complete-k8s.sh
 
-# 3. Deploy microservices
-make deploy-dev  # Deploys all services to dev namespace
+# 3. Or deploy manually to specific environment
+kubectl apply -k k8s/overlays/dev/      # Development
+kubectl apply -k k8s/overlays/staging/  # Staging
+kubectl apply -k k8s/overlays/prod/     # Production
 
 # 4. Access services
-kubectl port-forward svc/api-gateway 8080:80 -n medcontract-dev
+kubectl port-forward svc/kong-proxy 8080:80 -n medcontracthub
 # http://localhost:8080 (API Gateway)
 ```
 
@@ -110,10 +111,10 @@ make prod     # Port 3002 (production simulation)
 ### **🎯 Enterprise Value Proposition**
 - **Microservices Architecture** with Kubernetes orchestration
 - **Multi-Model AI System** with intelligent routing and cost optimization
-- **Event-Driven Processing** handling 50K+ messages/second
-- **Real-Time Collaboration** with operational transformation
-- **Semantic Search** powered by vector embeddings
-- **Predictive Analytics** with reinforcement learning
+- **Event-Driven Processing** handling 50K+ messages/second via Kafka
+- **Real-Time Collaboration** with WebSocket service and operational transformation
+- **Semantic Search** powered by Weaviate vector database
+- **Predictive Analytics** with ClickHouse time-series analytics
 
 ### **🚀 Key Features**
 

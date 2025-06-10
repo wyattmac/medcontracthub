@@ -1,0 +1,150 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clickhouse
+  namespace: medcontracthub
+  labels:
+    app: clickhouse
+    component: database
+    tier: analytics
+spec:
+  serviceName: clickhouse-headless
+  replicas: 3
+  selector:
+    matchLabels:
+      app: clickhouse
+  template:
+    metadata:
+      labels:
+        app: clickhouse
+        component: database
+        tier: analytics
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9363"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: clickhouse
+      securityContext:
+        fsGroup: 101
+        runAsUser: 101
+        runAsNonRoot: true
+      containers:
+      - name: clickhouse
+        image: clickhouse/clickhouse-server:23.12
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8123
+          name: http
+          protocol: TCP
+        - containerPort: 9000
+          name: tcp
+          protocol: TCP
+        - containerPort: 9009
+          name: interserver
+          protocol: TCP
+        env:
+        - name: CLICKHOUSE_DB
+          value: "medcontract_analytics"
+        - name: CLICKHOUSE_USER
+          value: "default"
+        - name: CLICKHOUSE_DEFAULT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: clickhouse-secrets
+              key: default-password
+        - name: CLICKHOUSE_ANALYTICS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: clickhouse-secrets
+              key: analytics-password
+        - name: CLICKHOUSE_SHARD
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['clickhouse.medcontracthub.com/shard']
+        - name: CLICKHOUSE_REPLICA
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2000m"
+          limits:
+            memory: "16Gi"
+            cpu: "8000m"
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/clickhouse
+        - name: config
+          mountPath: /etc/clickhouse-server/config.d
+        - name: users
+          mountPath: /etc/clickhouse-server/users.d
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+      - name: clickhouse-exporter
+        image: f1yegor/clickhouse-exporter:latest
+        ports:
+        - containerPort: 9363
+          name: metrics
+        env:
+        - name: CLICKHOUSE_USER
+          value: "default"
+        - name: CLICKHOUSE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: clickhouse-secrets
+              key: default-password
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      volumes:
+      - name: config
+        configMap:
+          name: clickhouse-config
+          items:
+          - key: config.xml
+            path: config.xml
+      - name: users
+        configMap:
+          name: clickhouse-config
+          items:
+          - key: users.xml
+            path: users.xml
+      - name: init-scripts
+        configMap:
+          name: clickhouse-config
+          items:
+          - key: init.sql
+            path: init.sql
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      labels:
+        app: clickhouse
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: fast-ssd
+      resources:
+        requests:
+          storage: 500Gi

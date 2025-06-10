@@ -1,0 +1,194 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: realtime-service
+  namespace: medcontracthub
+  labels:
+    app: realtime-service
+    version: v1
+    component: microservice
+    tier: realtime
+spec:
+  serviceName: realtime-service-headless
+  replicas: 3
+  selector:
+    matchLabels:
+      app: realtime-service
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: realtime-service
+        version: v1
+        component: microservice
+        tier: realtime
+      annotations:
+        sidecar.istio.io/inject: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: realtime-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: realtime-service
+        image: localhost:5001/realtime-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8400
+          name: websocket
+          protocol: TCP
+        - containerPort: 9090
+          name: metrics
+          protocol: TCP
+        env:
+        - name: SERVICE_NAME
+          value: "realtime-service"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: realtime-service-config
+              key: environment
+        - name: PORT
+          value: "8400"
+        - name: METRICS_PORT
+          value: "9090"
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: realtime-service-config
+              key: log_level
+        - name: WEBSOCKET_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: realtime-service-config
+              key: websocket_config
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: realtime-service-config
+              key: redis_url
+        - name: REDIS_CHANNEL_PREFIX
+          valueFrom:
+            configMapKeyRef:
+              name: realtime-service-config
+              key: redis_channel_prefix
+        - name: SESSION_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: realtime-service-config
+              key: session_config
+        - name: COLLABORATION_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: realtime-service-config
+              key: collaboration_config
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          valueFrom:
+            configMapKeyRef:
+              name: realtime-service-config
+              key: kafka_bootstrap_servers
+        - name: KAFKA_PRODUCER_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: realtime-service-config
+              key: kafka_producer_config
+        - name: SCALING_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: realtime-service-config
+              key: scaling_config
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: realtime-service-secrets
+              key: redis-password
+              optional: true
+        - name: JAEGER_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: JAEGER_AGENT_PORT
+          value: "6831"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: metrics
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: metrics
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: metrics
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 30
+        volumeMounts:
+        - name: session-storage
+          mountPath: /data/sessions
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - |
+                # Graceful shutdown script
+                echo "Starting graceful shutdown..."
+                # Signal the service to stop accepting new connections
+                curl -X POST http://localhost:9090/shutdown/prepare
+                # Wait for existing connections to drain
+                sleep 30
+                # Final shutdown
+                curl -X POST http://localhost:9090/shutdown/execute
+      volumes:
+      - name: session-storage
+        emptyDir:
+          sizeLimit: 1Gi
+      terminationGracePeriodSeconds: 60
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - realtime-service
+            topologyKey: kubernetes.io/hostname
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate

@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: analytics-service-config
+  namespace: medcontracthub
+  labels:
+    app: analytics-service
+    component: microservice
+    tier: analytics
+data:
+  environment: "development"
+  log_level: "info"
+  port: "8300"
+  metrics_port: "9090"
+  
+  # Database connections
+  postgres_host: "postgres-primary"
+  postgres_port: "5432"
+  postgres_db: "medcontracthub"
+  clickhouse_host: "clickhouse"
+  clickhouse_port: "8123"
+  clickhouse_db: "medcontract_analytics"
+  redis_url: "redis://redis-cluster:6379"
+  
+  # Kafka configuration
+  kafka_bootstrap_servers: "kafka-cluster-kafka-bootstrap:9092"
+  kafka_consumer_group: "analytics-service"
+  kafka_topics: "opportunity-events,proposal-events,user-events,system-events"
+  
+  # Analytics configuration
+  analytics_config: |
+    {
+      "aggregation_intervals": ["1m", "5m", "1h", "1d", "1w"],
+      "retention_policies": {
+        "raw_events": "7d",
+        "1m_aggregates": "30d",
+        "5m_aggregates": "90d",
+        "1h_aggregates": "1y",
+        "1d_aggregates": "3y"
+      },
+      "real_time_metrics": {
+        "opportunity_views": true,
+        "proposal_submissions": true,
+        "win_rate": true,
+        "user_activity": true,
+        "api_performance": true
+      },
+      "batch_analytics": {
+        "naics_trends": true,
+        "agency_analysis": true,
+        "competition_metrics": true,
+        "success_predictors": true
+      }
+    }
+  
+  # Performance settings
+  performance_config: |
+    {
+      "batch_size": 1000,
+      "flush_interval_seconds": 10,
+      "max_concurrent_queries": 50,
+      "query_timeout_seconds": 300,
+      "cache_ttl_seconds": 300,
+      "materialized_view_refresh_interval": "5m"
+    }
+  
+  # Feature flags
+  features: |
+    {
+      "real_time_dashboard": true,
+      "predictive_analytics": true,
+      "anomaly_detection": true,
+      "custom_reports": true,
+      "data_export": true,
+      "ml_insights": true
+    }

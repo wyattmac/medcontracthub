@@ -1,0 +1,130 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ocr-service-netpol
+  namespace: medcontracthub
+  labels:
+    app: ocr-service
+    component: network-security
+spec:
+  podSelector:
+    matchLabels:
+      app: ocr-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow traffic from API Gateway
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: medcontracthub
+      podSelector:
+        matchLabels:
+          app: kong
+    ports:
+    - protocol: TCP
+      port: 8100
+  # Allow traffic from other microservices
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: medcontracthub
+      podSelector:
+        matchLabels:
+          tier: backend
+    ports:
+    - protocol: TCP
+      port: 8100
+  # Allow Prometheus scraping
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+      podSelector:
+        matchLabels:
+          app: prometheus
+    ports:
+    - protocol: TCP
+      port: 8100
+  # Allow Istio sidecar communication
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: medcontracthub
+    ports:
+    - protocol: TCP
+      port: 15090  # Envoy admin
+    - protocol: TCP
+      port: 15021  # Health checks
+  egress:
+  # Allow DNS resolution
+  - to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow Redis access
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: medcontracthub
+      podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow Kafka access
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: medcontracthub
+      podSelector:
+        matchLabels:
+          app: kafka
+    ports:
+    - protocol: TCP
+      port: 9092
+  # Allow Jaeger tracing
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+      podSelector:
+        matchLabels:
+          app: jaeger
+    ports:
+    - protocol: UDP
+      port: 6831
+    - protocol: TCP
+      port: 16686
+  # Allow external API calls (Mistral, etc)
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80
+  # Allow Istio sidecar communication
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: istio-system
+    ports:
+    - protocol: TCP
+      port: 15000  # Envoy Admin
+    - protocol: TCP
+      port: 15001  # Envoy
+    - protocol: TCP
+      port: 15006  # Envoy
+    - protocol: TCP
+      port: 15020  # Envoy Merged Prometheus
+    - protocol: TCP
+      port: 15090  # Envoy Prometheus

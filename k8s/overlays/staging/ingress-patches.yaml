@@ -1,0 +1,56 @@
+# Ingress patches for staging environment
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: medcontracthub-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    nginx.ingress.kubernetes.io/rate-limit-requests: "200"
+spec:
+  tls:
+  - hosts:
+    - staging.medcontracthub.com
+    - "*.staging.medcontracthub.com"
+    secretName: staging-medcontracthub-tls
+  rules:
+  - host: staging.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: staging-kong-proxy
+            port:
+              number: 80
+  - host: api-staging.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: staging-kong-proxy
+            port:
+              number: 80
+  - host: ws-staging.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: staging-realtime-service
+            port:
+              number: 8400
+  - host: analytics-staging.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: staging-analytics-service
+            port:
+              number: 8300

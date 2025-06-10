@@ -1,0 +1,196 @@
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: prometheus
+  labels:
+    global: "true"
+config:
+  per_consumer: false
+  status_code_metrics: true
+  latency_metrics: true
+  bandwidth_metrics: true
+  upstream_health_metrics: true
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: rate-limiting-global
+  labels:
+    global: "true"
+config:
+  minute: 10000
+  hour: 100000
+  policy: local
+  fault_tolerant: true
+  hide_client_headers: false
+  redis_ssl: false
+  redis_ssl_verify: false
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: cors-global
+  labels:
+    global: "true"
+config:
+  origins:
+  - "*"
+  methods:
+  - GET
+  - POST
+  - PUT
+  - DELETE
+  - OPTIONS
+  - HEAD
+  - PATCH
+  headers:
+  - Accept
+  - Accept-Version
+  - Content-Length
+  - Content-MD5
+  - Content-Type
+  - Date
+  - X-Auth-Token
+  - X-Request-ID
+  - Authorization
+  exposed_headers:
+  - X-Auth-Token
+  - X-Request-ID
+  credentials: true
+  max_age: 3600
+  preflight_continue: false
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: request-transformer-global
+  labels:
+    global: "true"
+config:
+  add:
+    headers:
+    - "X-Forwarded-Prefix:/"
+    - "X-Real-IP:$(remote_addr)"
+  remove:
+    headers:
+    - "X-Internal-Secret"
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: response-transformer-security
+  labels:
+    global: "true"
+config:
+  add:
+    headers:
+    - "X-Content-Type-Options:nosniff"
+    - "X-Frame-Options:DENY"
+    - "X-XSS-Protection:1; mode=block"
+    - "Strict-Transport-Security:max-age=31536000; includeSubDomains"
+    - "Content-Security-Policy:default-src 'self'"
+    - "Referrer-Policy:strict-origin-when-cross-origin"
+  remove:
+    headers:
+    - "Server"
+    - "X-Powered-By"
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: jwt-auth
+  namespace: medcontracthub
+config:
+  key_claim_name: iss
+  secret_is_base64: false
+  claims_to_verify:
+  - exp
+  - nbf
+  maximum_expiration: 86400
+  anonymous: null
+  run_on_preflight: false
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: request-size-limiting
+  namespace: medcontracthub
+config:
+  allowed_payload_size: 50
+  size_unit: megabytes
+  require_content_length: false
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: ip-restriction
+  namespace: medcontracthub
+config:
+  allow:
+  - 10.0.0.0/8
+  - 172.16.0.0/12
+  - 192.168.0.0/16
+  deny: null
+  status: 403
+  message: "Your IP address is not allowed"
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: bot-detection
+  namespace: medcontracthub
+config:
+  allow:
+  - "(Mozilla|Chrome|Safari|Opera)"
+  deny:
+  - "(bot|crawler|spider|scraper)"
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: acl
+  namespace: medcontracthub
+config:
+  allow:
+  - admin
+  - user
+  - service
+  hide_groups_header: true
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: oauth2
+  namespace: medcontracthub
+config:
+  scopes:
+  - read
+  - write
+  - admin
+  mandatory_scope: true
+  token_expiration: 7200
+  enable_authorization_code: true
+  enable_client_credentials: true
+  enable_implicit_grant: false
+  enable_password_grant: false
+  hide_credentials: true
+  accept_http_if_already_terminated: false
+  anonymous: null
+  global_credentials: false
+  auth_header_name: authorization
+  refresh_token_ttl: 1209600
+  reuse_refresh_token: false
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: zipkin
+  namespace: medcontracthub
+config:
+  http_endpoint: http://zipkin-collector.monitoring.svc.cluster.local:9411/api/v2/spans
+  sample_ratio: 0.01
+  include_credential: true
+  traceid_byte_count: 16
+  header_type: preserve
+  default_header_type: b3
+  tags_header: Zipkin-Tags

@@ -1,0 +1,132 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: analytics-daily-aggregation
+  namespace: medcontracthub
+  labels:
+    app: analytics-service
+    component: cronjob
+    tier: analytics
+spec:
+  schedule: "0 1 * * *"  # Daily at 1 AM
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: analytics-service
+            job-type: daily-aggregation
+        spec:
+          serviceAccountName: analytics-service
+          restartPolicy: OnFailure
+          containers:
+          - name: daily-aggregation
+            image: localhost:5001/analytics-service:latest
+            command: ["python", "-m", "analytics.jobs.daily_aggregation"]
+            env:
+            - name: JOB_TYPE
+              value: "daily-aggregation"
+            - name: CLICKHOUSE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: analytics-service-config
+                  key: clickhouse_host
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: analytics-service-secrets
+                  key: clickhouse-password
+            resources:
+              requests:
+                memory: "2Gi"
+                cpu: "1000m"
+              limits:
+                memory: "4Gi"
+                cpu: "2000m"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: analytics-weekly-reports
+  namespace: medcontracthub
+  labels:
+    app: analytics-service
+    component: cronjob
+    tier: analytics
+spec:
+  schedule: "0 2 * * 1"  # Weekly on Monday at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: analytics-service
+            job-type: weekly-reports
+        spec:
+          serviceAccountName: analytics-service
+          restartPolicy: OnFailure
+          containers:
+          - name: weekly-reports
+            image: localhost:5001/analytics-service:latest
+            command: ["python", "-m", "analytics.jobs.weekly_reports"]
+            env:
+            - name: JOB_TYPE
+              value: "weekly-reports"
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: analytics-service-config
+                  key: postgres_host
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: analytics-service-secrets
+                  key: postgres-password
+            resources:
+              requests:
+                memory: "1Gi"
+                cpu: "500m"
+              limits:
+                memory: "2Gi"
+                cpu: "1000m"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: analytics-data-cleanup
+  namespace: medcontracthub
+  labels:
+    app: analytics-service
+    component: cronjob
+    tier: analytics
+spec:
+  schedule: "0 3 * * *"  # Daily at 3 AM
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: analytics-service
+            job-type: data-cleanup
+        spec:
+          serviceAccountName: analytics-service
+          restartPolicy: OnFailure
+          containers:
+          - name: data-cleanup
+            image: localhost:5001/analytics-service:latest
+            command: ["python", "-m", "analytics.jobs.data_cleanup"]
+            env:
+            - name: JOB_TYPE
+              value: "data-cleanup"
+            - name: ANALYTICS_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: analytics-service-config
+                  key: analytics_config
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "250m"
+              limits:
+                memory: "1Gi"
+                cpu: "500m"

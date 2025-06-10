@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ocr-service-config
+  namespace: medcontracthub
+  labels:
+    app: ocr-service
+    component: configuration
+data:
+  environment: "production"
+  log_level: "INFO"
+  redis_url: "redis://redis-master.medcontracthub.svc.cluster.local:6379"
+  kafka_bootstrap_servers: "kafka-0.kafka-headless.medcontracthub.svc.cluster.local:9092,kafka-1.kafka-headless.medcontracthub.svc.cluster.local:9092,kafka-2.kafka-headless.medcontracthub.svc.cluster.local:9092"
+  cache_ttl: "3600"
+  max_file_size: "52428800"  # 50MB
+  max_pages: "1000"
+  request_timeout: "300"
+  circuit_breaker_failure_threshold: "5"
+  circuit_breaker_recovery_timeout: "60"
+  default_ocr_model: "pixtral-12b-latest"
+  enable_tesseract: "true"
+  enable_layoutlm: "false"
+  enable_tracing: "true"
+  health_check_interval: "30"
