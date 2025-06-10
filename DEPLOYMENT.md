@@ -1,156 +1,177 @@
 # Deployment Guide
 
-**Production deployment and infrastructure setup for MedContractHub**
+**Enterprise-grade Kubernetes deployment for MedContractHub Hybrid Intelligence Platform**
 
-> 🚀 **Production Ready** | 🐳 **Docker Optimized** | 🔒 **Security Hardened** | 📊 **Monitoring Enabled**
+> 🚀 **Microservices Ready** | 🐳 **Kubernetes Orchestrated** | 🔒 **Zero Trust Security** | 📊 **Observability Stack**
 
 ---
 
 ## 🎯 Deployment Overview
 
-MedContractHub is designed for enterprise-grade deployment with multi-environment support, comprehensive monitoring, and robust security. This guide covers complete production setup from infrastructure to monitoring.
+MedContractHub Hybrid Intelligence Platform uses **Kubernetes** orchestration with **Istio service mesh** for enterprise-scale deployment. The platform features distributed microservices, event-driven architecture, and multi-model AI integration.
 
-### **Deployment Status**
-- **Production Readiness**: 99% complete
-- **Zero TypeScript Errors**: Strict mode compliance
-- **Security Hardened**: CSRF protection, input sanitization, RLS
-- **Performance Optimized**: <500ms API response times
-- **Multi-Environment**: Development, staging, production configurations
+### **Platform Architecture**
+- **Container Orchestration**: Kubernetes with auto-scaling and self-healing
+- **Service Mesh**: Istio for mTLS, traffic management, and observability
+- **Event Streaming**: Kafka for distributed event processing
+- **AI/ML Platform**: MLflow with multi-model orchestration
+- **Multi-Region**: Edge computing with global CDN distribution
+- **Security**: Zero Trust architecture with encryption at rest
 
 ---
 
 ## 🏗️ Infrastructure Requirements
 
-### **Core Services**
+### **Kubernetes Cluster Requirements**
 
-#### **1. Application Server**
-- **CPU**: 2+ cores (4+ recommended for production)
-- **Memory**: 4GB minimum (8GB+ recommended)
-- **Storage**: 20GB+ for application and logs
-- **Network**: HTTPS certificate required for production
+#### **1. Control Plane**
+- **Nodes**: 3 master nodes for HA
+- **CPU**: 4 cores per master
+- **Memory**: 16GB per master
+- **etcd**: SSD storage for cluster state
 
-#### **2. Database - Supabase**
-- **Service**: Supabase Pro plan or higher
-- **Storage**: 8GB+ for 50k+ opportunities
-- **Connections**: Connection pooling enabled
-- **Security**: Row Level Security (RLS) configured
-- **Backups**: Daily automated backups enabled
+#### **2. Worker Nodes**
+- **Minimum**: 5 worker nodes
+- **CPU**: 8 cores per node
+- **Memory**: 32GB per node
+- **Storage**: 100GB SSD per node
+- **GPU**: Optional for local LLM inference
 
-#### **3. Cache - Redis**
-- **Version**: Redis 6.0+ with persistence
-- **Memory**: 2GB+ for optimal caching
-- **Configuration**: Password authentication required
-- **Persistence**: AOF and RDB backup enabled
+#### **3. Data Layer**
+- **PostgreSQL**: 3-node cluster with streaming replication
+- **Redis Cluster**: 6 nodes (3 masters, 3 replicas)
+- **Weaviate**: 3-node vector database cluster
+- **ClickHouse**: 3-node analytics cluster
+- **Kafka**: 3 brokers + 3 ZooKeeper nodes
+- **S3**: Object storage for documents
 
-#### **4. External API Services**
-- **SAM.gov**: Active API key with 1,000 daily quota
-- **Anthropic**: Claude API for contract analysis
-- **Stripe**: Production keys for billing
-- **Resend**: Transactional email service
+#### **4. Observability Stack**
+- **Prometheus**: Metrics collection
+- **Grafana**: Visualization dashboards
+- **Jaeger**: Distributed tracing
+- **ELK Stack**: Log aggregation
+- **Istio**: Service mesh with built-in observability
 
 ---
 
-## 🐳 Docker Deployment
+## ☸️ Kubernetes Deployment
 
-### **Multi-Environment Setup**
+### **Namespace Organization**
 
-#### **Development Environment**
+#### **Development Cluster**
 ```bash
-# Start development environment
-make dev                    # Port 3000
-docker-compose up --build
+# Create namespaces
+kubectl create namespace medcontract-dev
+kubectl create namespace medcontract-staging
+kubectl create namespace medcontract-prod
 
-# Environment file
-cp .env.example .env.local
-# Configure development API keys
+# Apply configurations
+kubectl apply -f k8s/dev/ -n medcontract-dev
+kubectl apply -f k8s/staging/ -n medcontract-staging
+kubectl apply -f k8s/prod/ -n medcontract-prod
 ```
 
-#### **Staging Environment**
-```bash
-# Start staging environment
-make staging               # Port 3001
-docker-compose -f docker-compose.yml up --build
-
-# Environment configuration
-NEXT_PUBLIC_ENV=staging
-ENABLE_AI_FEATURES=true
-```
-
-#### **Production Environment**
-```bash
-# Production deployment
-make prod                  # Port 3002
-docker-compose -f docker-compose.prod.yml up -d
-
-# Production environment
-NEXT_PUBLIC_ENV=production
-NODE_ENV=production
-```
-
-### **Docker Configuration Files**
-
-#### **Production Dockerfile**
-```dockerfile
-# Multi-stage production build
-FROM node:18-alpine AS base
-WORKDIR /app
-COPY package*.json ./
-
-FROM base AS deps
-RUN npm ci --only=production && npm cache clean --force
-
-FROM base AS build
-COPY . .
-RUN npm ci && npm run build
-
-FROM node:18-alpine AS runtime
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/public ./public
-COPY --from=build /app/package.json ./package.json
-
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
-#### **Docker Compose - Production**
+#### **Service Deployment**
 ```yaml
-version: '3.8'
-services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-    ports:
-      - "3002:3000"
-    environment:
-      - NODE_ENV=production
-    depends_on:
-      - redis
-    restart: unless-stopped
-    
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
+# k8s/prod/api-gateway.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    spec:
+      containers:
+      - name: kong
+        image: kong:3.0
+        ports:
+        - containerPort: 8000
+        env:
+        - name: KONG_DATABASE
+          value: "postgres"
+        - name: KONG_PG_HOST
+          value: "postgresql-service"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+```
 
-  worker:
-    build:
-      context: .
-      dockerfile: Dockerfile.worker
-    environment:
-      - NODE_ENV=production
-    depends_on:
-      - redis
-    restart: unless-stopped
+### **Microservice Dockerfiles**
 
-volumes:
-  redis_data:
+#### **AI Service Dockerfile**
+```dockerfile
+# Multi-stage AI service build
+FROM python:3.11-slim AS base
+WORKDIR /app
+
+# Install ML dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Model downloads
+FROM base AS models
+RUN python -m transformers.cli download bert-base-uncased
+RUN python -m spacy download en_core_web_lg
+
+# Runtime
+FROM base AS runtime
+COPY --from=models /root/.cache /root/.cache
+COPY . .
+
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+#### **Kubernetes Service Mesh**
+```yaml
+# istio-service-mesh.yaml
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: medcontract-routing
+spec:
+  hosts:
+  - medcontracthub.com
+  gateways:
+  - medcontract-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/api/ai"
+    route:
+    - destination:
+        host: ai-service
+        port:
+          number: 8000
+      weight: 100
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+  - match:
+    - uri:
+        prefix: "/api/ocr"
+    route:
+    - destination:
+        host: ocr-service
+        port:
+          number: 8100
+    circuitBreaker:
+      consecutiveErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
 ```
 
 ---

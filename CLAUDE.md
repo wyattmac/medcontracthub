@@ -1,106 +1,134 @@
 # CLAUDE.md - AI Assistant Reference Guide
 
-This document provides essential information for AI assistants working with the MedContractHub codebase.
+This document provides essential information for AI assistants working with the MedContractHub Hybrid Intelligence Platform.
 
 ## Project Overview
 
-**MedContractHub** is a medical equipment sourcing platform that helps suppliers find and respond to government contracts. The system is 99% production-ready with 23,300+ live opportunities.
+**MedContractHub** is an enterprise-scale hybrid intelligence platform combining human expertise with AI/ML for federal contracting. The system features microservices architecture, event-driven processing, and multi-model AI orchestration.
 
 ### Tech Stack
+- **Architecture**: Microservices with Kubernetes orchestration
+- **Service Mesh**: Istio for communication and observability
+- **Event Streaming**: Kafka for distributed messaging
+- **AI/ML**: Multi-model system (Claude, GPT, Mistral, Llama)
+- **Databases**: PostgreSQL, Redis Cluster, Weaviate, ClickHouse
 - **Frontend**: Next.js 15, TypeScript, React, Tailwind CSS
-- **Backend**: Next.js API Routes, TypeScript
-- **Database**: Supabase (PostgreSQL)
-- **Cache**: Redis
-- **Infrastructure**: Docker, Docker Compose
-- **Architecture**: Clean Architecture + Domain-Driven Design
+- **Infrastructure**: Kubernetes, Docker, Helm Charts
 
-## 🐳 Docker Setup & Configuration
+## ☸️ Kubernetes Setup & Configuration
 
-### Critical Docker Setup Steps
+### Critical Kubernetes Setup Steps
 
-**⚠️ IMPORTANT**: Follow these steps EXACTLY to ensure Docker works correctly:
+**⚠️ IMPORTANT**: Follow these steps EXACTLY to deploy the hybrid intelligence platform:
 
-#### 1. **WSL Configuration (Required for Windows Users)**
+#### 1. **Cluster Prerequisites**
 ```bash
-# Add to ~/.bashrc for permanent configuration
-export DOCKER_HOST=unix:///var/run/docker.sock
-source ~/.bashrc
+# Verify cluster access
+kubectl cluster-info
+kubectl get nodes
+
+# Create namespaces
+kubectl create namespace medcontract-dev
+kubectl create namespace medcontract-staging
+kubectl create namespace medcontract-prod
+
+# Enable Istio injection
+kubectl label namespace medcontract-dev istio-injection=enabled
 ```
 
-#### 2. **Environment Setup (BOTH Files Required)**
+#### 2. **Deploy Core Infrastructure**
 ```bash
-# Copy the consolidated environment file to BOTH locations
-cp .env.consolidated .env.local  # Primary - used by Next.js and Docker
-cp .env.consolidated .env        # Fallback - ensures Docker Compose works
+# Deploy databases
+helm install postgresql bitnami/postgresql -n medcontract-dev -f k8s/values/postgresql.yaml
+helm install redis bitnami/redis-cluster -n medcontract-dev -f k8s/values/redis.yaml
+helm install kafka bitnami/kafka -n medcontract-dev -f k8s/values/kafka.yaml
+
+# Deploy observability stack
+helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring
+helm install jaeger jaegertracing/jaeger -n monitoring
 ```
 
-**Why both files?** The `docker-compose.yml` is configured to use `.env.local`, but Docker Compose may need `.env` as a fallback in some scenarios.
-
-#### 3. **Start Docker Development**
+#### 3. **Deploy Microservices**
 ```bash
-# Recommended: Use the easy docker script
-./easy-docker.sh
-# Select option 1 for development
+# Apply all service deployments
+kubectl apply -f k8s/services/ -n medcontract-dev
 
-# Alternative: Use docker-compose directly
-docker-compose up -d --build
+# Verify deployments
+kubectl get deployments -n medcontract-dev
+kubectl get pods -n medcontract-dev
 ```
 
-#### 4. **Verify Everything is Working**
+#### 4. **Verify Platform Health**
 ```bash
-# Wait ~60 seconds for Next.js to compile, then:
+# Check API Gateway
+kubectl port-forward svc/kong-proxy 8080:80 -n medcontract-dev
+curl http://localhost:8080/health | jq .
 
-# Check health endpoint (should return JSON with "status": "healthy")
-curl http://localhost:3000/api/health | jq .
-
-# Verify database has opportunities
-curl http://localhost:3000/api/opportunities/count | jq .
-# Should show: {"count": 23350}
+# Verify all services are ready
+kubectl get pods -n medcontract-dev -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,READY:.status.conditions[?(@.type=="Ready")].status
 ```
 
-### Common Docker Issues & Solutions
+### Common Kubernetes Issues & Solutions
 
-#### "Missing Supabase configuration" Error
-**Problem**: Container logs show missing environment variables  
+#### Pod CrashLoopBackOff
+**Problem**: Service pods failing to start  
 **Solution**: 
-1. Ensure BOTH `.env.local` and `.env` exist and contain Supabase credentials
-2. Restart the container: `docker restart medcontract-dev`
-3. If still failing: `docker-compose down && docker-compose up -d --build`
-
-#### Container Shows "Unhealthy" Status
-**Problem**: Health check failing  
-**Solution**:
-1. Wait 60-90 seconds for Next.js compilation
-2. Check logs: `docker logs medcontract-dev --tail=50`
-3. Verify environment files are properly configured
-4. Try health endpoint manually: `curl http://localhost:3000/api/health`
-
-#### Environment Variables Not Loading
-**Problem**: Variables are empty inside container  
-**Solution**:
 ```bash
-# Verify files exist
-ls -la .env.local .env
+# Check pod logs
+kubectl logs <pod-name> -n medcontract-dev --previous
 
-# Check variables in container
-docker exec medcontract-dev env | grep SUPABASE
+# Verify secrets are mounted
+kubectl get secrets -n medcontract-dev
+kubectl describe pod <pod-name> -n medcontract-dev
 
-# Full restart with rebuild
-docker-compose down
-cp .env.consolidated .env.local
-cp .env.consolidated .env
-docker-compose up -d --build
+# Check resource limits
+kubectl describe node
 ```
 
-### Docker Container Architecture
+#### Service Mesh Communication Failures
+**Problem**: 503 errors between services  
+**Solution**:
+```bash
+# Verify Istio sidecar injection
+kubectl get pods -n medcontract-dev -o jsonpath='{.items[*].spec.containers[*].name}' | tr ' ' '\n' | grep istio-proxy
 
-**Development Containers:**
-- `medcontract-dev` - Main Next.js application (port 3000)
-- `medcontract-dev-db` - PostgreSQL database (not used with Supabase cloud)
-- `medcontract-dev-redis` - Redis cache (port 6379) - REQUIRED
-- `medcontracthub-bull-board` - Queue monitoring dashboard (port 3001) - Optional
+# Check DestinationRules
+kubectl get destinationrule -n medcontract-dev
 
-**Important**: The app uses Supabase cloud database, not the local PostgreSQL container.
+# Debug with Kiali
+kubectl port-forward svc/kiali 20001:20001 -n istio-system
+```
+
+#### Kafka Event Processing Issues
+**Problem**: Events not being consumed  
+**Solution**:
+```bash
+# Check consumer groups
+kubectl exec -it kafka-0 -- kafka-consumer-groups.sh --bootstrap-server kafka:9092 --list
+
+# Monitor lag
+kubectl exec -it kafka-0 -- kafka-consumer-groups.sh --bootstrap-server kafka:9092 --describe --group <consumer-group>
+
+# Verify topic exists
+kubectl exec -it kafka-0 -- kafka-topics.sh --bootstrap-server kafka:9092 --list
+```
+
+### Microservices Architecture
+
+**Core Services:**
+- `api-gateway` - Kong API Gateway (port 8080)
+- `ocr-service` - Document processing with Mistral (port 8100)
+- `ai-service` - ML model orchestration (port 8200)
+- `analytics-service` - Real-time analytics (port 8300)
+- `realtime-service` - WebSocket collaboration (port 8400)
+- `worker-service` - Background job processing
+
+**Data Services:**
+- `postgresql-primary` - Main database with replicas
+- `redis-cluster` - 6-node Redis cluster
+- `weaviate` - Vector database cluster
+- `kafka-cluster` - Event streaming (3 brokers)
+- `clickhouse` - Time-series analytics
 
 ### Checking Docker Logs
 
@@ -160,31 +188,34 @@ export DOCKER_HOST=unix:///var/run/docker.sock
 - **`./easy-docker.sh`** - Quick start script for development
 - **`.bashrc.docker`** - WSL Docker configuration helper
 
-### Docker Development Commands
+### Kubernetes Development Commands
 
-#### Three-Stage Docker Environment
+#### Multi-Environment Kubernetes Setup
 
-MedContractHub uses a consolidated three-stage Docker setup:
-- **Development** (Port 3000): Hot reload, local database, debugging tools
-- **Staging** (Port 3001): Production build, test database, worker processes
-- **Production** (Port 3002 + nginx 80/443): Optimized build, external database, load balancing
+MedContractHub uses namespace-based environment isolation:
+- **Development** (medcontract-dev): Hot reload, full observability
+- **Staging** (medcontract-staging): Production configs, testing
+- **Production** (medcontract-prod): Full scale, multi-region
 
-#### Managing Docker Environments
+#### Managing Kubernetes Deployments
 ```bash
-# Primary management script (WSL-optimized)
-./docker-manage.sh [command] [environment]
+# Deploy to specific environment
+make deploy-dev      # Deploy to development
+make deploy-staging  # Deploy to staging
+make deploy-prod     # Deploy to production
 
-# Commands:
-./docker-manage.sh start dev      # Start development environment
-./docker-manage.sh start staging  # Start staging environment
-./docker-manage.sh start prod     # Start production environment
-./docker-manage.sh stop dev       # Stop development environment
-./docker-manage.sh logs staging   # View staging logs
-./docker-manage.sh status prod    # Check production status
-./docker-manage.sh clean dev      # Remove dev containers and volumes
+# Kubernetes operations
+kubectl get all -n medcontract-dev          # View all resources
+kubectl rollout restart deployment/ai-service -n medcontract-dev  # Restart service
+kubectl scale deployment/ocr-service --replicas=5 -n medcontract-dev  # Scale service
 
-# Quick start for development
-./easy-docker.sh                  # Interactive menu for Docker operations
+# View logs
+kubectl logs -f deployment/api-gateway -n medcontract-dev
+kubectl logs -f pod/ai-service-0 -c ai-service -n medcontract-dev
+
+# Access services locally
+kubectl port-forward svc/api-gateway 8080:80 -n medcontract-dev
+kubectl port-forward svc/grafana 3000:3000 -n monitoring
 ```
 
 #### Stopping Services
@@ -237,11 +268,18 @@ docker system prune -a --volumes
 
 ## Key Features & Workflows
 
-### OCR-Enhanced Proposals
+### Hybrid Intelligence Proposal Generation
 1. User clicks "Mark for Proposal" on an opportunity
-2. System processes attachments using Mistral AI OCR
-3. Extracted data auto-fills proposal forms
-4. User reviews and submits proposal
+2. Microservices orchestration begins:
+   - OCR Service processes documents in parallel
+   - AI Service analyzes requirements with multi-model ensemble
+   - Analytics Service tracks processing metrics
+3. Event-driven workflow via Kafka:
+   - DocumentProcessed event triggers AI analysis
+   - RequirementsExtracted event updates UI in real-time
+   - ProposalGenerated event saves to multiple databases
+4. Human-in-the-loop validation for low confidence results
+5. Continuous learning from proposal outcomes
 
 ### Testing Commands
 ```bash

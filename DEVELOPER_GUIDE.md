@@ -8,21 +8,23 @@
 
 ## 🎯 Project Overview
 
-**MedContractHub** is an AI-powered federal contracting platform for medical supply distributors built with enterprise architecture standards.
+**MedContractHub** is a **Hybrid Intelligence Platform** combining human expertise with AI/ML for enterprise-scale federal contracting in the medical supply industry.
 
 ### **Current Status**
-- **Production Ready**: 99% complete with 23,300+ live opportunities
-- **Technology Stack**: Next.js 15, TypeScript, Supabase, Docker, Redis
-- **Zero TypeScript Errors**: Strict mode compliance maintained
-- **Database**: Populated with real federal opportunities from SAM.gov
+- **Platform Architecture**: Microservices with Event-Driven Design and DDD
+- **Technology Stack**: Next.js 15, TypeScript, Supabase, Kubernetes, Kafka, Redis
+- **AI/ML Integration**: Multi-model system with Claude, GPT, Mistral, and local LLMs
+- **Database**: Multi-model persistence with 23,300+ real federal opportunities
+- **Infrastructure**: Container orchestration with service mesh and auto-scaling
 
-### **Recent Achievements** (December 2024)
-- ✅ Redis DNS errors resolved (Edge runtime compatibility)
-- ✅ SAM.gov sync operational (1,002+ opportunities loaded)
-- ✅ Sentry monitoring restored and functional
-- ✅ Performance optimized (11.7s → 1.95s page loads, 83% improvement)
-- ✅ OCR proposal integration with "Mark for Proposal" workflow
-- ✅ Environment files consolidated into single `.env.consolidated` file
+### **Recent Achievements** (January 2025)
+- ✅ Hybrid Intelligence Architecture implemented
+- ✅ Microservices infrastructure with Kubernetes orchestration
+- ✅ Event-driven architecture with Kafka streaming
+- ✅ Multi-model AI system with MLflow lifecycle management
+- ✅ Vector database integration for semantic search
+- ✅ Real-time collaboration with WebSocket support
+- ✅ Zero Trust security model with encryption at rest
 
 ---
 
@@ -30,13 +32,22 @@
 
 **MedContractHub uses Docker with Supabase for all development work.** There are three development stages with isolated environments:
 
-### **Multi-Stage Development Architecture**
+### **Multi-Stage Microservices Architecture**
 
-| Stage | Port | Purpose | Database | SSL | Command |
-|-------|------|---------|----------|-----|---------|
-| **Development** | 3000 | Hot reload coding | Supabase Dev Project | Disabled | `make dev` |
-| **Staging** | 3001 | Production build testing | Supabase Staging Project | Nginx proxy | `make staging` |
-| **Production** | 3002 | Live deployment | Supabase Production Project | Full SSL | `make prod` |
+| Stage | Port | Infrastructure | Database | Orchestration | Command |
+|-------|------|----------------|----------|---------------|---------|
+| **Development** | 3000 | Docker Compose | PostgreSQL + Redis + Weaviate | Local K8s | `make dev` |
+| **Staging** | 3001 | Kubernetes | Multi-model (Dev Cluster) | Istio Mesh | `make staging` |
+| **Production** | 3002 | Kubernetes | Production Cluster | Full Istio | `make prod` |
+
+### **Microservices Ports**
+| Service | Dev Port | Staging Port | Prod Port | Purpose |
+|---------|----------|--------------|-----------|----------|
+| **API Gateway** | 8080 | 8081 | 80/443 | Kong routing |
+| **OCR Service** | 8100 | 8101 | Internal | Document processing |
+| **AI Service** | 8200 | 8201 | Internal | ML orchestration |
+| **Analytics** | 8300 | 8301 | Internal | Real-time analytics |
+| **WebSocket** | 8400 | 8401 | Internal | Collaboration |
 
 ### **1. Prerequisites**
 ```bash
@@ -207,27 +218,32 @@ docker ps                            # Check all containers are running
 - **`.env`** - Fallback file that Docker Compose may use if .env.local fails to load
 - **Both files are required** for reliable Docker operation
 
-**Docker Architecture:**
+**Microservices Architecture:**
 ```bash
-# MedContractHub uses a three-stage Docker setup:
+# MedContractHub Hybrid Intelligence Platform:
 
-# Development Environment (Port 3000)
-medcontract-dev-app         # Next.js app with hot reload
-medcontract-dev-postgres    # PostgreSQL (port 5432) 
-medcontract-dev-redis       # Redis cache (port 6379)
-medcontract-dev-bull        # Queue dashboard (port 3003)
+# Core Services (Kubernetes Pods)
+api-gateway                 # Kong API Gateway with plugins
+ocr-service                 # Document processing (Mistral, Tesseract)
+ai-service                  # ML orchestration (Claude, GPT, Local)
+analytics-service           # Real-time analytics with Kafka
+realtime-service           # WebSocket collaboration
+worker-service             # Background job processing
 
-# Staging Environment (Port 3001)
-medcontract-staging-app     # Production build
-medcontract-staging-postgres # PostgreSQL (port 5433)
-medcontract-staging-redis   # Redis cache (port 6380)
-medcontract-staging-worker  # Background job processor
+# Data Layer (Stateful Sets)
+postgresql-primary         # Main transactional database
+postgresql-replica         # Read replicas for scaling
+redis-cluster              # Distributed cache
+weaviate-vector-db         # AI embeddings storage
+clickhouse-analytics       # Time-series analytics
+kafka-cluster              # Event streaming
 
-# Production Environment (Port 3002/80/443)
-medcontract-prod-nginx      # Nginx reverse proxy (80/443)
-medcontract-prod-app        # Optimized production build
-medcontract-prod-redis      # Redis cache (port 6381)
-medcontract-prod-worker     # Background job processor
+# Infrastructure Services
+prometheus                 # Metrics collection
+grafana                    # Monitoring dashboards
+jaeger                     # Distributed tracing
+elasticsearch              # Log aggregation
+istio-proxy                # Service mesh sidecar
 ```
 
 #### **🐧 WSL (Windows Subsystem for Linux) Setup**
@@ -609,21 +625,27 @@ Use consistent gradient themes across the application:
 - **Quota Management**: 1,000 daily API calls with intelligent rate limiting
 - **NAICS Matching**: Personalized medical industry matching system
 
-### **AI Services**
-- **Claude**: Contract analysis and insights (`lib/ai/claude-client.ts`)
-- **Mistral**: Document OCR processing (`lib/ai/mistral-ocr-client.ts`)
-- **Cost Optimization**: AI features disabled in development (`ENABLE_AI_FEATURES=false`)
+### **AI/ML Services**
+- **Multi-Model Orchestration**: Intelligent routing between Claude, GPT, and local models
+- **MLflow Integration**: Model versioning, A/B testing, and lifecycle management
+- **Vector Search**: Weaviate for semantic similarity and RAG applications
+- **Cost Optimization**: Dynamic model selection based on task complexity
+- **Fine-tuning Pipeline**: Domain-specific model training on contract data
+- **Ensemble Models**: Combine multiple models for improved accuracy
 
 ### **Billing System** (`lib/stripe/`)
 - **Subscription tiers**: $29 Starter, $99 Professional, $299 Enterprise
 - **Usage metering**: Track AI feature usage for billing
 - **Webhook handlers**: Process Stripe events securely
 
-### **Background Jobs**
-- **Email queue**: Handle notification processing (`emailQueue`)
-- **OCR queue**: Document processing pipeline (`ocrQueue`)
-- **Sync queue**: SAM.gov data synchronization (`syncQueue`)
-- **Worker process**: `npm run worker:dev` for development
+### **Distributed Job Processing**
+- **OCR Pipeline**: Multi-stage document processing with Kafka streaming
+- **AI Processing**: Distributed ML inference with auto-scaling
+- **Email Campaigns**: Bulk processing with personalization
+- **Data Sync**: Event-driven synchronization with SAM.gov
+- **Analytics Jobs**: Real-time aggregation and reporting
+- **Export Generation**: Async PDF/Excel generation with progress tracking
+- **Worker Scaling**: Kubernetes HPA based on queue depth
 
 ### **OCR-Enhanced Proposals Integration** ✨ NEW
 
