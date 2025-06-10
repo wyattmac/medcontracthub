@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Calendar, Plus, X, Upload, FileText, Loader2 } from 'lucide-react'
+import { Calendar, Plus, X, Upload, FileText, Loader2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,6 +13,9 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { createProposalFormSchema, type CreateProposalFormData } from '@/lib/validation/schemas/proposal-form'
+import { AIProposalGenerator } from './ai-proposal-generator'
+import { ProposalDocumentAnalyzer } from './proposal-document-analyzer'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 interface Opportunity {
   id: string
@@ -105,6 +108,9 @@ export function CreateProposalForm({
 }: CreateProposalFormProps) {
   const [newTag, setNewTag] = useState('')
   const [isUploadingDocument, setIsUploadingDocument] = useState(false)
+  const [activeTab, setActiveTab] = useState('form')
+  const [rfpDocumentUrl, setRfpDocumentUrl] = useState<string | undefined>()
+  const [rfpDocumentName, setRfpDocumentName] = useState<string | undefined>()
 
   const {
     register,
@@ -164,6 +170,28 @@ export function CreateProposalForm({
     setValue('sections', sections.filter((_, i) => i !== index))
   }
 
+  const handleSectionGenerated = (sectionType: string, content: string) => {
+    // Find the section index
+    const sectionIndex = sections.findIndex(s => s.section_type === sectionType)
+    
+    if (sectionIndex !== -1) {
+      // Update existing section
+      updateSection(sectionIndex, 'content', content)
+    } else {
+      // Add new section
+      const sectionConfig = sectionTypeOptions.find(opt => opt.value === sectionType)
+      setValue('sections', [...sections, {
+        section_type: sectionType,
+        title: sectionConfig?.label || sectionType,
+        content: content,
+        is_required: false
+      }])
+    }
+    
+    // Switch back to form tab
+    setActiveTab('form')
+  }
+
   const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (!files || files.length === 0) return
@@ -213,6 +241,13 @@ export function CreateProposalForm({
               : doc
           )
         )
+        
+        // If this is an RFP document, set it for AI generation
+        if (file.name.toLowerCase().includes('rfp') || 
+            file.name.toLowerCase().includes('solicitation')) {
+          setRfpDocumentUrl(result.data.publicUrl)
+          setRfpDocumentName(file.name)
+        }
       } catch (error) {
         console.error('Document upload failed:', error)
         // Remove failed document
@@ -248,12 +283,25 @@ export function CreateProposalForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-      {error && (
-        <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded dark:bg-red-900/20 dark:border-red-800">
-          {error}
-        </div>
-      )}
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsTrigger value="form">Proposal Form</TabsTrigger>
+        <TabsTrigger value="ai" disabled={!opportunity}>
+          <Sparkles className="h-4 w-4 mr-1" />
+          AI Generator
+        </TabsTrigger>
+        <TabsTrigger value="documents" disabled={attachedDocuments.length === 0}>
+          Document Analysis
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="form">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+          {error && (
+            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded dark:bg-red-900/20 dark:border-red-800">
+              {error}
+            </div>
+          )}
 
       {/* Basic Information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -566,5 +614,35 @@ export function CreateProposalForm({
         </Button>
       </div>
     </form>
+      </TabsContent>
+
+      <TabsContent value="ai">
+        {opportunity && (
+          <AIProposalGenerator
+            opportunityId={opportunity.id}
+            rfpDocumentUrl={rfpDocumentUrl}
+            rfpDocumentName={rfpDocumentName}
+            onSectionGenerated={handleSectionGenerated}
+          />
+        )}
+      </TabsContent>
+
+      <TabsContent value="documents">
+        <ProposalDocumentAnalyzer
+          documents={attachedDocuments}
+          onAnalysisComplete={(analyses) => {
+            // If we have an RFP document, set it for AI generation
+            const rfpDoc = attachedDocuments.find(doc => 
+              doc.name.toLowerCase().includes('rfp') || 
+              doc.name.toLowerCase().includes('solicitation')
+            )
+            if (rfpDoc && rfpDoc.url) {
+              setRfpDocumentUrl(rfpDoc.url)
+              setRfpDocumentName(rfpDoc.name)
+            }
+          }}
+        />
+      </TabsContent>
+    </Tabs>
   )
 }

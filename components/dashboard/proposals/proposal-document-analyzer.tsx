@@ -17,7 +17,7 @@ import {
   Download,
   Search
 } from 'lucide-react'
-import { toast } from 'sonner'
+import { useToast } from '@/components/ui/use-toast'
 
 interface AttachedDocument {
   id: string
