@@ -1,19 +1,17 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: worker-service-hpa
+  name: worker-service
   namespace: medcontracthub
   labels:
     app: worker-service
-    component: microservice
-    tier: backend
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
     name: worker-service
-  minReplicas: 3
-  maxReplicas: 30
+  minReplicas: 2
+  maxReplicas: 10
   metrics:
   - type: Resource
     resource:
@@ -30,17 +28,10 @@ spec:
   - type: Pods
     pods:
       metric:
-        name: bull_queue_depth
+        name: worker_queue_size
       target:
         type: AverageValue
-        averageValue: "100"
-  - type: Pods
-    pods:
-      metric:
-        name: bull_active_jobs
-      target:
-        type: AverageValue
-        averageValue: "50"
+        averageValue: "30"
   behavior:
     scaleDown:
       stabilizationWindowSeconds: 300
@@ -49,16 +40,16 @@ spec:
         value: 50
         periodSeconds: 60
       - type: Pods
-        value: 5
+        value: 2
         periodSeconds: 60
       selectPolicy: Min
     scaleUp:
-      stabilizationWindowSeconds: 30
+      stabilizationWindowSeconds: 60
       policies:
       - type: Percent
         value: 100
-        periodSeconds: 30
+        periodSeconds: 60
       - type: Pods
-        value: 10
-        periodSeconds: 30
+        value: 4
+        periodSeconds: 60
       selectPolicy: Max

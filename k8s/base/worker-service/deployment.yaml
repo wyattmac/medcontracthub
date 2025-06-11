@@ -9,7 +9,7 @@ metadata:
     component: microservice
     tier: backend
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: worker-service
@@ -24,137 +24,104 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9090"
+        prometheus.io/port: "8500"
         prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: worker-service
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        fsGroup: 1000
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: worker-service
-        image: localhost:5001/worker-service:latest
+        image: medcontracthub/worker-service:1.0.0
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 9090
-          name: metrics
+        - containerPort: 8500
+          name: http
           protocol: TCP
         env:
         - name: SERVICE_NAME
           value: "worker-service"
-        - name: NODE_ID
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
         - name: ENVIRONMENT
           valueFrom:
             configMapKeyRef:
               name: worker-service-config
               key: environment
+        - name: PORT
+          value: "8500"
         - name: LOG_LEVEL
           valueFrom:
             configMapKeyRef:
               name: worker-service-config
               key: log_level
-        - name: METRICS_PORT
-          value: "9090"
         - name: REDIS_URL
           valueFrom:
             configMapKeyRef:
               name: worker-service-config
               key: redis_url
-        - name: REDIS_QUEUE_PREFIX
-          valueFrom:
-            configMapKeyRef:
-              name: worker-service-config
-              key: redis_queue_prefix
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
               name: worker-service-secrets
               key: redis-password
               optional: true
-        - name: WORKER_CONFIG
+        - name: KAFKA_BROKERS
           valueFrom:
             configMapKeyRef:
               name: worker-service-config
-              key: worker_config
-        - name: QUEUE_CONFIG
+              key: kafka_brokers
+        - name: KAFKA_CLIENT_ID
+          value: "worker-service"
+        - name: KAFKA_GROUP_ID
+          value: "worker-service-group"
+        - name: SUPABASE_URL
           valueFrom:
             configMapKeyRef:
               name: worker-service-config
-              key: queue_config
-        - name: RETRY_CONFIG
-          valueFrom:
-            configMapKeyRef:
-              name: worker-service-config
-              key: retry_config
-        - name: POSTGRES_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: worker-service-config
-              key: postgres_host
-        - name: POSTGRES_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: worker-service-config
-              key: postgres_port
-        - name: POSTGRES_DB
-          valueFrom:
-            configMapKeyRef:
-              name: worker-service-config
-              key: postgres_db
-        - name: POSTGRES_PASSWORD
+              key: supabase_url
+        - name: SUPABASE_SERVICE_ROLE_KEY
           valueFrom:
             secretKeyRef:
               name: worker-service-secrets
-              key: postgres-password
-        - name: KAFKA_BOOTSTRAP_SERVERS
+              key: supabase-service-role-key
+        - name: EMAIL_PROVIDER
           valueFrom:
             configMapKeyRef:
               name: worker-service-config
-              key: kafka_bootstrap_servers
-        - name: KAFKA_PRODUCER_CONFIG
-          valueFrom:
-            configMapKeyRef:
-              name: worker-service-config
-              key: kafka_producer_config
-        - name: S3_CONFIG
-          valueFrom:
-            configMapKeyRef:
-              name: worker-service-config
-              key: s3_config
-        - name: AWS_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: worker-service-secrets
-              key: aws-access-key-id
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: worker-service-secrets
-              key: aws-secret-access-key
+              key: email_provider
         - name: EMAIL_FROM
           valueFrom:
-            secretKeyRef:
-              name: worker-service-secrets
-              key: email-from
-        - name: RESEND_API_KEY
+            configMapKeyRef:
+              name: worker-service-config
+              key: email_from
+        - name: SENDGRID_API_KEY
           valueFrom:
             secretKeyRef:
               name: worker-service-secrets
-              key: resend-api-key
-        - name: MISTRAL_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: worker-service-secrets
-              key: mistral-api-key
+              key: sendgrid-api-key
+              optional: true
         - name: SAM_GOV_API_KEY
           valueFrom:
             secretKeyRef:
               name: worker-service-secrets
               key: sam-gov-api-key
+              optional: true
+        - name: SAM_GOV_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: worker-service-config
+              key: sam_gov_base_url
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: worker-service-secrets
+              key: sentry-dsn
+              optional: true
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         - name: JAEGER_AGENT_HOST
           valueFrom:
             fieldRef:
@@ -163,15 +130,15 @@ spec:
           value: "6831"
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "512Mi"
+            cpu: "250m"
           limits:
-            memory: "4Gi"
-            cpu: "2000m"
+            memory: "2Gi"
+            cpu: "1000m"
         livenessProbe:
           httpGet:
             path: /health
-            port: metrics
+            port: http
           initialDelaySeconds: 30
           periodSeconds: 30
           timeoutSeconds: 5
@@ -179,37 +146,18 @@ spec:
         readinessProbe:
           httpGet:
             path: /ready
-            port: metrics
-          initialDelaySeconds: 20
+            port: http
+          initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
         volumeMounts:
         - name: temp-storage
           mountPath: /tmp
-        - name: job-storage
-          mountPath: /data/jobs
-        lifecycle:
-          preStop:
-            exec:
-              command:
-              - /bin/sh
-              - -c
-              - |
-                # Graceful shutdown
-                echo "Starting graceful shutdown..."
-                # Signal worker to stop accepting new jobs
-                kill -TERM 1
-                # Wait for current jobs to complete (max 30s)
-                sleep 30
       volumes:
       - name: temp-storage
         emptyDir:
-          sizeLimit: 2Gi
-      - name: job-storage
-        emptyDir:
           sizeLimit: 5Gi
-      terminationGracePeriodSeconds: 45
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

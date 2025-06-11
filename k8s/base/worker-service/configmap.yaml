@@ -8,130 +8,86 @@ metadata:
     component: microservice
     tier: backend
 data:
-  environment: "development"
+  environment: "production"
   log_level: "info"
-  metrics_port: "9090"
   
-  # Redis configuration for job queue
-  redis_url: "redis://redis-cluster:6379"
-  redis_queue_prefix: "bull:"
+  # Redis configuration
+  redis_url: "redis://redis-cluster.medcontracthub.svc.cluster.local:6379"
   
-  # Worker configuration
-  worker_config: |
+  # Kafka configuration
+  kafka_brokers: "kafka-0.kafka-headless.medcontracthub.svc.cluster.local:9092,kafka-1.kafka-headless.medcontracthub.svc.cluster.local:9092,kafka-2.kafka-headless.medcontracthub.svc.cluster.local:9092"
+  
+  # Database configuration
+  supabase_url: "${SUPABASE_URL}"
+  
+  # Email configuration
+  email_provider: "sendgrid"
+  email_from: "noreply@medcontracthub.com"
+  
+  # SAM.gov configuration
+  sam_gov_base_url: "https://api.sam.gov"
+  sam_sync_interval: "360"  # 6 hours in minutes
+  
+  # Queue configurations
+  queue_config:  < /dev/null | 
     {
-      "concurrency": 10,
-      "max_jobs_per_worker": 100,
-      "job_timeout": 300000,
-      "shutdown_timeout": 30000,
-      "health_check_interval": 5000,
-      "stalled_check_interval": 30000
-    }
-  
-  # Queue configuration
-  queue_config: |
-    {
-      "queues": {
-        "email": {
-          "concurrency": 5,
-          "rate_limit": {
-            "max": 100,
-            "duration": 60000
-          }
-        },
-        "document_processing": {
-          "concurrency": 3,
-          "priority": "high"
-        },
-        "ocr_processing": {
-          "concurrency": 2,
-          "priority": "high",
-          "retry": {
-            "attempts": 3,
-            "backoff": "exponential"
-          }
-        },
-        "sam_sync": {
-          "concurrency": 2,
-          "priority": "medium",
-          "rate_limit": {
-            "max": 30,
-            "duration": 60000
-          }
-        },
-        "analytics_aggregation": {
-          "concurrency": 5,
-          "priority": "low"
-        },
-        "ai_inference": {
-          "concurrency": 2,
-          "priority": "high",
-          "timeout": 600000
-        },
-        "compliance_analysis": {
-          "concurrency": 3,
-          "priority": "medium"
-        },
-        "proposal_generation": {
-          "concurrency": 2,
-          "priority": "high",
-          "timeout": 900000
-        },
-        "data_export": {
-          "concurrency": 3,
-          "priority": "low"
-        },
-        "cleanup": {
-          "concurrency": 1,
-          "priority": "low",
-          "schedule": "0 2 * * *"
-        }
-      }
-    }
-  
-  # Job retry configuration
-  retry_config: |
-    {
-      "default": {
-        "attempts": 3,
-        "backoff": {
-          "type": "exponential",
-          "delay": 1000
-        }
-      },
       "email": {
-        "attempts": 5,
-        "backoff": {
-          "type": "fixed",
-          "delay": 60000
+        "concurrency": 5,
+        "defaultJobOptions": {
+          "attempts": 3,
+          "backoff": {
+            "type": "exponential",
+            "delay": 5000
+          },
+          "removeOnComplete": true,
+          "removeOnFail": false
         }
       },
-      "ai_inference": {
-        "attempts": 2,
-        "backoff": {
-          "type": "exponential",
-          "delay": 5000
+      "document": {
+        "concurrency": 3,
+        "defaultJobOptions": {
+          "attempts": 3,
+          "timeout": 300000,
+          "backoff": {
+            "type": "exponential",
+            "delay": 10000
+          }
+        }
+      },
+      "sync": {
+        "concurrency": 1,
+        "defaultJobOptions": {
+          "attempts": 3,
+          "timeout": 600000
+        }
+      },
+      "report": {
+        "concurrency": 2,
+        "defaultJobOptions": {
+          "attempts": 2,
+          "timeout": 180000
         }
       }
     }
   
-  # External service configuration
-  postgres_host: "postgres-primary"
-  postgres_port: "5432"
-  postgres_db: "medcontracthub"
-  
-  # Kafka configuration for event publishing
-  kafka_bootstrap_servers: "kafka-cluster-kafka-bootstrap:9092"
-  kafka_producer_config: |
+  # Scheduled jobs configuration
+  scheduled_jobs: |
     {
-      "client_id": "worker-service",
-      "acks": "all",
-      "retries": 3
-    }
-  
-  # S3 configuration for file storage
-  s3_config: |
-    {
-      "endpoint": "s3.amazonaws.com",
-      "region": "us-east-1",
-      "bucket": "medcontracthub-files"
+      "emailReminders": {
+        "enabled": true,
+        "cron": "0 9 * * *"
+      },
+      "samGovSync": {
+        "enabled": true,
+        "cron": "0 */6 * * *"
+      },
+      "dataCleanup": {
+        "enabled": true,
+        "cron": "0 2 * * *",
+        "retentionDays": 90
+      },
+      "reportGeneration": {
+        "enabled": true,
+        "cron": "0 8 * * MON"
+      }
     }

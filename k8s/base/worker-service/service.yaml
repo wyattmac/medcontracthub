@@ -7,12 +7,17 @@ metadata:
     app: worker-service
     component: microservice
     tier: backend
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8500"
+    prometheus.io/path: "/metrics"
 spec:
   type: ClusterIP
   selector:
     app: worker-service
   ports:
-  - port: 9090
-    targetPort: 9090
+  - name: http
+    port: 8500
+    targetPort: http
     protocol: TCP
-    name: metrics
+  sessionAffinity: None

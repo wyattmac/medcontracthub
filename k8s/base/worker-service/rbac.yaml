@@ -5,45 +5,33 @@ metadata:
   namespace: medcontracthub
   labels:
     app: worker-service
-    component: microservice
-    tier: backend
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: worker-service-role
+  name: worker-service
   namespace: medcontracthub
   labels:
     app: worker-service
-    component: microservice
-    tier: backend
 rules:
 - apiGroups: [""]
   resources: ["configmaps"]
   verbs: ["get", "list", "watch"]
 - apiGroups: [""]
   resources: ["secrets"]
-  verbs: ["get", "list"]
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "list"]
-- apiGroups: ["batch"]
-  resources: ["jobs"]
-  verbs: ["get", "list", "create", "update", "patch", "delete"]
+  verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: worker-service-rolebinding
+  name: worker-service
   namespace: medcontracthub
   labels:
     app: worker-service
-    component: microservice
-    tier: backend
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: worker-service-role
+  name: worker-service
 subjects:
 - kind: ServiceAccount
   name: worker-service

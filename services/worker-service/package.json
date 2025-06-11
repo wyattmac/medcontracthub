@@ -1,0 +1,60 @@
+{
+  "name": "@medcontracthub/worker-service",
+  "version": "1.0.0",
+  "description": "Background job processing service for MedContractHub",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bull-board/express": "^5.14.0",
+    "@bull-board/api": "^5.14.0",
+    "@supabase/supabase-js": "^2.39.7",
+    "@sendgrid/mail": "^8.1.0",
+    "@sentry/node": "^7.99.0",
+    "bull": "^4.12.2",
+    "bullmq": "^5.1.4",
+    "express": "^4.18.2",
+    "ioredis": "^5.3.2",
+    "kafkajs": "^2.2.4",
+    "node-cron": "^3.0.3",
+    "axios": "^1.6.7",
+    "cheerio": "^1.0.0-rc.12",
+    "csv-writer": "^1.6.0",
+    "exceljs": "^4.4.0",
+    "pdfkit": "^0.14.0",
+    "pino": "^8.17.2",
+    "pino-pretty": "^10.3.1",
+    "zod": "^3.22.4",
+    "date-fns": "^3.3.1",
+    "p-queue": "^8.0.1",
+    "retry": "^0.13.1",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/bull": "^4.10.0",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.11",
+    "@types/lodash": "^4.14.202",
+    "@types/node": "^20.11.5",
+    "@types/node-cron": "^3.0.11",
+    "@types/pdfkit": "^0.13.2",
+    "@types/retry": "^0.12.5",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
