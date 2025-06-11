@@ -1,0 +1,330 @@
+# Production Alert Rules for MedContractHub Microservices
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: production-alert-rules
+  namespace: monitoring
+data:
+  alerts.yaml: |
+    groups:
+    # Service Availability Alerts
+    - name: service_availability
+      interval: 30s
+      rules:
+      - alert: ServiceDown
+        expr: up{job=~"ocr-service|ai-service|analytics-service|realtime-service|worker-service|medcontracthub-app"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} in namespace {{ $labels.namespace }} has been down for more than 2 minutes."
+          runbook_url: "https://docs.medcontracthub.com/runbooks/service-down"
+          
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (job, namespace)
+            /
+            sum(rate(http_requests_total[5m])) by (job, namespace)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High error rate for {{ $labels.job }}"
+          description: "{{ $labels.job }} is experiencing {{ $value | humanizePercentage }} error rate"
+          dashboard: "https://grafana.medcontracthub.com/d/service-errors"
+          
+      - alert: PodCrashLooping
+        expr: rate(kube_pod_container_status_restarts_total[15m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Pod {{ $labels.pod }} is crash looping"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is restarting {{ $value }} times per minute"
+          
+    # Performance and Latency Alerts
+    - name: performance_alerts
+      interval: 30s
+      rules:
+      - alert: HighResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (job, le)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High response time for {{ $labels.job }}"
+          description: "95th percentile response time for {{ $labels.job }} is {{ $value }}s"
+          
+      - alert: AIInferenceLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(ai_inference_duration_seconds_bucket[5m])) by (model, le)
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          team: ai
+        annotations:
+          summary: "AI model {{ $labels.model }} inference is slow"
+          description: "95th percentile inference time for {{ $labels.model }} is {{ $value }}s"
+          
+      - alert: OCRProcessingBacklog
+        expr: |
+          sum(redis_queue_length{queue="ocr-processing"}) > 1000
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "OCR processing queue is backing up"
+          description: "OCR queue has {{ $value }} documents waiting"
+          
+    # Resource Utilization Alerts
+    - name: resource_alerts
+      interval: 30s
+      rules:
+      - alert: HighCPUUsage
+        expr: |
+          (
+            100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])))
+          ) > 85
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+          
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))
+          ) > 90
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+          
+      - alert: PersistentVolumeSpaceLow
+        expr: |
+          (
+            100 * kubelet_volume_stats_available_bytes{persistentvolumeclaim!=""}
+            / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim!=""}
+          ) < 10
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "PVC {{ $labels.persistentvolumeclaim }} is almost full"
+          description: "Only {{ $value }}% space left on {{ $labels.persistentvolumeclaim }}"
+          
+    # Kafka and Event Processing Alerts
+    - name: kafka_alerts
+      interval: 30s
+      rules:
+      - alert: KafkaConsumerLagHigh
+        expr: kafka_consumer_lag_sum > 10000
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Kafka consumer lag is high"
+          description: "Consumer group {{ $labels.consumer_group }} has lag of {{ $value }} messages on topic {{ $labels.topic }}"
+          
+      - alert: KafkaBrokerDown
+        expr: kafka_brokers{state="down"} > 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Kafka broker is down"
+          description: "{{ $value }} Kafka broker(s) are down"
+          
+      - alert: EventProcessingFailureRate
+        expr: |
+          rate(event_processing_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High event processing failure rate"
+          description: "Event processing failing at {{ $value }} per second for {{ $labels.service }}"
+          
+    # Database Alerts
+    - name: database_alerts
+      interval: 30s
+      rules:
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: database
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL instance {{ $labels.instance }} is down"
+          
+      - alert: PostgreSQLHighConnections
+        expr: |
+          100 * (pg_stat_database_numbackends / pg_settings_max_connections) > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "PostgreSQL connection pool near limit"
+          description: "{{ $value }}% of max connections used on {{ $labels.instance }}"
+          
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: database
+        annotations:
+          summary: "Redis is down"
+          description: "Redis instance {{ $labels.instance }} is down"
+          
+      - alert: RedisMemoryHigh
+        expr: |
+          100 * (redis_memory_used_bytes / redis_memory_max_bytes) > 90
+        for: 5m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Redis using {{ $value }}% of max memory on {{ $labels.instance }}"
+          
+    # Business Metrics Alerts
+    - name: business_alerts
+      interval: 1m
+      rules:
+      - alert: OpportunityProcessingDelayed
+        expr: |
+          (time() - max(opportunity_last_processed_timestamp)) > 3600
+        for: 15m
+        labels:
+          severity: warning
+          team: product
+        annotations:
+          summary: "No opportunities processed in the last hour"
+          description: "Opportunity processing may be stuck. Last processed {{ $value }} seconds ago"
+          
+      - alert: ProposalGenerationFailureHigh
+        expr: |
+          rate(proposal_generation_failures_total[30m]) > 0.1
+        for: 15m
+        labels:
+          severity: warning
+          team: product
+        annotations:
+          summary: "High proposal generation failure rate"
+          description: "Proposal generation failing at {{ $value }} per minute"
+          
+      - alert: APIUsageQuotaExceeded
+        expr: |
+          (api_usage_current / api_usage_quota) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          team: product
+        annotations:
+          summary: "API usage quota nearly exceeded"
+          description: "{{ $labels.user }} has used {{ $value | humanizePercentage }} of their API quota"
+          
+      - alert: SubscriptionPaymentFailed
+        expr: |
+          increase(stripe_payment_failures_total[1h]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          team: billing
+        annotations:
+          summary: "Subscription payment failures detected"
+          description: "{{ $value }} payment failures in the last hour"
+          
+    # Security Alerts
+    - name: security_alerts
+      interval: 30s
+      rules:
+      - alert: UnauthorizedAccessAttempts
+        expr: |
+          rate(http_requests_total{status="401"}[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "High rate of unauthorized access attempts"
+          description: "{{ $value }} unauthorized requests per second to {{ $labels.job }}"
+          
+      - alert: SuspiciousActivityDetected
+        expr: |
+          rate(security_events_total{type="suspicious"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "Suspicious activity detected"
+          description: "{{ $value }} suspicious events per second from {{ $labels.source }}"
+          
+      - alert: CertificateExpiringSoon
+        expr: |
+          (probe_ssl_earliest_cert_expiry - time()) / 86400 < 30
+        for: 1h
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "Certificate for {{ $labels.instance }} expires in {{ $value }} days"
+          
+    # Cost and Efficiency Alerts
+    - name: cost_alerts
+      interval: 5m
+      rules:
+      - alert: HighCloudCosts
+        expr: |
+          increase(cloud_costs_total[24h]) > 1000
+        for: 1h
+        labels:
+          severity: warning
+          team: finance
+        annotations:
+          summary: "Cloud costs increasing rapidly"
+          description: "Cloud costs increased by ${{ $value }} in the last 24 hours"
+          
+      - alert: UnderutilizedResources
+        expr: |
+          (
+            avg(rate(container_cpu_usage_seconds_total[5m])) by (pod, namespace)
+            < 0.1
+          ) and on(pod, namespace) kube_pod_container_resource_requests{resource="cpu"} > 0.5
+        for: 30m
+        labels:
+          severity: info
+          team: platform
+        annotations:
+          summary: "Pod {{ $labels.pod }} is underutilizing CPU"
+          description: "Pod requesting {{ $labels.requests }} CPU but only using {{ $value }}"

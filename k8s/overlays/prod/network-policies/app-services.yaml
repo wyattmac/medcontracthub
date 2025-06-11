@@ -1,0 +1,381 @@
+# Network policies for application services
+
+# Main application network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: medcontracthub-app-policy
+  namespace: medcontract-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: medcontracthub-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # From ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 3000
+  # From Kong API Gateway
+  - from:
+    - podSelector:
+        matchLabels:
+          app: kong-gateway
+    ports:
+    - protocol: TCP
+      port: 3000
+  # Health checks from monitoring
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 3000
+  egress:
+  # To PostgreSQL
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres-primary
+    ports:
+    - protocol: TCP
+      port: 5432
+  # To Redis
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis-cluster
+    ports:
+    - protocol: TCP
+      port: 6379
+  # To microservices via Kong
+  - to:
+    - podSelector:
+        matchLabels:
+          app: kong-gateway
+    ports:
+    - protocol: TCP
+      port: 8000
+  # External APIs (SAM.gov, Stripe, etc)
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+    ports:
+    - protocol: TCP
+      port: 443
+
+---
+# OCR Service network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ocr-service-policy
+  namespace: medcontract-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: ocr-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # From Kong Gateway
+  - from:
+    - podSelector:
+        matchLabels:
+          app: kong-gateway
+    ports:
+    - protocol: TCP
+      port: 8100
+  # From other services (internal)
+  - from:
+    - podSelector:
+        matchLabels:
+          app: worker-service
+    ports:
+    - protocol: TCP
+      port: 8100
+  # Prometheus scraping
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8100
+  egress:
+  # To Kafka
+  - to:
+    - podSelector:
+        matchLabels:
+          app: kafka
+    ports:
+    - protocol: TCP
+      port: 9092
+  # To Redis
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis-cluster
+    ports:
+    - protocol: TCP
+      port: 6379
+  # To PostgreSQL
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres-primary
+    ports:
+    - protocol: TCP
+      port: 5432
+  # To S3 (document storage)
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 443
+
+---
+# AI Service network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-service-policy
+  namespace: medcontract-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: ai-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # From Kong Gateway
+  - from:
+    - podSelector:
+        matchLabels:
+          app: kong-gateway
+    ports:
+    - protocol: TCP
+      port: 8200
+  # From other services
+  - from:
+    - podSelector:
+        matchLabels:
+          app: ocr-service
+    - podSelector:
+        matchLabels:
+          app: worker-service
+    ports:
+    - protocol: TCP
+      port: 8200
+  # Monitoring
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8200
+  egress:
+  # To Weaviate
+  - to:
+    - podSelector:
+        matchLabels:
+          app: weaviate
+    ports:
+    - protocol: TCP
+      port: 8080
+  # To Kafka
+  - to:
+    - podSelector:
+        matchLabels:
+          app: kafka
+    ports:
+    - protocol: TCP
+      port: 9092
+  # To external AI APIs (Claude, OpenAI)
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 443
+
+---
+# Analytics Service network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: analytics-service-policy
+  namespace: medcontract-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: analytics-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # From Kong Gateway
+  - from:
+    - podSelector:
+        matchLabels:
+          app: kong-gateway
+    ports:
+    - protocol: TCP
+      port: 8300
+  # From main app for dashboard data
+  - from:
+    - podSelector:
+        matchLabels:
+          app: medcontracthub-app
+    ports:
+    - protocol: TCP
+      port: 8300
+  # Monitoring
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8300
+  egress:
+  # To ClickHouse
+  - to:
+    - podSelector:
+        matchLabels:
+          app: clickhouse
+    ports:
+    - protocol: TCP
+      port: 8123
+    - protocol: TCP
+      port: 9000
+  # To Kafka
+  - to:
+    - podSelector:
+        matchLabels:
+          app: kafka
+    ports:
+    - protocol: TCP
+      port: 9092
+
+---
+# Real-time Service network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: realtime-service-policy
+  namespace: medcontract-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: realtime-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # WebSocket from ingress
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8400
+  # From Kong for internal connections
+  - from:
+    - podSelector:
+        matchLabels:
+          app: kong-gateway
+    ports:
+    - protocol: TCP
+      port: 8400
+  # Monitoring
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8400
+  egress:
+  # To Redis for pub/sub
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis-cluster
+    ports:
+    - protocol: TCP
+      port: 6379
+  # To Kafka
+  - to:
+    - podSelector:
+        matchLabels:
+          app: kafka
+    ports:
+    - protocol: TCP
+      port: 9092
+  # To PostgreSQL for session data
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres-primary
+    ports:
+    - protocol: TCP
+      port: 5432
+
+---
+# Worker Service network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: worker-service-policy
+  namespace: medcontract-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: worker-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Only monitoring access
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8500
+  egress:
+  # To all internal services
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+  # To external APIs
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 587  # SMTP

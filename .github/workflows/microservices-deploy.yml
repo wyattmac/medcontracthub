@@ -1,0 +1,342 @@
+name: Microservices Production Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'services/**'
+      - 'k8s/**'
+      - '.github/workflows/microservices-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      services:
+        description: 'Services to deploy (comma-separated, or "all")'
+        required: false
+        default: 'all'
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+
+env:
+  REGISTRY: registry.medcontracthub.com
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  # Determine which services to build and deploy
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.detect.outputs.services }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed services
+        id: detect
+        run: |
+          if [ "${{ github.event.inputs.services }}" != "" ] && [ "${{ github.event.inputs.services }}" != "all" ]; then
+            # Manual input
+            SERVICES="${{ github.event.inputs.services }}"
+          elif [ "${{ github.event.inputs.services }}" == "all" ]; then
+            # All services
+            SERVICES="ocr-service,ai-service,analytics-service,realtime-service,worker-service,api-gateway"
+          else
+            # Detect from git diff
+            SERVICES=""
+            for service in ocr-service ai-service analytics-service realtime-service worker-service; do
+              if git diff --name-only HEAD~1 HEAD | grep -q "services/$service/"; then
+                SERVICES="$SERVICES,$service"
+              fi
+            done
+            # Check for API gateway changes
+            if git diff --name-only HEAD~1 HEAD | grep -q "k8s/base/kong/"; then
+              SERVICES="$SERVICES,api-gateway"
+            fi
+            SERVICES=${SERVICES#,}  # Remove leading comma
+          fi
+          
+          echo "Services to deploy: $SERVICES"
+          echo "services=$SERVICES" >> $GITHUB_OUTPUT
+
+      - name: Calculate version
+        id: version
+        run: |
+          # Get current version from tags
+          CURRENT_VERSION=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || echo "v0.0.0")
+          CURRENT_VERSION=${CURRENT_VERSION#v}
+          
+          # Parse version components
+          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+          MAJOR=${VERSION_PARTS[0]}
+          MINOR=${VERSION_PARTS[1]}
+          PATCH=${VERSION_PARTS[2]}
+          
+          # Bump version based on input
+          case "${{ github.event.inputs.version_bump }}" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+          
+          NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "New version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+  # Build and scan containers
+  build-services:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services != ''
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: ${{ fromJson(format('[{0}]', needs.detect-changes.outputs.services)) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/medcontracthub/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}},value=${{ needs.detect-changes.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.detect-changes.outputs.version }}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service == 'api-gateway' && '.' || format('services/{0}', matrix.service) }}
+          file: ${{ matrix.service == 'api-gateway' && 'k8s/base/kong/Dockerfile' || format('services/{0}/Dockerfile', matrix.service) }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ needs.detect-changes.outputs.version }}
+            BUILD_DATE=${{ github.event.repository.updated_at }}
+            VCS_REF=${{ github.sha }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/medcontracthub/${{ matrix.service }}:${{ needs.detect-changes.outputs.version }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Run integration tests
+  integration-tests:
+    needs: [detect-changes, build-services]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up test environment
+        run: |
+          # Start test infrastructure
+          docker-compose -f docker-compose.test.yml up -d
+          
+          # Wait for services
+          npm run wait-for-services
+
+      - name: Run integration tests
+        run: |
+          npm run test:integration:microservices
+        env:
+          TEST_IMAGE_TAG: ${{ needs.detect-changes.outputs.version }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: |
+            test-results/
+            coverage/
+
+  # Deploy to Kubernetes
+  deploy:
+    needs: [detect-changes, build-services, integration-tests]
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: https://medcontracthub.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name medcontracthub-${{ github.event.inputs.environment || 'production' }} --region us-east-1
+
+      - name: Set up Kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Update image tags
+        run: |
+          cd k8s/overlays/${{ github.event.inputs.environment || 'prod' }}
+          
+          # Update image tags for deployed services
+          IFS=',' read -ra SERVICES <<< "${{ needs.detect-changes.outputs.services }}"
+          for service in "${SERVICES[@]}"; do
+            if [ "$service" != "api-gateway" ]; then
+              kustomize edit set image localhost:5001/${service}=${{ env.REGISTRY }}/medcontracthub/${service}:${{ needs.detect-changes.outputs.version }}
+            fi
+          done
+
+      - name: Deploy to Kubernetes
+        run: |
+          cd k8s/overlays/${{ github.event.inputs.environment || 'prod' }}
+          
+          # Apply configurations
+          kustomize build . | kubectl apply -f -
+          
+          # Wait for rollout
+          IFS=',' read -ra SERVICES <<< "${{ needs.detect-changes.outputs.services }}"
+          for service in "${SERVICES[@]}"; do
+            if [ "$service" == "api-gateway" ]; then
+              kubectl rollout status deployment/kong-gateway -n medcontract-${{ github.event.inputs.environment || 'prod' }} --timeout=600s
+            else
+              kubectl rollout status deployment/${service} -n medcontract-${{ github.event.inputs.environment || 'prod' }} --timeout=600s
+            fi
+          done
+
+      - name: Run smoke tests
+        run: |
+          # Wait for services to stabilize
+          sleep 30
+          
+          # Run smoke tests
+          npm run test:smoke:production
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+
+      - name: Update deployment status
+        if: always()
+        run: |
+          # Send deployment notification
+          curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+            -H 'Content-type: application/json' \
+            -d '{
+              "text": "Deployment to ${{ github.event.inputs.environment || 'production' }} ${{ job.status }}",
+              "attachments": [{
+                "color": "${{ job.status == 'success' && 'good' || 'danger' }}",
+                "fields": [
+                  {"title": "Version", "value": "${{ needs.detect-changes.outputs.version }}", "short": true},
+                  {"title": "Services", "value": "${{ needs.detect-changes.outputs.services }}", "short": true},
+                  {"title": "Environment", "value": "${{ github.event.inputs.environment || 'production' }}", "short": true},
+                  {"title": "Triggered by", "value": "${{ github.actor }}", "short": true}
+                ]
+              }]
+            }'
+
+  # Create release
+  create-release:
+    needs: [detect-changes, deploy]
+    if: github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Generate changelog from commits
+          PREVIOUS_TAG=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -2 | tail -1 || echo "")
+          
+          if [ -n "$PREVIOUS_TAG" ]; then
+            CHANGELOG=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --reverse)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --reverse | head -20)
+          fi
+          
+          # Group by service
+          echo "## Changelog" > changelog.md
+          echo "" >> changelog.md
+          
+          IFS=',' read -ra SERVICES <<< "${{ needs.detect-changes.outputs.services }}"
+          for service in "${SERVICES[@]}"; do
+            echo "### $service" >> changelog.md
+            echo "$CHANGELOG" | grep -i "$service" >> changelog.md || echo "- No specific changes" >> changelog.md
+            echo "" >> changelog.md
+          done
+          
+          echo "### Other Changes" >> changelog.md
+          echo "$CHANGELOG" | grep -v -E "(ocr-service|ai-service|analytics-service|realtime-service|worker-service|api-gateway)" >> changelog.md || echo "- No other changes" >> changelog.md
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.detect-changes.outputs.version }}
+          name: Release ${{ needs.detect-changes.outputs.version }}
+          body_path: changelog.md
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

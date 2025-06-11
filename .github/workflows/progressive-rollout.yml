@@ -1,0 +1,484 @@
+name: Progressive Rollout
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to deploy'
+        required: true
+        type: choice
+        options:
+          - ocr-service
+          - ai-service
+          - analytics-service
+          - realtime-service
+          - worker-service
+          - all
+      version:
+        description: 'Version to deploy'
+        required: true
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      strategy:
+        description: 'Rollout strategy'
+        required: true
+        default: 'canary'
+        type: choice
+        options:
+          - canary
+          - blue-green
+          - rolling
+      canary_percentage:
+        description: 'Initial canary percentage (for canary strategy)'
+        required: false
+        default: '10'
+
+env:
+  REGISTRY: registry.medcontracthub.com
+  FLAGGER_NAMESPACE: flagger-system
+
+jobs:
+  prepare-rollout:
+    runs-on: ubuntu-latest
+    outputs:
+      rollout_id: ${{ steps.generate.outputs.rollout_id }}
+      services: ${{ steps.parse.outputs.services }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate rollout ID
+        id: generate
+        run: |
+          ROLLOUT_ID="rollout-$(date +%Y%m%d-%H%M%S)-${{ github.run_number }}"
+          echo "rollout_id=$ROLLOUT_ID" >> $GITHUB_OUTPUT
+
+      - name: Parse services
+        id: parse
+        run: |
+          if [ "${{ github.event.inputs.service }}" == "all" ]; then
+            SERVICES='["ocr-service","ai-service","analytics-service","realtime-service","worker-service"]'
+          else
+            SERVICES='["${{ github.event.inputs.service }}"]'
+          fi
+          echo "services=$SERVICES" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name medcontracthub-${{ github.event.inputs.environment }} --region us-east-1
+
+      - name: Validate target version exists
+        run: |
+          # Check if image exists in registry
+          for service in $(echo '${{ steps.parse.outputs.services }}' | jq -r '.[]'); do
+            echo "Checking $service:${{ github.event.inputs.version }}..."
+            docker manifest inspect ${{ env.REGISTRY }}/medcontracthub/${service}:${{ github.event.inputs.version }} || {
+              echo "Error: Image not found for $service:${{ github.event.inputs.version }}"
+              exit 1
+            }
+          done
+
+  canary-rollout:
+    needs: prepare-rollout
+    if: github.event.inputs.strategy == 'canary'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: ${{ fromJson(needs.prepare-rollout.outputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --name medcontracthub-${{ github.event.inputs.environment }} --region us-east-1
+
+      - name: Install Flagger CLI
+        run: |
+          curl -sL https://github.com/fluxcd/flagger/releases/download/v1.35.0/flagger_1.35.0_linux_amd64.tar.gz | tar xz
+          sudo mv flagger /usr/local/bin/
+
+      - name: Create Canary resource
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: flagger.app/v1beta1
+          kind: Canary
+          metadata:
+            name: ${{ matrix.service }}
+            namespace: medcontract-${{ github.event.inputs.environment }}
+            labels:
+              rollout-id: ${{ needs.prepare-rollout.outputs.rollout_id }}
+          spec:
+            targetRef:
+              apiVersion: apps/v1
+              kind: Deployment
+              name: ${{ matrix.service }}
+            progressDeadlineSeconds: 600
+            service:
+              port: 8080
+              targetPort: 8080
+              gateways:
+              - medcontract-gateway
+              hosts:
+              - ${{ matrix.service }}.medcontracthub.com
+            analysis:
+              interval: 1m
+              threshold: 5
+              maxWeight: 50
+              stepWeight: 10
+              metrics:
+              - name: request-success-rate
+                thresholdRange:
+                  min: 99
+                interval: 1m
+              - name: request-duration
+                thresholdRange:
+                  max: 500
+                interval: 30s
+              - name: error-rate
+                thresholdRange:
+                  max: 1
+                interval: 1m
+              webhooks:
+              - name: acceptance-test
+                type: pre-rollout
+                url: http://flagger-loadtester.flagger-system/
+                timeout: 30s
+                metadata:
+                  type: bash
+                  cmd: "curl -sd 'test' http://${{ matrix.service }}-canary:8080/health | grep -q 'ok'"
+              - name: load-test
+                type: rollout
+                url: http://flagger-loadtester.flagger-system/
+                metadata:
+                  cmd: "hey -z 2m -q 10 -c 2 http://${{ matrix.service }}-canary:8080/"
+          EOF
+
+      - name: Trigger canary deployment
+        run: |
+          # Update deployment image
+          kubectl set image deployment/${{ matrix.service }} \
+            ${{ matrix.service }}=${{ env.REGISTRY }}/medcontracthub/${{ matrix.service }}:${{ github.event.inputs.version }} \
+            -n medcontract-${{ github.event.inputs.environment }}
+
+      - name: Monitor canary progress
+        run: |
+          # Monitor canary deployment
+          echo "Starting canary rollout for ${{ matrix.service }}..."
+          
+          # Wait for canary to initialize
+          sleep 30
+          
+          # Monitor progress
+          TIMEOUT=1800  # 30 minutes
+          INTERVAL=30
+          ELAPSED=0
+          
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            STATUS=$(kubectl get canary ${{ matrix.service }} -n medcontract-${{ github.event.inputs.environment }} -o jsonpath='{.status.phase}')
+            WEIGHT=$(kubectl get canary ${{ matrix.service }} -n medcontract-${{ github.event.inputs.environment }} -o jsonpath='{.status.canaryWeight}')
+            
+            echo "Status: $STATUS, Weight: $WEIGHT%"
+            
+            case $STATUS in
+              "Succeeded")
+                echo "✅ Canary deployment succeeded!"
+                exit 0
+                ;;
+              "Failed")
+                echo "❌ Canary deployment failed!"
+                kubectl describe canary ${{ matrix.service }} -n medcontract-${{ github.event.inputs.environment }}
+                exit 1
+                ;;
+              "Progressing"|"Promoting")
+                echo "🔄 Deployment in progress..."
+                ;;
+            esac
+            
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+          
+          echo "⏱️ Deployment timeout!"
+          exit 1
+
+      - name: Collect metrics
+        if: always()
+        run: |
+          # Collect deployment metrics
+          kubectl logs -n ${{ env.FLAGGER_NAMESPACE }} -l app.kubernetes.io/name=flagger --tail=100 > flagger-logs.txt
+          
+          # Get canary analysis
+          kubectl get canaryanalysis -n medcontract-${{ github.event.inputs.environment }} -o yaml > canary-analysis.yaml
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canary-rollout-${{ matrix.service }}
+          path: |
+            flagger-logs.txt
+            canary-analysis.yaml
+
+  blue-green-rollout:
+    needs: prepare-rollout
+    if: github.event.inputs.strategy == 'blue-green'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: ${{ fromJson(needs.prepare-rollout.outputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --name medcontracthub-${{ github.event.inputs.environment }} --region us-east-1
+
+      - name: Create green deployment
+        run: |
+          # Get current deployment
+          kubectl get deployment ${{ matrix.service }} -n medcontract-${{ github.event.inputs.environment }} -o yaml > blue-deployment.yaml
+          
+          # Create green deployment
+          sed -i 's/name: ${{ matrix.service }}/name: ${{ matrix.service }}-green/g' blue-deployment.yaml
+          sed -i 's|image: .*|image: ${{ env.REGISTRY }}/medcontracthub/${{ matrix.service }}:${{ github.event.inputs.version }}|g' blue-deployment.yaml
+          
+          # Add green labels
+          kubectl patch -f blue-deployment.yaml --type json -p='[
+            {"op": "add", "path": "/metadata/labels/deployment", "value": "green"},
+            {"op": "add", "path": "/spec/selector/matchLabels/deployment", "value": "green"},
+            {"op": "add", "path": "/spec/template/metadata/labels/deployment", "value": "green"}
+          ]' --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Wait for green deployment
+        run: |
+          kubectl rollout status deployment/${{ matrix.service }}-green -n medcontract-${{ github.event.inputs.environment }} --timeout=600s
+
+      - name: Run smoke tests on green
+        run: |
+          # Get green service endpoint
+          GREEN_POD=$(kubectl get pods -n medcontract-${{ github.event.inputs.environment }} -l app=${{ matrix.service }},deployment=green -o jsonpath='{.items[0].metadata.name}')
+          
+          # Port forward for testing
+          kubectl port-forward -n medcontract-${{ github.event.inputs.environment }} pod/$GREEN_POD 8080:8080 &
+          PF_PID=$!
+          sleep 5
+          
+          # Run smoke tests
+          npm run test:smoke -- --service ${{ matrix.service }} --endpoint http://localhost:8080
+          
+          kill $PF_PID
+
+      - name: Switch traffic to green
+        run: |
+          # Update service selector to point to green
+          kubectl patch service ${{ matrix.service }} -n medcontract-${{ github.event.inputs.environment }} \
+            -p '{"spec":{"selector":{"deployment":"green"}}}'
+          
+          # Wait for endpoints to update
+          sleep 10
+          
+          # Verify traffic is going to green
+          ENDPOINTS=$(kubectl get endpoints ${{ matrix.service }} -n medcontract-${{ github.event.inputs.environment }} -o jsonpath='{.subsets[0].addresses[*].targetRef.name}')
+          echo "Active endpoints: $ENDPOINTS"
+
+      - name: Monitor green deployment
+        run: |
+          # Monitor for 5 minutes
+          echo "Monitoring green deployment for 5 minutes..."
+          
+          for i in {1..30}; do
+            # Check pod status
+            kubectl get pods -n medcontract-${{ github.event.inputs.environment }} -l app=${{ matrix.service }},deployment=green
+            
+            # Check for errors
+            ERROR_COUNT=$(kubectl logs -n medcontract-${{ github.event.inputs.environment }} -l app=${{ matrix.service }},deployment=green --tail=100 | grep -c ERROR || true)
+            
+            if [ $ERROR_COUNT -gt 10 ]; then
+              echo "❌ High error rate detected!"
+              exit 1
+            fi
+            
+            sleep 10
+          done
+          
+          echo "✅ Green deployment stable"
+
+      - name: Cleanup blue deployment
+        run: |
+          # Delete old blue deployment
+          kubectl delete deployment ${{ matrix.service }} -n medcontract-${{ github.event.inputs.environment }} || true
+          
+          # Rename green to primary
+          kubectl patch deployment ${{ matrix.service }}-green -n medcontract-${{ github.event.inputs.environment }} \
+            --type='json' -p='[{"op": "replace", "path": "/metadata/name", "value": "${{ matrix.service }}"}]'
+
+  rolling-rollout:
+    needs: prepare-rollout
+    if: github.event.inputs.strategy == 'rolling'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: ${{ fromJson(needs.prepare-rollout.outputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --name medcontracthub-${{ github.event.inputs.environment }} --region us-east-1
+
+      - name: Configure rolling update
+        run: |
+          # Set conservative rolling update parameters
+          kubectl patch deployment ${{ matrix.service }} -n medcontract-${{ github.event.inputs.environment }} \
+            --type='json' -p='[
+              {"op": "replace", "path": "/spec/strategy/rollingUpdate/maxSurge", "value": "1"},
+              {"op": "replace", "path": "/spec/strategy/rollingUpdate/maxUnavailable", "value": "0"}
+            ]'
+
+      - name: Start rolling update
+        run: |
+          # Update image
+          kubectl set image deployment/${{ matrix.service }} \
+            ${{ matrix.service }}=${{ env.REGISTRY }}/medcontracthub/${{ matrix.service }}:${{ github.event.inputs.version }} \
+            -n medcontract-${{ github.event.inputs.environment }}
+          
+          # Add rollout annotation
+          kubectl annotate deployment/${{ matrix.service }} \
+            -n medcontract-${{ github.event.inputs.environment }} \
+            rollout.id="${{ needs.prepare-rollout.outputs.rollout_id }}" \
+            rollout.timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --overwrite
+
+      - name: Monitor rolling update
+        run: |
+          # Monitor rollout with detailed progress
+          echo "Starting rolling update for ${{ matrix.service }}..."
+          
+          # Function to check deployment status
+          check_deployment() {
+            local REPLICAS=$(kubectl get deployment ${{ matrix.service }} -n medcontract-${{ github.event.inputs.environment }} -o jsonpath='{.spec.replicas}')
+            local READY=$(kubectl get deployment ${{ matrix.service }} -n medcontract-${{ github.event.inputs.environment }} -o jsonpath='{.status.readyReplicas}')
+            local UPDATED=$(kubectl get deployment ${{ matrix.service }} -n medcontract-${{ github.event.inputs.environment }} -o jsonpath='{.status.updatedReplicas}')
+            local AVAILABLE=$(kubectl get deployment ${{ matrix.service }} -n medcontract-${{ github.event.inputs.environment }} -o jsonpath='{.status.availableReplicas}')
+            
+            echo "Replicas: $REPLICAS, Ready: $READY, Updated: $UPDATED, Available: $AVAILABLE"
+            
+            if [ "$READY" == "$REPLICAS" ] && [ "$UPDATED" == "$REPLICAS" ] && [ "$AVAILABLE" == "$REPLICAS" ]; then
+              return 0
+            else
+              return 1
+            fi
+          }
+          
+          # Monitor with timeout
+          TIMEOUT=900  # 15 minutes
+          ELAPSED=0
+          
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if check_deployment; then
+              echo "✅ Rolling update completed successfully!"
+              exit 0
+            fi
+            
+            # Check for failed pods
+            FAILED_PODS=$(kubectl get pods -n medcontract-${{ github.event.inputs.environment }} -l app=${{ matrix.service }} --field-selector=status.phase=Failed -o name)
+            if [ -n "$FAILED_PODS" ]; then
+              echo "❌ Failed pods detected:"
+              echo "$FAILED_PODS"
+              kubectl describe $FAILED_PODS -n medcontract-${{ github.event.inputs.environment }}
+              exit 1
+            fi
+            
+            sleep 10
+            ELAPSED=$((ELAPSED + 10))
+          done
+          
+          echo "⏱️ Rolling update timeout!"
+          exit 1
+
+  post-rollout-validation:
+    needs: [prepare-rollout, canary-rollout, blue-green-rollout, rolling-rollout]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --name medcontracthub-${{ github.event.inputs.environment }} --region us-east-1
+
+      - name: Run post-deployment tests
+        run: |
+          npm ci
+          npm run test:production:smoke
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment }}
+
+      - name: Check service health
+        run: |
+          # Check all deployed services
+          for service in $(echo '${{ needs.prepare-rollout.outputs.services }}' | jq -r '.[]'); do
+            echo "Checking $service health..."
+            
+            # Get service endpoint
+            ENDPOINT=$(kubectl get service $service -n medcontract-${{ github.event.inputs.environment }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            
+            # Health check
+            curl -f http://$ENDPOINT:8080/health || {
+              echo "❌ Health check failed for $service"
+              exit 1
+            }
+          done
+
+      - name: Generate rollout report
+        run: |
+          cat <<EOF > rollout-report.json
+          {
+            "rollout_id": "${{ needs.prepare-rollout.outputs.rollout_id }}",
+            "strategy": "${{ github.event.inputs.strategy }}",
+            "services": ${{ needs.prepare-rollout.outputs.services }},
+            "version": "${{ github.event.inputs.version }}",
+            "environment": "${{ github.event.inputs.environment }}",
+            "status": "${{ job.status }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+      - name: Send notification
+        if: always()
+        run: |
+          # Send Slack notification
+          STATUS_EMOJI=$([[ "${{ job.status }}" == "success" ]] && echo ":white_check_mark:" || echo ":x:")
+          
+          curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+            -H 'Content-type: application/json' \
+            -d "{
+              \"text\": \"$STATUS_EMOJI Progressive Rollout ${{ needs.prepare-rollout.outputs.rollout_id }}\",
+              \"attachments\": [{
+                \"color\": \"$([[ "${{ job.status }}" == "success" ]] && echo "good" || echo "danger")\",
+                \"fields\": [
+                  {\"title\": \"Strategy\", \"value\": \"${{ github.event.inputs.strategy }}\", \"short\": true},
+                  {\"title\": \"Version\", \"value\": \"${{ github.event.inputs.version }}\", \"short\": true},
+                  {\"title\": \"Services\", \"value\": \"${{ github.event.inputs.service }}\", \"short\": true},
+                  {\"title\": \"Environment\", \"value\": \"${{ github.event.inputs.environment }}\", \"short\": true}
+                ]
+              }]
+            }"
+
+      - name: Upload rollout report
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollout-report
+          path: rollout-report.json

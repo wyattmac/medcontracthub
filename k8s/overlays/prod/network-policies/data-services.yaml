@@ -1,0 +1,417 @@
+# Network policies for data services
+
+# PostgreSQL network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-policy
+  namespace: medcontract-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres-primary
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # From application services
+  - from:
+    - podSelector:
+        matchExpressions:
+        - key: app
+          operator: In
+          values:
+          - medcontracthub-app
+          - ocr-service
+          - ai-service
+          - realtime-service
+          - worker-service
+    ports:
+    - protocol: TCP
+      port: 5432
+  # From replicas
+  - from:
+    - podSelector:
+        matchLabels:
+          app: postgres-replica
+    ports:
+    - protocol: TCP
+      port: 5432
+  # From backup jobs
+  - from:
+    - podSelector:
+        matchLabels:
+          job-name: postgres-backup
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Monitoring
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    - podSelector:
+        matchLabels:
+          app: postgres-exporter
+    ports:
+    - protocol: TCP
+      port: 5432
+  egress:
+  # To replicas for replication
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres-replica
+    ports:
+    - protocol: TCP
+      port: 5432
+  # To S3 for backups
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 443
+
+---
+# PostgreSQL Replica network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-replica-policy
+  namespace: medcontract-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres-replica
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Read-only queries from apps
+  - from:
+    - podSelector:
+        matchExpressions:
+        - key: app
+          operator: In
+          values:
+          - medcontracthub-app
+          - analytics-service
+    ports:
+    - protocol: TCP
+      port: 5432
+  # From primary for replication
+  - from:
+    - podSelector:
+        matchLabels:
+          app: postgres-primary
+    ports:
+    - protocol: TCP
+      port: 5432
+  egress:
+  # To primary for replication
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres-primary
+    ports:
+    - protocol: TCP
+      port: 5432
+
+---
+# Redis Cluster network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-cluster-policy
+  namespace: medcontract-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: redis-cluster
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # From all application services
+  - from:
+    - podSelector:
+        matchExpressions:
+        - key: app
+          operator: In
+          values:
+          - medcontracthub-app
+          - ocr-service
+          - ai-service
+          - realtime-service
+          - worker-service
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Cluster communication
+  - from:
+    - podSelector:
+        matchLabels:
+          app: redis-cluster
+    ports:
+    - protocol: TCP
+      port: 6379
+    - protocol: TCP
+      port: 16379  # Cluster bus
+  # Monitoring
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    - podSelector:
+        matchLabels:
+          app: redis-exporter
+    ports:
+    - protocol: TCP
+      port: 6379
+  egress:
+  # To other Redis nodes
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis-cluster
+    ports:
+    - protocol: TCP
+      port: 6379
+    - protocol: TCP
+      port: 16379
+
+---
+# Kafka network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kafka-policy
+  namespace: medcontract-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: kafka
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # From all services
+  - from:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 9092
+    - protocol: TCP
+      port: 9093  # Internal listener
+  # From Zookeeper
+  - from:
+    - podSelector:
+        matchLabels:
+          app: zookeeper
+    ports:
+    - protocol: TCP
+      port: 9092
+    - protocol: TCP
+      port: 9093
+  # JMX metrics
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 9999
+  egress:
+  # To Zookeeper
+  - to:
+    - podSelector:
+        matchLabels:
+          app: zookeeper
+    ports:
+    - protocol: TCP
+      port: 2181
+  # To other Kafka brokers
+  - to:
+    - podSelector:
+        matchLabels:
+          app: kafka
+    ports:
+    - protocol: TCP
+      port: 9092
+    - protocol: TCP
+      port: 9093
+
+---
+# ClickHouse network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: clickhouse-policy
+  namespace: medcontract-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: clickhouse
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # From Analytics Service
+  - from:
+    - podSelector:
+        matchLabels:
+          app: analytics-service
+    ports:
+    - protocol: TCP
+      port: 8123  # HTTP
+    - protocol: TCP
+      port: 9000  # Native
+  # From backup jobs
+  - from:
+    - podSelector:
+        matchLabels:
+          job-name: clickhouse-backup
+    ports:
+    - protocol: TCP
+      port: 9000
+  # Replication between nodes
+  - from:
+    - podSelector:
+        matchLabels:
+          app: clickhouse
+    ports:
+    - protocol: TCP
+      port: 9000
+    - protocol: TCP
+      port: 9009  # Interserver
+  egress:
+  # To other ClickHouse nodes
+  - to:
+    - podSelector:
+        matchLabels:
+          app: clickhouse
+    ports:
+    - protocol: TCP
+      port: 9000
+    - protocol: TCP
+      port: 9009
+  # To S3 for backups
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 443
+
+---
+# Weaviate network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: weaviate-policy
+  namespace: medcontract-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: weaviate
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # From AI Service
+  - from:
+    - podSelector:
+        matchLabels:
+          app: ai-service
+    ports:
+    - protocol: TCP
+      port: 8080
+  # Cluster communication
+  - from:
+    - podSelector:
+        matchLabels:
+          app: weaviate
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 7000  # Gossip
+    - protocol: TCP
+      port: 7001  # gRPC
+  egress:
+  # To other Weaviate nodes
+  - to:
+    - podSelector:
+        matchLabels:
+          app: weaviate
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 7000
+    - protocol: TCP
+      port: 7001
+
+---
+# Kong API Gateway network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kong-gateway-policy
+  namespace: medcontract-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: kong-gateway
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # From ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8000  # Proxy
+  # From main app
+  - from:
+    - podSelector:
+        matchLabels:
+          app: medcontracthub-app
+    ports:
+    - protocol: TCP
+      port: 8000
+  # Admin API (restricted)
+  - from:
+    - podSelector:
+        matchLabels:
+          app: kong-admin
+    ports:
+    - protocol: TCP
+      port: 8001
+  egress:
+  # To all microservices
+  - to:
+    - podSelector:
+        matchExpressions:
+        - key: app
+          operator: In
+          values:
+          - ocr-service
+          - ai-service
+          - analytics-service
+          - realtime-service
+          - worker-service
+    ports:
+    - protocol: TCP
+  # To PostgreSQL (Kong database)
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres-kong
+    ports:
+    - protocol: TCP
+      port: 5432

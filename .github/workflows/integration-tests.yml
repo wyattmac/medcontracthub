@@ -1,0 +1,345 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    paths:
+      - 'services/**'
+      - 'lib/**'
+      - 'tests/integration/**'
+      - 'docker-compose*.yml'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to test'
+        required: false
+        type: string
+        default: 'latest'
+
+env:
+  NODE_ENV: test
+  DOCKER_BUILDKIT: 1
+  TEST_TIMEOUT: 30000
+
+jobs:
+  test-microservices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: medcontracthub_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    strategy:
+      matrix:
+        test-suite:
+          - name: "OCR Service Integration"
+            path: "tests/integration/microservices/ocr-service.test.ts"
+            services: ["ocr-service", "kafka", "redis"]
+          - name: "AI Service Integration"
+            path: "tests/integration/microservices/ai-service.test.ts"
+            services: ["ai-service", "weaviate", "kafka"]
+          - name: "Analytics Service Integration"
+            path: "tests/integration/microservices/analytics-service.test.ts"
+            services: ["analytics-service", "clickhouse", "kafka"]
+          - name: "Real-time Service Integration"
+            path: "tests/integration/microservices/realtime-service.test.ts"
+            services: ["realtime-service", "redis"]
+          - name: "Worker Service Integration"
+            path: "tests/integration/microservices/worker-service.test.ts"
+            services: ["worker-service", "redis", "postgres"]
+          - name: "End-to-End Flow"
+            path: "tests/integration/microservices/e2e-flow.test.ts"
+            services: ["all"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up test infrastructure
+        run: |
+          # Create test network
+          docker network create test-network || true
+          
+          # Start required services
+          if [[ "${{ matrix.test-suite.services }}" == *"all"* ]]; then
+            docker-compose -f docker-compose.test.yml up -d
+          else
+            SERVICES="${{ join(matrix.test-suite.services, ' ') }}"
+            docker-compose -f docker-compose.test.yml up -d $SERVICES
+          fi
+          
+          # Wait for services to be ready
+          npm run wait-for-services -- --services "${{ join(matrix.test-suite.services, ',') }}"
+
+      - name: Run database migrations
+        run: |
+          npm run db:migrate:test
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/medcontracthub_test
+
+      - name: Run integration tests
+        run: |
+          npm run test:integration -- ${{ matrix.test-suite.path }}
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/medcontracthub_test
+          REDIS_URL: redis://localhost:6379
+          KAFKA_BROKERS: localhost:9092
+          IMAGE_TAG: ${{ inputs.image_tag || 'latest' }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.test-suite.name }}
+          path: |
+            test-results/
+            coverage/
+
+      - name: Collect service logs
+        if: failure()
+        run: |
+          mkdir -p logs
+          docker-compose -f docker-compose.test.yml logs > logs/docker-compose.log
+          docker ps -a > logs/docker-ps.log
+          
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-logs-${{ matrix.test-suite.name }}
+          path: logs/
+
+  test-data-consistency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: test-microservices
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start all services
+        run: |
+          docker-compose -f docker-compose.test.yml up -d
+          npm run wait-for-services
+
+      - name: Run data migration tests
+        run: |
+          npm run test:migration
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/medcontracthub_test
+
+      - name: Run consistency checks
+        run: |
+          npm run scripts:check-consistency -- --test-mode
+        env:
+          TEST_MODE: true
+
+      - name: Generate consistency report
+        if: always()
+        run: |
+          npm run scripts:generate-consistency-report
+          
+      - name: Upload consistency report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: consistency-report
+          path: consistency_report_*.json
+
+  test-performance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: test-microservices
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm install -g artillery
+
+      - name: Start services with production config
+        run: |
+          docker-compose -f docker-compose.prod.yml up -d
+          npm run wait-for-services
+
+      - name: Run performance tests
+        run: |
+          # OCR Service performance
+          artillery run tests/performance/ocr-service.yml
+          
+          # AI Service performance
+          artillery run tests/performance/ai-service.yml
+          
+          # Real-time Service performance
+          artillery run tests/performance/realtime-service.yml
+
+      - name: Analyze performance results
+        run: |
+          npm run analyze-performance
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: |
+            performance-results/
+            artillery-reports/
+
+  test-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run OWASP dependency check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'medcontracthub'
+          path: '.'
+          format: 'HTML'
+
+      - name: Upload dependency check results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: reports/
+
+      - name: Run Semgrep security scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+            p/nodejs
+            p/typescript
+
+      - name: Run container security scan
+        run: |
+          # Scan all service images
+          for service in ocr-service ai-service analytics-service realtime-service worker-service; do
+            echo "Scanning $service..."
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              aquasec/trivy image \
+              --severity HIGH,CRITICAL \
+              --exit-code 1 \
+              localhost:5000/$service:latest || true
+          done
+
+  integration-test-summary:
+    runs-on: ubuntu-latest
+    needs: [test-microservices, test-data-consistency, test-performance, test-security]
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Generate test summary
+        run: |
+          echo "# Integration Test Summary" > summary.md
+          echo "" >> summary.md
+          
+          # Check test results
+          if [ -d "test-results-*" ]; then
+            echo "## Test Results" >> summary.md
+            echo "| Test Suite | Status |" >> summary.md
+            echo "|------------|--------|" >> summary.md
+            for result in test-results-*/; do
+              suite=$(basename "$result" | sed 's/test-results-//')
+              if [ -f "$result/results.json" ]; then
+                status=$(jq -r '.status' "$result/results.json")
+                echo "| $suite | $status |" >> summary.md
+              fi
+            done
+            echo "" >> summary.md
+          fi
+          
+          # Performance summary
+          if [ -d "performance-results" ]; then
+            echo "## Performance Summary" >> summary.md
+            cat performance-results/summary.md >> summary.md || echo "No performance summary available" >> summary.md
+            echo "" >> summary.md
+          fi
+          
+          # Security summary
+          if [ -d "dependency-check-report" ]; then
+            echo "## Security Summary" >> summary.md
+            echo "Dependency check report generated. Please review for vulnerabilities." >> summary.md
+            echo "" >> summary.md
+          fi
+          
+          # Consistency check
+          if [ -f "consistency_report_*.json" ]; then
+            echo "## Data Consistency" >> summary.md
+            latest_report=$(ls -t consistency_report_*.json | head -1)
+            jq -r '.summary | "Total Checks: \(.totalChecks)\nPassed: \(.passed)\nWarnings: \(.warnings)\nFailed: \(.failed)"' "$latest_report" >> summary.md
+            echo "" >> summary.md
+          fi
+
+      - name: Comment PR with summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('summary.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            })
+
+      - name: Set job status
+        run: |
+          # Check if any critical tests failed
+          if grep -q "failed" summary.md; then
+            echo "Integration tests failed"
+            exit 1
+          fi
