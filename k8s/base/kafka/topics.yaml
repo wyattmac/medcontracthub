@@ -1,0 +1,90 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-topics-init
+  namespace: kafka
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: kafka-topics
+        image: confluentinc/cp-kafka:7.5.1
+        command:
+        - /bin/bash
+        - -c
+        - |
+          echo "Waiting for Kafka to be ready..."
+          while ! kafka-topics --bootstrap-server kafka:9092 --list; do
+            echo "Kafka not ready yet..."
+            sleep 5
+          done
+          
+          echo "Creating MedContractHub event topics..."
+          
+          # Contract Domain Events
+          kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic contracts.opportunity.created \
+            --partitions 6 --replication-factor 2 \
+            --config retention.ms=604800000 \
+            --config compression.type=gzip
+          
+          kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic contracts.opportunity.viewed \
+            --partitions 6 --replication-factor 2 \
+            --config retention.ms=604800000
+          
+          kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic contracts.opportunity.saved \
+            --partitions 6 --replication-factor 2 \
+            --config retention.ms=604800000
+          
+          kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic contracts.proposal.created \
+            --partitions 3 --replication-factor 2 \
+            --config retention.ms=2592000000 \
+            --config compression.type=gzip
+          
+          kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic contracts.proposal.updated \
+            --partitions 3 --replication-factor 2 \
+            --config retention.ms=2592000000
+          
+          # Analytics Domain Events
+          kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic analytics.metrics.computed \
+            --partitions 3 --replication-factor 2 \
+            --config retention.ms=86400000
+          
+          kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic analytics.report.generated \
+            --partitions 2 --replication-factor 2 \
+            --config retention.ms=604800000
+          
+          # AI Domain Events
+          kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic ai.document.processed \
+            --partitions 4 --replication-factor 2 \
+            --config retention.ms=604800000 \
+            --config compression.type=gzip
+          
+          kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic ai.proposal.generated \
+            --partitions 3 --replication-factor 2 \
+            --config retention.ms=2592000000
+          
+          # User Activity Events
+          kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic user.activity \
+            --partitions 6 --replication-factor 2 \
+            --config retention.ms=259200000 \
+            --config compression.type=snappy
+          
+          # Dead Letter Queue
+          kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic dlq.failed.events \
+            --partitions 3 --replication-factor 2 \
+            --config retention.ms=5184000000
+          
+          echo "All topics created successfully!"
+          kafka-topics --bootstrap-server kafka:9092 --list

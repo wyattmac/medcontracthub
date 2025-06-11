@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "analytics-service.fullname" . }}
+  labels:
+    {{- include "analytics-service.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "analytics-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "analytics-service.selectorLabels" . | nindent 8 }}
+        version: {{ .Values.image.tag | default .Chart.AppVersion }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "analytics-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.service.metricsPort }}
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: {{ .Values.config.environment }}
+            - name: PORT
+              value: "{{ .Values.service.port }}"
+            - name: METRICS_PORT
+              value: "{{ .Values.service.metricsPort }}"
+            - name: LOG_LEVEL
+              value: {{ .Values.config.logLevel }}
+            # Kafka configuration
+            - name: KAFKA_BROKERS
+              value: {{ .Values.config.kafka.brokers }}
+            - name: KAFKA_CONSUMER_GROUP
+              value: {{ .Values.config.kafka.consumerGroup }}
+            - name: KAFKA_TOPICS
+              value: {{ join "," .Values.config.kafka.topics }}
+            - name: KAFKA_SESSION_TIMEOUT
+              value: "{{ .Values.config.kafka.sessionTimeout }}"
+            - name: KAFKA_REBALANCE_TIMEOUT
+              value: "{{ .Values.config.kafka.rebalanceTimeout }}"
+            # Schema Registry
+            - name: SCHEMA_REGISTRY_URL
+              value: {{ .Values.config.schemaRegistry.url }}
+            # ClickHouse configuration
+            - name: CLICKHOUSE_HOST
+              value: {{ .Values.config.clickhouse.host }}
+            - name: CLICKHOUSE_PORT
+              value: "{{ .Values.config.clickhouse.port }}"
+            - name: CLICKHOUSE_DATABASE
+              value: {{ .Values.config.clickhouse.database }}
+            - name: CLICKHOUSE_USERNAME
+              value: {{ .Values.config.clickhouse.username }}
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "analytics-service.fullname" . }}
+                  key: clickhouse-password
+            # Redis configuration
+            - name: REDIS_HOST
+              value: {{ .Values.config.redis.host }}
+            - name: REDIS_PORT
+              value: "{{ .Values.config.redis.port }}"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "analytics-service.fullname" . }}
+                  key: redis-password
+                  optional: true
+            # Processing configuration
+            - name: BATCH_SIZE
+              value: "{{ .Values.config.processing.batchSize }}"
+            - name: FLUSH_INTERVAL_MS
+              value: "{{ .Values.config.processing.flushIntervalMs }}"
+            # Pod information
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: temp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /app/cache
+      volumes:
+        - name: temp
+          emptyDir: {}
+        - name: cache
+          emptyDir:
+            sizeLimit: 2Gi
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

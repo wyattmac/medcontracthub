@@ -11,6 +11,7 @@ import {
   DatabaseError
 } from '@/lib/errors/types'
 import { uuidSchema, dateSchema } from '@/lib/validation/shared-schemas'
+import { eventProducer } from '@/lib/events/kafka-producer'
 
 // Request body validation schema
 const saveOpportunitySchema = z.object({
@@ -48,7 +49,7 @@ export const POST = enhancedRouteHandler.POST(
     // Verify opportunity exists
     const { data: opportunity, error: opportunityError } = await supabase
       .from('opportunities')
-      .select('id')
+      .select('id, title, agency, naics_code, set_aside_type, response_deadline, estimated_value')
       .eq('id', opportunityId)
       .single()
 
@@ -110,6 +111,32 @@ export const POST = enhancedRouteHandler.POST(
       } catch (auditError) {
         // Continue if audit logging fails - it's not critical
         console.warn('Audit logging failed:', auditError)
+      }
+
+      // Publish opportunity saved event (fire and forget)
+      try {
+        eventProducer.publishOpportunitySaved(
+          user.id,
+          opportunityId,
+          {
+            title: opportunity.title,
+            agency: opportunity.agency,
+            naicsCode: opportunity.naics_code,
+            setAsideType: opportunity.set_aside_type,
+            responseDeadline: opportunity.response_deadline,
+            awardAmount: opportunity.estimated_value,
+          },
+          {
+            source: 'DETAIL_PAGE', // Could determine from referer
+            savedToList: 'default', // Could support custom lists later
+            tags: tags,
+            notes: notes || undefined,
+          }
+        ).catch(error => {
+          console.error('Failed to publish opportunity saved event:', error)
+        })
+      } catch (error) {
+        console.error('Error publishing save event:', error)
       }
 
       return NextResponse.json({ 

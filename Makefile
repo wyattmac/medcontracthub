@@ -439,3 +439,64 @@ argocd-rollback: ## Rollback ArgoCD application (usage: make argocd-rollback APP
 		echo "↩️  Rolling back $(APP)..."; \
 		argocd app rollback $(APP); \
 	fi
+
+# ====================================
+# Cloud-Native Microservices Commands
+# ====================================
+
+analytics-infra-start: ## Start local analytics infrastructure (Kafka, ClickHouse)
+	@echo "🚀 Starting analytics infrastructure..."
+	docker-compose -f docker-compose.analytics.yml up -d
+	@echo "⏳ Waiting for services to be ready..."
+	@sleep 10
+	@echo "✅ Analytics infrastructure started!"
+	@echo "   - Kafka: localhost:9092"
+	@echo "   - Kafka UI: http://localhost:8080"
+	@echo "   - ClickHouse: http://localhost:8123"
+	@echo "   - Schema Registry: http://localhost:8081"
+
+analytics-infra-stop: ## Stop local analytics infrastructure
+	@echo "🛑 Stopping analytics infrastructure..."
+	docker-compose -f docker-compose.analytics.yml down
+
+analytics-infra-logs: ## View analytics infrastructure logs
+	docker-compose -f docker-compose.analytics.yml logs -f
+
+analytics-dev: ## Start Analytics Service in development mode
+	@echo "🔥 Starting Analytics Service..."
+	cd services/analytics-service && npm run dev
+
+analytics-build: ## Build Analytics Service Docker image
+	@echo "🔨 Building Analytics Service..."
+	cd services/analytics-service && docker build -t medcontracthub/analytics-service:latest .
+
+analytics-test: ## Run Analytics Service tests
+	@echo "🧪 Testing Analytics Service..."
+	cd services/analytics-service && npm test
+
+analytics-deploy: ## Deploy Analytics Service to Kubernetes
+	@echo "🚀 Deploying Analytics Service..."
+	helm upgrade --install analytics-service services/analytics-service/helm \
+		--namespace medcontracthub \
+		--values services/analytics-service/helm/values.yaml
+
+kafka-ui: ## Open Kafka UI
+	@echo "🔗 Opening Kafka UI..."
+	kubectl port-forward -n kafka svc/kafka-ui 8080:8080
+
+clickhouse-ui: ## Access ClickHouse UI
+	@echo "🔗 Opening ClickHouse UI..."
+	kubectl port-forward -n medcontracthub svc/clickhouse 8123:8123
+
+test-event-flow: ## Test end-to-end event flow
+	@echo "🧪 Testing event flow..."
+	tsx scripts/test-event-flow.ts
+
+migrate-analytics-local: ## Run ClickHouse migrations for local Analytics
+	@echo "🗄️  Running Analytics migrations locally..."
+	docker exec -i medcontract-clickhouse clickhouse-client --multiquery < services/analytics-service/migrations/001_create_analytics_schema.sql
+
+migrate-analytics: ## Run ClickHouse migrations for Analytics
+	@echo "🗄️  Running Analytics migrations..."
+	kubectl exec -it clickhouse-0 -n medcontracthub -- \
+		clickhouse-client --multiquery < services/analytics-service/migrations/001_create_analytics_schema.sql

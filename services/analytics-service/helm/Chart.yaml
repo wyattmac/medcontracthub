@@ -1,0 +1,21 @@
+apiVersion: v2
+name: analytics-service
+description: Event-driven analytics service for MedContractHub
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - analytics
+  - kafka
+  - clickhouse
+  - microservice
+home: https://github.com/medcontracthub/analytics-service
+maintainers:
+  - name: MedContractHub Team
+    email: team@medcontracthub.com
+dependencies:
+  - name: common
+    version: "2.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    tags:
+      - bitnami-common

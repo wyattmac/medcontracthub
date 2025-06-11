@@ -1,0 +1,104 @@
+{
+  "namespace": "com.medcontracthub.contracts",
+  "type": "record",
+  "name": "OpportunityViewedEvent",
+  "version": "1.0.0",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": "string",
+      "doc": "Unique event identifier (UUID)"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "doc": "Event timestamp in milliseconds since epoch"
+    },
+    {
+      "name": "opportunityId",
+      "type": "string",
+      "doc": "SAM.gov notice ID"
+    },
+    {
+      "name": "userId",
+      "type": "string",
+      "doc": "User ID who viewed the opportunity"
+    },
+    {
+      "name": "sessionId",
+      "type": "string",
+      "doc": "User session ID for tracking"
+    },
+    {
+      "name": "viewContext",
+      "type": {
+        "type": "record",
+        "name": "ViewContext",
+        "fields": [
+          {
+            "name": "source",
+            "type": {
+              "type": "enum",
+              "name": "ViewSource",
+              "symbols": ["SEARCH", "DASHBOARD", "SAVED", "RECOMMENDATION", "DIRECT_LINK"]
+            }
+          },
+          {
+            "name": "searchQuery",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Search query if from search"
+          },
+          {
+            "name": "referrer",
+            "type": ["null", "string"],
+            "default": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "opportunityMetadata",
+      "type": {
+        "type": "record",
+        "name": "OpportunityMetadata",
+        "fields": [
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "agency",
+            "type": "string"
+          },
+          {
+            "name": "naicsCode",
+            "type": ["null", "string"],
+            "default": null
+          },
+          {
+            "name": "setAsideType",
+            "type": ["null", "string"],
+            "default": null
+          },
+          {
+            "name": "responseDeadline",
+            "type": ["null", "long"],
+            "default": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "userAgent",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "ipAddress",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Hashed IP for privacy"
+    }
+  ]
+}

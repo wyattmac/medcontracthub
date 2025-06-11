@@ -1,0 +1,109 @@
+{
+  "namespace": "com.medcontracthub.contracts",
+  "type": "record",
+  "name": "OpportunitySavedEvent",
+  "version": "1.0.0",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": "string",
+      "doc": "Unique event identifier (UUID)"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "doc": "Event timestamp in milliseconds since epoch"
+    },
+    {
+      "name": "opportunityId",
+      "type": "string",
+      "doc": "SAM.gov notice ID"
+    },
+    {
+      "name": "userId",
+      "type": "string",
+      "doc": "User ID who saved the opportunity"
+    },
+    {
+      "name": "savedToList",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Custom list name if applicable"
+    },
+    {
+      "name": "tags",
+      "type": {
+        "type": "array",
+        "items": "string",
+        "default": []
+      },
+      "doc": "User-applied tags"
+    },
+    {
+      "name": "notes",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "User notes (first 500 chars for analytics)"
+    },
+    {
+      "name": "opportunityMetadata",
+      "type": {
+        "type": "record",
+        "name": "OpportunityMetadata",
+        "fields": [
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "agency",
+            "type": "string"
+          },
+          {
+            "name": "naicsCode",
+            "type": ["null", "string"],
+            "default": null
+          },
+          {
+            "name": "setAsideType",
+            "type": ["null", "string"],
+            "default": null
+          },
+          {
+            "name": "responseDeadline",
+            "type": ["null", "long"],
+            "default": null
+          },
+          {
+            "name": "awardAmount",
+            "type": ["null", "double"],
+            "default": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "saveContext",
+      "type": {
+        "type": "record",
+        "name": "SaveContext",
+        "fields": [
+          {
+            "name": "source",
+            "type": {
+              "type": "enum",
+              "name": "SaveSource",
+              "symbols": ["SEARCH_RESULTS", "DETAIL_PAGE", "AI_RECOMMENDATION", "BULK_ACTION"]
+            }
+          },
+          {
+            "name": "aiRecommendationScore",
+            "type": ["null", "double"],
+            "default": null,
+            "doc": "AI match score if from recommendation"
+          }
+        ]
+      }
+    }
+  ]
+}

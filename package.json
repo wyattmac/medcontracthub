@@ -111,7 +111,12 @@
     "tailwind-merge": "^3.3.0",
     "xlsx": "^0.18.5",
     "zod": "^3.24.1",
-    "zustand": "^5.0.5"
+    "zustand": "^5.0.5",
+    "kafkajs": "^2.2.4",
+    "@kafkajs/confluent-schema-registry": "^3.3.0",
+    "@clickhouse/client": "^0.2.10",
+    "uuid": "^10.0.0",
+    "winston": "^3.13.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",

@@ -1,0 +1,190 @@
+# Default values for analytics-service
+replicaCount: 3
+
+image:
+  repository: ghcr.io/medcontracthub/analytics-service
+  pullPolicy: IfNotPresent
+  tag: ""  # Overrides the image tag whose default is the chart appVersion
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1001
+  allowPrivilegeEscalation: false
+
+service:
+  type: ClusterIP
+  port: 8300
+  metricsPort: 9090
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - analytics-service
+        topologyKey: kubernetes.io/hostname
+
+# Analytics Service Configuration
+config:
+  environment: production
+  logLevel: info
+  
+  kafka:
+    brokers: "kafka:9092"
+    consumerGroup: "analytics-consumer-group"
+    topics:
+      - "contracts.opportunity.viewed"
+      - "contracts.opportunity.saved"
+      - "contracts.proposal.created"
+      - "contracts.proposal.updated"
+      - "ai.document.processed"
+      - "user.activity"
+    sessionTimeout: 30000
+    rebalanceTimeout: 60000
+  
+  schemaRegistry:
+    url: "http://schema-registry:8081"
+  
+  clickhouse:
+    host: "clickhouse"
+    port: 8123
+    database: "medcontract_analytics"
+    username: "default"
+    # Password should be in secret
+  
+  redis:
+    host: "redis-cluster"
+    port: 6379
+    ttl: 300
+  
+  processing:
+    batchSize: 1000
+    flushIntervalMs: 5000
+    maxConcurrentQueries: 10
+    retryAttempts: 3
+    retryDelayMs: 1000
+  
+  slos:
+    dataFreshnessMinutes: 5
+    queryLatencyP99Ms: 500
+    availabilityTarget: 0.995
+
+# Secrets - these should be provided via sealed secrets or external secrets
+secrets:
+  clickhousePassword: ""
+  redisPassword: ""
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /live
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: http
+  initialDelaySeconds: 20
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Network Policy
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: prometheus
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: api-gateway
+  egress:
+    - to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: kafka
+    - to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: clickhouse
+    - to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: redis-cluster
+    - to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: schema-registry
+
+# Service Monitor for Prometheus
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+
+# Istio Virtual Service
+istio:
+  enabled: true
+  gateway: medcontracthub-gateway
+  retries:
+    attempts: 3
+    perTryTimeout: 30s
+    retryOn: 5xx,reset,connect-failure,refused-stream
