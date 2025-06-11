@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  realtime-service:
+    build: .
+    container_name: medcontract-realtime-service
+    ports:
+      - "8400:8400"
+      - "9094:9090"  # Metrics port
+    environment:
+      - NODE_ENV=development
+      - REALTIME_PORT=8400
+      - CORS_ORIGINS=http://localhost:3000
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-key}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKERS=kafka:9092
+      - LOG_LEVEL=debug
+    depends_on:
+      - redis
+      - kafka
+    networks:
+      - medcontract-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8400/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    container_name: medcontract-realtime-redis
+    ports:
+      - "6382:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - medcontract-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: medcontract-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - medcontract-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: medcontract-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - medcontract-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  medcontract-network:
+    driver: bridge
+
+volumes:
+  redis-data:

@@ -9,17 +9,24 @@ metadata:
     tier: ml
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+    prometheus.io/path: "/metrics"
 spec:
   type: ClusterIP
   selector:
     app: ai-service
   ports:
   - port: 8200
-    targetPort: 8200
+    targetPort: http
     protocol: TCP
     name: http
+  - port: 8201
+    targetPort: grpc
+    protocol: TCP
+    name: grpc
   - port: 9090
-    targetPort: 9090
+    targetPort: metrics
     protocol: TCP
     name: metrics
   sessionAffinity: ClientIP

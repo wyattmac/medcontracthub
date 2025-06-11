@@ -8,43 +8,92 @@ metadata:
     component: microservice
     tier: ml
 data:
-  environment: "development"
+  environment: "production"
   log_level: "info"
   port: "8200"
   model_cache_dir: "/models"
-  redis_url: "redis://redis-cluster:6379"
-  kafka_bootstrap_servers: "kafka-cluster-kafka-bootstrap:9092"
-  postgres_host: "postgres-primary"
-  postgres_port: "5432"
-  postgres_db: "medcontracthub"
-  weaviate_url: "http://weaviate:8080"
+  redis_url: "redis://redis-cluster.medcontracthub.svc.cluster.local:6379"
+  kafka_bootstrap_servers: "kafka-0.kafka-headless.medcontracthub.svc.cluster.local:9092,kafka-1.kafka-headless.medcontracthub.svc.cluster.local:9092,kafka-2.kafka-headless.medcontracthub.svc.cluster.local:9092"
+  
+  # Weaviate Configuration (PostgreSQL removed - using Weaviate exclusively)
+  weaviate_url: "http://weaviate.medcontracthub.svc.cluster.local:8080"
+  weaviate_scheme: "http"
+  weaviate_grpc_port: "50051"
+  vector_db_type: "weaviate"
+  vector_dimensions: "1536"  # OpenAI embeddings default
+  index_type: "hnsw"
+  enable_vector_cache: "true"
   
   # ML Model Configuration
   model_configs: |
     {
-      "claude": {
-        "enabled": true,
-        "endpoint": "https://api.anthropic.com/v1",
+      "claude-3": {
+        "provider": "anthropic",
+        "model": "claude-3-opus-20240229",
         "max_tokens": 4096,
-        "temperature": 0.7
+        "temperature": 0.7,
+        "capabilities": ["reasoning", "analysis", "generation", "compliance"],
+        "cost_per_1k_tokens": 0.015
       },
-      "gpt": {
-        "enabled": true,
-        "endpoint": "https://api.openai.com/v1",
+      "gpt-4": {
+        "provider": "openai",
+        "model": "gpt-4-turbo-preview",
         "max_tokens": 4096,
-        "temperature": 0.7
+        "temperature": 0.7,
+        "capabilities": ["generation", "summarization", "qa", "vision"],
+        "cost_per_1k_tokens": 0.01
       },
       "mistral": {
-        "enabled": true,
-        "endpoint": "https://api.mistral.ai/v1",
-        "max_tokens": 4096,
-        "temperature": 0.7
+        "provider": "mistral",
+        "model": "mistral-large-latest",
+        "max_tokens": 8192,
+        "temperature": 0.7,
+        "capabilities": ["code", "technical", "multilingual", "analysis"],
+        "cost_per_1k_tokens": 0.008
       },
-      "llama": {
-        "enabled": true,
-        "endpoint": "http://llama-service:8080",
+      "llama-70b": {
+        "provider": "huggingface",
+        "model": "meta-llama/Llama-2-70b-chat-hf",
         "max_tokens": 4096,
-        "temperature": 0.7
+        "temperature": 0.7,
+        "capabilities": ["instruction", "chat", "reasoning", "open-source"],
+        "cost_per_1k_tokens": 0.0,
+        "local": true
+      }
+    }
+  
+  # Embedding Models Configuration
+  embedding_models: |
+    {
+      "text-embedding-ada-002": {
+        "provider": "openai",
+        "dimensions": 1536,
+        "max_tokens": 8192,
+        "default": true
+      },
+      "text-embedding-3-small": {
+        "provider": "openai",
+        "dimensions": 1536,
+        "max_tokens": 8192,
+        "cost_optimized": true
+      },
+      "text-embedding-3-large": {
+        "provider": "openai",
+        "dimensions": 3072,
+        "max_tokens": 8192,
+        "quality_optimized": true
+      },
+      "sentence-transformers/all-mpnet-base-v2": {
+        "provider": "huggingface",
+        "dimensions": 768,
+        "max_tokens": 512,
+        "local": true
+      },
+      "BAAI/bge-large-en-v1.5": {
+        "provider": "huggingface",
+        "dimensions": 1024,
+        "max_tokens": 512,
+        "local": true
       }
     }
   
@@ -56,15 +105,91 @@ data:
       "compliance_analysis": true,
       "document_understanding": true,
       "multi_model_ensemble": true,
-      "continuous_learning": true
+      "continuous_learning": true,
+      "enable_gpu": true,
+      "enable_streaming": true,
+      "enable_caching": true,
+      "cache_ttl": 3600,
+      "enable_ensemble": true,
+      "max_concurrent_models": 3,
+      "enable_fallback": true,
+      "enable_rate_limiting": true,
+      "enable_model_routing": true
     }
   
   # Performance settings
   performance: |
     {
-      "max_concurrent_inferences": 10,
-      "inference_timeout_seconds": 300,
-      "cache_ttl_seconds": 3600,
-      "batch_size": 5,
-      "model_warmup": true
+      "max_concurrent_requests": 200,
+      "request_timeout": 300,
+      "batch_size": 50,
+      "embedding_batch_size": 100,
+      "vector_search_limit": 1000,
+      "enable_connection_pooling": true,
+      "pool_size": 20,
+      "enable_result_streaming": true,
+      "model_warmup": true,
+      "prefetch_models": ["claude-3", "text-embedding-ada-002"],
+      "circuit_breaker_threshold": 5,
+      "circuit_breaker_timeout": 60,
+      "retry_max_attempts": 3,
+      "retry_backoff_multiplier": 2
+    }
+  
+  # Weaviate Schema Configuration
+  weaviate_schemas: |
+    {
+      "ProposalEmbeddings": {
+        "vectorizer": "text2vec-openai",
+        "vectorIndexConfig": {
+          "distance": "cosine",
+          "ef": 256,
+          "maxConnections": 64
+        }
+      },
+      "OpportunityEmbeddings": {
+        "vectorizer": "text2vec-openai",
+        "vectorIndexConfig": {
+          "distance": "cosine",
+          "ef": 256,
+          "maxConnections": 64
+        }
+      },
+      "DocumentEmbeddings": {
+        "vectorizer": "text2vec-huggingface",
+        "vectorIndexConfig": {
+          "distance": "cosine",
+          "ef": 128,
+          "maxConnections": 32
+        }
+      },
+      "KnowledgeBase": {
+        "vectorizer": "text2vec-openai",
+        "vectorIndexConfig": {
+          "distance": "cosine",
+          "ef": 512,
+          "maxConnections": 128
+        }
+      }
+    }
+  
+  # Kafka Topics
+  kafka_topics: |
+    {
+      "ai.embedding.request": {
+        "partitions": 10,
+        "replication_factor": 3
+      },
+      "ai.inference.request": {
+        "partitions": 10,
+        "replication_factor": 3
+      },
+      "ai.similarity.search": {
+        "partitions": 5,
+        "replication_factor": 3
+      },
+      "ai.learning.feedback": {
+        "partitions": 3,
+        "replication_factor": 3
+      }
     }

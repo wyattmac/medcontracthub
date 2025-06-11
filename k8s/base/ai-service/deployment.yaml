@@ -34,7 +34,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: ai-service
-        image: localhost:5001/ai-service:latest
+        image: medcontracthub/ai-service:1.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8200
@@ -42,6 +42,9 @@ spec:
           protocol: TCP
         - containerPort: 9090
           name: metrics
+          protocol: TCP
+        - containerPort: 8201
+          name: grpc
           protocol: TCP
         env:
         - name: SERVICE_NAME
@@ -73,26 +76,27 @@ spec:
             configMapKeyRef:
               name: ai-service-config
               key: kafka_bootstrap_servers
-        - name: POSTGRES_HOST
+        # PostgreSQL removed - using Weaviate exclusively
+        - name: WEAVIATE_SCHEME
           valueFrom:
             configMapKeyRef:
               name: ai-service-config
-              key: postgres_host
-        - name: POSTGRES_PORT
+              key: weaviate_scheme
+        - name: WEAVIATE_GRPC_PORT
           valueFrom:
             configMapKeyRef:
               name: ai-service-config
-              key: postgres_port
-        - name: POSTGRES_DB
+              key: weaviate_grpc_port
+        - name: VECTOR_DB_TYPE
           valueFrom:
             configMapKeyRef:
               name: ai-service-config
-              key: postgres_db
-        - name: POSTGRES_PASSWORD
+              key: vector_db_type
+        - name: VECTOR_DIMENSIONS
           valueFrom:
-            secretKeyRef:
-              name: ai-service-secrets
-              key: postgres-password
+            configMapKeyRef:
+              name: ai-service-config
+              key: vector_dimensions
         - name: WEAVIATE_URL
           valueFrom:
             configMapKeyRef:
@@ -133,6 +137,21 @@ spec:
             configMapKeyRef:
               name: ai-service-config
               key: performance
+        - name: EMBEDDING_MODELS
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: embedding_models
+        - name: WEAVIATE_SCHEMAS
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: weaviate_schemas
+        - name: KAFKA_TOPICS
+          valueFrom:
+            configMapKeyRef:
+              name: ai-service-config
+              key: kafka_topics
         - name: JAEGER_AGENT_HOST
           valueFrom:
             fieldRef:
@@ -141,12 +160,12 @@ spec:
           value: "6831"
         resources:
           requests:
-            memory: "2Gi"
-            cpu: "1000m"
+            memory: "4Gi"
+            cpu: "2000m"
             nvidia.com/gpu: "0"  # GPU optional, will be ignored if not available
           limits:
-            memory: "8Gi"
-            cpu: "4000m"
+            memory: "16Gi"
+            cpu: "8000m"
             nvidia.com/gpu: "1"  # GPU optional
         livenessProbe:
           httpGet:

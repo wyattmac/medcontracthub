@@ -20,6 +20,14 @@ resources:
   # Redis Cluster
   - redis/redis-cluster.yaml
   
+  # Kafka Event Streaming Platform
+  - kafka/namespace.yaml
+  - kafka/zookeeper-deployment.yaml
+  - kafka/kafka-deployment.yaml
+  - kafka/schema-registry.yaml
+  - kafka/topics.yaml
+  - kafka/kafka-ui-deployment.yaml
+  
   # Main Application
   - app/configmap.yaml
   - app/secret.yaml
