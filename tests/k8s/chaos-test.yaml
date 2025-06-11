@@ -1,0 +1,127 @@
+# Chaos Engineering Tests using Litmus
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: litmus
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: medcontracthub-chaos
+  namespace: medcontracthub
+spec:
+  appinfo:
+    appns: medcontracthub
+    applabel: 'app.kubernetes.io/name=medcontracthub'
+    appkind: deployment
+  engineState: 'active'
+  chaosServiceAccount: litmus-admin
+  experiments:
+    # Pod Delete Experiment
+    - name: pod-delete
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: '60'
+            - name: CHAOS_INTERVAL
+              value: '10'
+            - name: FORCE
+              value: 'false'
+            - name: PODS_AFFECTED_PERC
+              value: '50'
+    
+    # Pod CPU Hog Experiment
+    - name: pod-cpu-hog
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: '60'
+            - name: CPU_CORES
+              value: '1'
+            - name: PODS_AFFECTED_PERC
+              value: '50'
+    
+    # Pod Memory Hog Experiment
+    - name: pod-memory-hog
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: '60'
+            - name: MEMORY_CONSUMPTION
+              value: '500'  # MB
+            - name: PODS_AFFECTED_PERC
+              value: '50'
+    
+    # Pod Network Loss Experiment
+    - name: pod-network-loss
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: '60'
+            - name: NETWORK_INTERFACE
+              value: 'eth0'
+            - name: NETWORK_PACKET_LOSS_PERCENTAGE
+              value: '50'
+            - name: PODS_AFFECTED_PERC
+              value: '30'
+---
+# Chaos experiment for database failure
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: database-chaos
+  namespace: medcontracthub
+spec:
+  appinfo:
+    appns: medcontracthub
+    applabel: 'app=postgres-primary'
+    appkind: statefulset
+  engineState: 'active'
+  chaosServiceAccount: litmus-admin
+  experiments:
+    # Database connection failure
+    - name: pod-network-corruption
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: '30'
+            - name: NETWORK_INTERFACE
+              value: 'eth0'
+            - name: NETWORK_PACKET_CORRUPTION_PERCENTAGE
+              value: '100'
+---
+# Steady state hypothesis
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chaos-hypothesis
+  namespace: litmus
+data:
+  hypothesis.yaml: |
+    apiVersion: litmuschaos.io/v1alpha1
+    kind: ChaosEngine
+    metadata:
+      name: steady-state-check
+    spec:
+      monitoring: true
+      jobCleanUpPolicy: retain
+      auxiliaryAppInfo: |
+        - name: uptime-check
+          env:
+            - name: MINIMUM_UPTIME
+              value: "99.5"  # %
+            - name: CHECK_DURATION
+              value: "300"   # seconds
+        - name: latency-check
+          env:
+            - name: MAX_P95_LATENCY
+              value: "500"   # ms
+        - name: error-rate-check
+          env:
+            - name: MAX_ERROR_RATE
+              value: "0.5"   # %

@@ -1,0 +1,123 @@
+apiVersion: audit.k8s.io/v1
+kind: Policy
+metadata:
+  name: medcontracthub-audit-policy
+rules:
+  # Don't log requests to the following
+  - level: None
+    nonResourceURLs:
+    - "/healthz*"
+    - "/livez*"
+    - "/readyz*"
+    - "/version"
+    - "/swagger*"
+
+  # Don't log watch requests by system components
+  - level: None
+    users:
+    - "system:kube-scheduler"
+    - "system:kube-proxy"
+    - "system:apiserver"
+    - "system:kube-controller-manager"
+    verbs: ["watch"]
+
+  # Don't log authenticated requests to certain resources
+  - level: None
+    userGroups: ["system:authenticated"]
+    nonResourceURLs:
+    - "/api*"
+
+  # Log pod exec and attach at Metadata level
+  - level: Metadata
+    omitStages:
+    - RequestReceived
+    resources:
+    - group: ""
+      resources: ["pods/exec", "pods/attach", "pods/portforward"]
+
+  # Log Secret, ConfigMap access at Metadata level
+  - level: Metadata
+    omitStages:
+    - RequestReceived
+    resources:
+    - group: ""
+      resources: ["secrets", "configmaps"]
+
+  # Log all access to services at Metadata level
+  - level: Metadata
+    omitStages:
+    - RequestReceived
+    resources:
+    - group: ""
+      resources: ["services", "services/proxy", "services/status"]
+
+  # HIPAA Compliance - Log all access to production namespace at RequestResponse level
+  - level: RequestResponse
+    omitStages:
+    - RequestReceived
+    namespaces: ["medcontract-prod"]
+    verbs: ["create", "update", "patch", "delete", "deletecollection"]
+
+  # Log all access to RBAC resources
+  - level: RequestResponse
+    omitStages:
+    - RequestReceived
+    resources:
+    - group: "rbac.authorization.k8s.io"
+      resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
+
+  # Log authentication failures
+  - level: Metadata
+    omitStages:
+    - RequestReceived
+    - ResponseStarted
+    - ResponseComplete
+    userGroups: ["system:unauthenticated"]
+
+  # Log all deletions at RequestResponse level
+  - level: RequestResponse
+    verbs: ["delete", "deletecollection"]
+
+  # Log scale operations
+  - level: RequestResponse
+    omitStages:
+    - RequestReceived
+    resources:
+    - group: "apps"
+      resources: ["deployments/scale", "replicasets/scale", "statefulsets/scale"]
+    - group: "autoscaling"
+      resources: ["horizontalpodautoscalers"]
+
+  # Log all access to custom resources
+  - level: RequestResponse
+    omitStages:
+    - RequestReceived
+    resources:
+    - group: "medcontracthub.com"
+
+  # Catch-all - log everything else at Metadata level
+  - level: Metadata
+    omitStages:
+    - RequestReceived
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: audit-webhook-config
+  namespace: kube-system
+data:
+  webhook-config.yaml: |
+    apiVersion: v1
+    kind: Config
+    clusters:
+    - name: falco
+      cluster:
+        server: http://falco-k8saudit.falco:9765/k8s-audit
+    contexts:
+    - context:
+        cluster: falco
+        user: ""
+      name: default-context
+    current-context: default-context
+    preferences: {}
+    users: []

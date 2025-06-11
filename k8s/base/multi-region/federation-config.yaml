@@ -1,0 +1,163 @@
+# Kubernetes Federation v2 configuration for multi-region
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: federation-system
+---
+# KubeFed configuration
+apiVersion: core.kubefed.io/v1beta1
+kind: KubeFedConfig
+metadata:
+  name: kubefed
+  namespace: federation-system
+spec:
+  scope: Cluster
+  controllerDuration:
+    availableDelay: 20s
+    unavailableDelay: 60s
+  leaderElect:
+    leaseDuration: 15s
+    renewDeadline: 10s
+    retryPeriod: 5s
+  featureGates:
+  - name: SchedulerPreferences
+    enabled: true
+  - name: CrossClusterServiceDiscovery
+    enabled: true
+  syncController:
+    adoptResources: Enabled
+---
+# Multi-region clusters
+apiVersion: core.kubefed.io/v1beta1
+kind: KubeFedCluster
+metadata:
+  name: us-east-1
+  namespace: federation-system
+spec:
+  apiEndpoint: https://k8s-us-east-1.medcontracthub.com
+  secretRef:
+    name: us-east-1-secret
+---
+apiVersion: core.kubefed.io/v1beta1
+kind: KubeFedCluster
+metadata:
+  name: us-west-2
+  namespace: federation-system
+spec:
+  apiEndpoint: https://k8s-us-west-2.medcontracthub.com
+  secretRef:
+    name: us-west-2-secret
+---
+apiVersion: core.kubefed.io/v1beta1
+kind: KubeFedCluster
+metadata:
+  name: eu-west-1
+  namespace: federation-system
+spec:
+  apiEndpoint: https://k8s-eu-west-1.medcontracthub.com
+  secretRef:
+    name: eu-west-1-secret
+---
+# Federated namespace
+apiVersion: types.kubefed.io/v1beta1
+kind: FederatedNamespace
+metadata:
+  name: medcontract-prod
+  namespace: medcontract-prod
+spec:
+  placement:
+    clusters:
+    - name: us-east-1
+    - name: us-west-2
+    - name: eu-west-1
+---
+# Federated deployment for main app
+apiVersion: types.kubefed.io/v1beta1
+kind: FederatedDeployment
+metadata:
+  name: medcontracthub-app
+  namespace: medcontract-prod
+spec:
+  template:
+    metadata:
+      labels:
+        app: medcontracthub-app
+    spec:
+      replicas: 3
+      selector:
+        matchLabels:
+          app: medcontracthub-app
+      template:
+        metadata:
+          labels:
+            app: medcontracthub-app
+        spec:
+          containers:
+          - name: app
+            image: registry.medcontracthub.com/medcontracthub/app:v2.0.0
+            env:
+            - name: REGION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['federation.k8s.io/cluster-name']
+  placement:
+    clusters:
+    - name: us-east-1
+    - name: us-west-2
+    - name: eu-west-1
+  overrides:
+  # US East gets more replicas (primary region)
+  - clusterName: us-east-1
+    clusterOverrides:
+    - path: "/spec/replicas"
+      value: 5
+  # EU gets fewer replicas (compliance region)
+  - clusterName: eu-west-1
+    clusterOverrides:
+    - path: "/spec/replicas"
+      value: 2
+    - path: "/spec/template/spec/containers/0/env"
+      value:
+      - name: REGION
+        value: "eu-west-1"
+      - name: GDPR_MODE
+        value: "enabled"
+---
+# Replica scheduling preference
+apiVersion: scheduling.kubefed.io/v1alpha1
+kind: ReplicaSchedulingPreference
+metadata:
+  name: medcontracthub-app
+  namespace: medcontract-prod
+spec:
+  targetKind: FederatedDeployment
+  targetName: medcontracthub-app
+  clusters:
+    us-east-1:
+      weight: 50  # 50% of traffic
+    us-west-2:
+      weight: 35  # 35% of traffic
+    eu-west-1:
+      weight: 15  # 15% of traffic (GDPR compliance)
+  rebalance: true
+---
+# Cross-region service discovery
+apiVersion: multiclusterdns.kubefed.io/v1alpha1
+kind: Domain
+metadata:
+  name: medcontracthub-global
+  namespace: federation-system
+spec:
+  domain: global.medcontracthub.com
+---
+apiVersion: multiclusterdns.kubefed.io/v1alpha1
+kind: ServiceDNSRecord
+metadata:
+  name: medcontracthub-app
+  namespace: medcontract-prod
+spec:
+  domainRef: medcontracthub-global
+  recordTTL: 300
+  dnsPrefix: app
+  federatedName: medcontracthub-app-svc
+  recordType: A

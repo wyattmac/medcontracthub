@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: weaviate-backup
+  namespace: medcontracthub
+spec:
+  schedule: "0 3 * * *"  # Daily at 3 AM
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: weaviate-backup
+            component: backup
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: backup-operator
+          containers:
+          - name: weaviate-backup
+            image: semitechnologies/weaviate:1.22.4
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Starting Weaviate backup..."
+              
+              # Generate backup ID with timestamp
+              BACKUP_ID="weaviate-backup-$(date +%Y%m%d-%H%M%S)"
+              
+              # Trigger backup via Weaviate API
+              curl -X POST \
+                "http://weaviate:8080/v1/backups/filesystem" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "id": "'$BACKUP_ID'",
+                  "include": ["Proposal", "Document", "CompanyProfile"]
+                }'
+              
+              # Wait for backup to complete
+              while true; do
+                STATUS=$(curl -s "http://weaviate:8080/v1/backups/filesystem/$BACKUP_ID" | jq -r '.status')
+                if [ "$STATUS" = "SUCCESS" ]; then
+                  echo "Backup completed successfully"
+                  break
+                elif [ "$STATUS" = "FAILED" ]; then
+                  echo "Backup failed!"
+                  exit 1
+                fi
+                echo "Backup status: $STATUS"
+                sleep 10
+              done
+              
+              # Clean up old backups (keep last 7 days)
+              # This would need to be implemented based on your storage backend
+              
+              echo "Backup completed: $BACKUP_ID"
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "512Mi"
+                cpu: "500m"

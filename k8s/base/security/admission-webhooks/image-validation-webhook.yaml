@@ -1,0 +1,142 @@
+# Admission webhook for container image validation
+apiVersion: v1
+kind: Service
+metadata:
+  name: image-validation-webhook
+  namespace: medcontracthub
+spec:
+  ports:
+  - name: https
+    port: 443
+    targetPort: 8443
+  selector:
+    app: image-validation-webhook
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-validation-webhook
+  namespace: medcontracthub
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: image-validation-webhook
+  template:
+    metadata:
+      labels:
+        app: image-validation-webhook
+    spec:
+      serviceAccountName: image-validation-webhook
+      containers:
+      - name: webhook
+        image: registry.medcontracthub.com/medcontracthub/image-validation-webhook:v1.0.0
+        ports:
+        - containerPort: 8443
+          name: https
+        env:
+        - name: ALLOWED_REGISTRIES
+          value: "registry.medcontracthub.com,docker.io/medcontracthub"
+        - name: REQUIRE_IMAGE_SCANNING
+          value: "true"
+        - name: VULNERABILITY_THRESHOLD
+          value: "CRITICAL"
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /etc/webhook/certs
+          readOnly: true
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: image-validation-webhook-certs
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: image-validation-webhook
+webhooks:
+- name: validate.images.medcontracthub.com
+  clientConfig:
+    service:
+      name: image-validation-webhook
+      namespace: medcontracthub
+      path: "/validate"
+    caBundle: LS0tLS1CRUdJTi... # Placeholder - will be replaced by cert-manager
+  rules:
+  - operations: ["CREATE", "UPDATE"]
+    apiGroups: [""]
+    apiVersions: ["v1"]
+    resources: ["pods"]
+  - operations: ["CREATE", "UPDATE"]
+    apiGroups: ["apps"]
+    apiVersions: ["v1"]
+    resources: ["deployments", "replicasets", "daemonsets", "statefulsets"]
+  namespaceSelector:
+    matchLabels:
+      image-validation: "enabled"
+  admissionReviewVersions: ["v1", "v1beta1"]
+  sideEffects: None
+  failurePolicy: Fail
+  timeoutSeconds: 10
+---
+# Service Account and RBAC
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: image-validation-webhook
+  namespace: medcontracthub
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: image-validation-webhook
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets", "daemonsets", "statefulsets"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: image-validation-webhook
+subjects:
+- kind: ServiceAccount
+  name: image-validation-webhook
+  namespace: medcontracthub
+roleRef:
+  kind: ClusterRole
+  name: image-validation-webhook
+  apiGroup: rbac.authorization.k8s.io
+---
+# Certificate for webhook TLS
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: image-validation-webhook-certs
+  namespace: medcontracthub
+spec:
+  secretName: image-validation-webhook-certs
+  issuerRef:
+    name: medcontracthub-ca-issuer
+    kind: ClusterIssuer
+  dnsNames:
+  - image-validation-webhook.medcontracthub.svc
+  - image-validation-webhook.medcontracthub.svc.cluster.local

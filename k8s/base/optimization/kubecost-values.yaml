@@ -1,0 +1,133 @@
+# Kubecost configuration for cost optimization
+global:
+  prometheus:
+    enabled: false  # Use existing Prometheus
+    fqdn: http://prometheus-server.monitoring.svc.cluster.local
+
+kubecostProductConfigs:
+  clusterName: "medcontracthub-prod"
+  currencyCode: "USD"
+  azureBillingRegion: "US"
+  createServiceKeySecret: true
+  
+  # Spot instance configuration
+  spotCPU: 0.00463  # Cost per CPU hour for spot instances
+  spotRAM: 0.00063  # Cost per GB RAM hour for spot instances
+  
+  # Labels for cost allocation
+  labelMappingConfigs:
+    enabled: true
+    owner_label: "team"
+    product_label: "product"
+    environment_label: "env"
+    department_label: "department"
+
+# Cost alerts
+alerts:
+  enabled: true
+  alertConfigs:
+    - type: budget
+      threshold: 5000  # Monthly budget alert at $5000
+      window: 30d
+      aggregation: namespace
+      filter:
+        namespace: "medcontract-prod"
+      ownerContact:
+        - name: "Platform Team"
+          email: "platform@medcontracthub.com"
+    
+    - type: efficiency
+      threshold: 0.4  # Alert if efficiency drops below 40%
+      window: 7d
+      aggregation: cluster
+      
+    - type: recurringUpdate
+      window: weekly
+      aggregation: namespace
+
+# Resource recommendations
+recommendations:
+  enabled: true
+  updateInterval: "24h"
+  
+  # Workload rightsizing
+  workloadRecommendations:
+    enabled: true
+    targetUtilization: 0.7  # Target 70% utilization
+    
+  # Savings recommendations
+  savingsRecommendations:
+    enabled: true
+    spotNodes:
+      enabled: true
+      minSavings: 100  # Only show if saves >$100/month
+    reservedInstances:
+      enabled: true
+      term: "1yr"
+
+# Cost allocation
+costAllocation:
+  enabled: true
+  # Split costs by namespace
+  namespaceLabels:
+    - "product"
+    - "team"
+    - "env"
+  
+  # Idle cost allocation
+  idleCosts:
+    enabled: true
+    allocation: "proportional"  # Distribute idle costs proportionally
+  
+  # Shared costs (like monitoring)
+  sharedCosts:
+    enabled: true
+    namespaces:
+      - "monitoring"
+      - "logging"
+      - "ingress-nginx"
+    allocation: "even"  # Split evenly across namespaces
+
+# Prometheus metrics for cost optimization
+serviceMonitor:
+  enabled: true
+  additionalLabels:
+    prometheus: kube-prometheus
+  metricRelabelings:
+    - sourceLabels: [__name__]
+      regex: 'kubecost_.*'
+      action: keep
+
+# Reports
+reporting:
+  productAnalytics: true
+  errorReporting: true
+  valuesReporting: false  # Don't send config values
+
+# UI configuration
+frontend:
+  enabled: true
+  image: gcr.io/kubecost1/frontend:prod-1.106.0
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "200m"
+      memory: "512Mi"
+
+# Grafana dashboards
+grafana:
+  enabled: true
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+    datasources:
+      enabled: true
+      defaultDatasourceEnabled: false
+
+persistence:
+  enabled: true
+  storageClass: "fast-ssd"
+  size: "32Gi"

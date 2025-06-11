@@ -1,0 +1,138 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: security-audit
+  namespace: medcontracthub
+spec:
+  template:
+    metadata:
+      labels:
+        app: security-audit
+    spec:
+      serviceAccountName: security-audit
+      restartPolicy: Never
+      containers:
+      - name: auditor
+        image: registry.medcontracthub.com/medcontracthub/security-auditor:v1.0.0
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "🔍 Starting Security Audit..."
+          echo "================================"
+          
+          # Check for privileged containers
+          echo ""
+          echo "1. Checking for privileged containers..."
+          PRIV_COUNT=$(kubectl get pods -A -o json | jq -r '.items[].spec.containers[] | select(.securityContext.privileged == true) | .name' | wc -l)
+          if [ $PRIV_COUNT -eq 0 ]; then
+            echo "✅ No privileged containers found"
+          else
+            echo "❌ Found $PRIV_COUNT privileged containers!"
+            kubectl get pods -A -o json | jq -r '.items[] | select(.spec.containers[].securityContext.privileged == true) | "\(.metadata.namespace)/\(.metadata.name)"'
+          fi
+          
+          # Check for containers running as root
+          echo ""
+          echo "2. Checking for containers running as root..."
+          ROOT_COUNT=$(kubectl get pods -A -o json | jq -r '.items[].spec.containers[] | select(.securityContext.runAsUser == 0 or .securityContext.runAsUser == null) | .name' | wc -l)
+          if [ $ROOT_COUNT -eq 0 ]; then
+            echo "✅ No containers running as root"
+          else
+            echo "⚠️  Found $ROOT_COUNT containers potentially running as root"
+          fi
+          
+          # Check for latest image tags
+          echo ""
+          echo "3. Checking for 'latest' image tags..."
+          LATEST_COUNT=$(kubectl get pods -A -o json | jq -r '.items[].spec.containers[].image | select(. | endswith(":latest"))' | wc -l)
+          if [ $LATEST_COUNT -eq 0 ]; then
+            echo "✅ No 'latest' tags found"
+          else
+            echo "⚠️  Found $LATEST_COUNT images using 'latest' tag"
+          fi
+          
+          # Check network policies
+          echo ""
+          echo "4. Checking network policies..."
+          for ns in medcontracthub medcontract-staging medcontract-prod; do
+            POD_COUNT=$(kubectl get pods -n $ns --no-headers | wc -l)
+            NETPOL_COUNT=$(kubectl get networkpolicies -n $ns --no-headers | wc -l)
+            echo "   Namespace $ns: $POD_COUNT pods, $NETPOL_COUNT network policies"
+          done
+          
+          # Check RBAC
+          echo ""
+          echo "5. Checking RBAC permissions..."
+          echo "   Service accounts with cluster-admin:"
+          kubectl get clusterrolebindings -o json | jq -r '.items[] | select(.roleRef.name == "cluster-admin") | .subjects[]? | select(.kind == "ServiceAccount") | "\(.namespace)/\(.name)"' || echo "   None found (good!)"
+          
+          # Check secrets
+          echo ""
+          echo "6. Checking secret usage..."
+          SECRET_COUNT=$(kubectl get secrets -A | grep -v "default-token" | wc -l)
+          echo "   Total secrets (excluding default tokens): $SECRET_COUNT"
+          
+          # Check resource limits
+          echo ""
+          echo "7. Checking resource limits..."
+          NO_LIMITS=$(kubectl get pods -A -o json | jq -r '.items[] | select(.spec.containers[].resources.limits == null) | "\(.metadata.namespace)/\(.metadata.name)"' | wc -l)
+          if [ $NO_LIMITS -eq 0 ]; then
+            echo "✅ All containers have resource limits"
+          else
+            echo "⚠️  Found $NO_LIMITS pods without resource limits"
+          fi
+          
+          # Check pod security standards
+          echo ""
+          echo "8. Checking Pod Security Standards..."
+          for ns in medcontracthub medcontract-staging medcontract-prod; do
+            PSS_LABEL=$(kubectl get namespace $ns -o jsonpath='{.metadata.labels.pod-security\.kubernetes\.io/enforce}')
+            echo "   Namespace $ns: PSS level = ${PSS_LABEL:-not set}"
+          done
+          
+          # Summary
+          echo ""
+          echo "================================"
+          echo "Security Audit Complete!"
+          echo ""
+          echo "Next steps:"
+          echo "- Review any ❌ or ⚠️  items above"
+          echo "- Run 'make compliance-check' for compliance status"
+          echo "- Run 'make falco-logs' to check runtime security alerts"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: security-audit
+  namespace: medcontracthub
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: security-audit
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: security-audit
+subjects:
+- kind: ServiceAccount
+  name: security-audit
+  namespace: medcontracthub
+roleRef:
+  kind: ClusterRole
+  name: security-audit
+  apiGroup: rbac.authorization.k8s.io

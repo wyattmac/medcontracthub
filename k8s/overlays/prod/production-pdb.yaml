@@ -1,0 +1,122 @@
+# Production Pod Disruption Budgets for High Availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: medcontracthub-app-pdb
+  namespace: medcontract-prod
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: medcontracthub-app
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-service-pdb
+  namespace: medcontract-prod
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: ai-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ocr-service-pdb
+  namespace: medcontract-prod
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: ocr-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: analytics-service-pdb
+  namespace: medcontract-prod
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: analytics-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: realtime-service-pdb
+  namespace: medcontract-prod
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: realtime-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: worker-service-pdb
+  namespace: medcontract-prod
+spec:
+  minAvailable: 5
+  selector:
+    matchLabels:
+      app: worker-service
+---
+# Database PDBs
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-primary-pdb
+  namespace: medcontract-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: postgres-primary
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-replica-pdb
+  namespace: medcontract-prod
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: postgres-replica
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-cluster-pdb
+  namespace: medcontract-prod
+spec:
+  minAvailable: 4
+  selector:
+    matchLabels:
+      app: redis-cluster
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: weaviate-pdb
+  namespace: medcontract-prod
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: weaviate
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: clickhouse-pdb
+  namespace: medcontract-prod
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: clickhouse

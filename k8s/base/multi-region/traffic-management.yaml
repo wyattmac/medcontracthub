@@ -1,0 +1,179 @@
+# Global traffic management with Istio multi-cluster
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: primary-cluster
+spec:
+  values:
+    pilot:
+      env:
+        PILOT_ENABLE_WORKLOAD_ENTRY_AUTOREGISTRATION: true
+    global:
+      meshID: medcontracthub-mesh
+      multiCluster:
+        clusterName: us-east-1
+      network: network-us-east
+---
+# Multi-cluster gateway
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: cross-network-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: eastwestgateway
+  servers:
+  - port:
+      number: 15443
+      name: tls
+      protocol: TLS
+    tls:
+      mode: ISTIO_MUTUAL
+    hosts:
+    - "*.local"
+---
+# Global virtual service for geographic routing
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: medcontracthub-global
+  namespace: medcontract-prod
+spec:
+  hosts:
+  - medcontracthub.com
+  - app.global.medcontracthub.com
+  gateways:
+  - mesh
+  - istio-system/public-gateway
+  http:
+  - match:
+    - headers:
+        x-region:
+          exact: us-east
+    route:
+    - destination:
+        host: medcontracthub-app.medcontract-prod.svc.cluster.local
+        subset: us-east-1
+      weight: 100
+  - match:
+    - headers:
+        x-region:
+          exact: us-west
+    route:
+    - destination:
+        host: medcontracthub-app.medcontract-prod.svc.cluster.local
+        subset: us-west-2
+      weight: 100
+  - match:
+    - headers:
+        x-region:
+          exact: eu
+    route:
+    - destination:
+        host: medcontracthub-app.medcontract-prod.svc.cluster.local
+        subset: eu-west-1
+      weight: 100
+  # Default geographic routing based on source
+  - route:
+    - destination:
+        host: medcontracthub-app.medcontract-prod.svc.cluster.local
+        subset: us-east-1
+      weight: 50
+    - destination:
+        host: medcontracthub-app.medcontract-prod.svc.cluster.local
+        subset: us-west-2
+      weight: 35
+    - destination:
+        host: medcontracthub-app.medcontract-prod.svc.cluster.local
+        subset: eu-west-1
+      weight: 15
+---
+# Destination rules for each region
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: medcontracthub-app-regions
+  namespace: medcontract-prod
+spec:
+  host: medcontracthub-app.medcontract-prod.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 100
+    loadBalancer:
+      simple: LEAST_REQUEST
+    outlierDetection:
+      consecutiveErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+  subsets:
+  - name: us-east-1
+    labels:
+      region: us-east-1
+    trafficPolicy:
+      portLevelSettings:
+      - port:
+          number: 3000
+        connectionPool:
+          tcp:
+            maxConnections: 200  # Higher for primary region
+  - name: us-west-2
+    labels:
+      region: us-west-2
+  - name: eu-west-1
+    labels:
+      region: eu-west-1
+    trafficPolicy:
+      tls:
+        mode: ISTIO_MUTUAL  # Extra security for EU
+---
+# ServiceEntry for cross-region database access
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: postgres-global
+  namespace: medcontract-prod
+spec:
+  hosts:
+  - postgres.us-east-1.medcontracthub.com
+  - postgres.us-west-2.medcontracthub.com
+  - postgres.eu-west-1.medcontracthub.com
+  ports:
+  - number: 5432
+    name: postgres
+    protocol: TCP
+  location: MESH_EXTERNAL
+  resolution: DNS
+---
+# Geo-proximity routing policy
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: geo-routing-config
+  namespace: istio-system
+data:
+  routing.yaml: |
+    regions:
+      us-east-1:
+        coordinates: [38.7469, -77.4758]  # Virginia
+        preferredFor: ["US", "CA", "MX", "BR"]
+      us-west-2:
+        coordinates: [45.5152, -122.6784]  # Oregon
+        preferredFor: ["US-West", "JP", "AU", "NZ"]
+      eu-west-1:
+        coordinates: [53.4129, -8.2439]  # Ireland
+        preferredFor: ["EU", "UK", "AF", "ME"]
+    
+    latencyThresholds:
+      optimal: 50ms
+      acceptable: 100ms
+      maximum: 200ms
+    
+    failoverPriority:
+      us-east-1: ["us-west-2", "eu-west-1"]
+      us-west-2: ["us-east-1", "eu-west-1"]
+      eu-west-1: ["us-east-1", "us-west-2"]

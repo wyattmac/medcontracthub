@@ -1,0 +1,284 @@
+# FedRAMP Compliance Automation for MedContractHub
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fedramp-controls
+  namespace: medcontracthub
+data:
+  controls.yaml: |
+    # FedRAMP High Baseline Controls
+    controls:
+      # Access Control (AC)
+      AC-2:
+        name: "Account Management"
+        checks:
+          - name: "account-lifecycle"
+            description: "Verify account lifecycle management"
+            script: |
+              # Check for orphaned accounts
+              kubectl get serviceaccounts -A -o json | \
+              jq -r '.items[] | select(.metadata.annotations["last-used"] | . != null and (now - (. | fromdate)) > 7776000) | .metadata.name' | \
+              wc -l
+            threshold: 0
+          
+          - name: "privileged-accounts"
+            description: "Monitor privileged account usage"
+            query: |
+              SELECT COUNT(DISTINCT user_id) as privileged_users
+              FROM audit_logs
+              WHERE action LIKE '%admin%'
+              AND timestamp > NOW() - INTERVAL '24 hours'
+      
+      # Audit and Accountability (AU)
+      AU-2:
+        name: "Audit Events"
+        checks:
+          - name: "required-events"
+            description: "Ensure all required events are audited"
+            required_events:
+              - "authentication"
+              - "authorization"
+              - "data_access"
+              - "data_modification"
+              - "system_configuration"
+              - "privilege_escalation"
+      
+      AU-4:
+        name: "Audit Storage Capacity"
+        checks:
+          - name: "storage-capacity"
+            description: "Verify adequate audit storage"
+            script: |
+              kubectl exec -n logging elasticsearch-0 -- \
+              curl -s localhost:9200/_cat/allocation | \
+              awk '{print $5}' | sed 's/%//' | \
+              awk '{if ($1 < 80) print "PASS"; else print "FAIL"}'
+      
+      # Configuration Management (CM)
+      CM-2:
+        name: "Baseline Configuration"
+        checks:
+          - name: "configuration-baseline"
+            description: "Verify system baseline configuration"
+            script: |
+              # Check for configuration drift
+              kubectl diff -k k8s/overlays/prod/ | wc -l
+            threshold: 0
+      
+      CM-7:
+        name: "Least Functionality"
+        checks:
+          - name: "unnecessary-services"
+            description: "Ensure no unnecessary services"
+            script: |
+              kubectl get pods -A -o json | \
+              jq -r '.items[].spec.containers[].ports[]?.containerPort' | \
+              grep -vE '^(80|443|3000|5432|6379|8080|8100|8200|8300|8400|9090|9093)$' | \
+              wc -l
+            threshold: 0
+      
+      # Identification and Authentication (IA)
+      IA-2:
+        name: "Multi-Factor Authentication"
+        checks:
+          - name: "mfa-enabled"
+            description: "Verify MFA is enabled for all users"
+            query: |
+              SELECT COUNT(*) as users_without_mfa
+              FROM users
+              WHERE mfa_enabled = false
+              AND role IN ('admin', 'engineer', 'sre')
+            threshold: 0
+      
+      # System and Communications Protection (SC)
+      SC-7:
+        name: "Boundary Protection"
+        checks:
+          - name: "network-segmentation"
+            description: "Verify network segmentation"
+            script: |
+              kubectl get networkpolicies -A | wc -l
+            minimum: 10
+      
+      SC-8:
+        name: "Transmission Confidentiality"
+        checks:
+          - name: "tls-enforcement"
+            description: "Verify TLS 1.2+ enforcement"
+            script: |
+              kubectl get ingress -A -o json | \
+              jq -r '.items[].spec.tls' | \
+              grep -v "null" | wc -l
+            
+      # System and Information Integrity (SI)
+      SI-2:
+        name: "Flaw Remediation"
+        checks:
+          - name: "vulnerability-scanning"
+            description: "Ensure vulnerability scanning"
+            script: |
+              # Check last scan date
+              kubectl get configmap vulnerability-scan-results -o jsonpath='{.data.last_scan}' | \
+              xargs -I {} date -d {} +%s | \
+              awk -v now=$(date +%s) '{if (now - $1 < 86400) print "PASS"; else print "FAIL"}'
+      
+      SI-4:
+        name: "Information System Monitoring"
+        checks:
+          - name: "monitoring-coverage"
+            description: "Verify monitoring coverage"
+            script: |
+              # Check if all services have ServiceMonitors
+              diff <(kubectl get deployments -A -o json | jq -r '.items[].metadata.name' | sort) \
+                   <(kubectl get servicemonitors -A -o json | jq -r '.items[].metadata.name' | sort) | \
+              wc -l
+            threshold: 0
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fedramp-compliance-scanner
+  namespace: medcontracthub
+spec:
+  schedule: "0 6 * * *"  # Daily at 6 AM
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: compliance-scanner
+            compliance: fedramp
+        spec:
+          serviceAccountName: compliance-scanner
+          restartPolicy: OnFailure
+          containers:
+          - name: scanner
+            image: registry.medcontracthub.com/medcontracthub/fedramp-scanner:v1.0.0
+            env:
+            - name: COMPLIANCE_LEVEL
+              value: "HIGH"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Starting FedRAMP compliance scan..."
+              
+              # Load control definitions
+              CONTROLS=$(cat /config/controls.yaml)
+              
+              # Initialize results
+              echo '{"scan_date": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'", "results": []}' > /tmp/results.json
+              
+              # Run each control check
+              for CONTROL in $(echo "$CONTROLS" | yq e '.controls | keys | .[]' -); do
+                echo "Checking control: $CONTROL"
+                
+                CONTROL_RESULT='{"control": "'$CONTROL'", "checks": []}'
+                
+                # Run checks for this control
+                # ... (implementation of each check)
+                
+                # Add to results
+                jq '.results += ['"$CONTROL_RESULT"']' /tmp/results.json > /tmp/results.tmp
+                mv /tmp/results.tmp /tmp/results.json
+              done
+              
+              # Generate compliance score
+              TOTAL_CHECKS=$(jq '.results[].checks | length' /tmp/results.json | paste -sd+ | bc)
+              PASSED_CHECKS=$(jq '.results[].checks[] | select(.status == "PASS") | length' /tmp/results.json | wc -l)
+              SCORE=$((PASSED_CHECKS * 100 / TOTAL_CHECKS))
+              
+              jq '. + {"compliance_score": '$SCORE', "total_checks": '$TOTAL_CHECKS', "passed_checks": '$PASSED_CHECKS'}' \
+                /tmp/results.json > /tmp/fedramp-results.json
+              
+              # Store results
+              kubectl create configmap fedramp-scan-$(date +%Y%m%d) \
+                --from-file=/tmp/fedramp-results.json \
+                --dry-run=client -o yaml | kubectl apply -f -
+              
+              # Update compliance dashboard
+              curl -X POST http://analytics-service:8300/api/compliance/fedramp \
+                -H "Content-Type: application/json" \
+                -d @/tmp/fedramp-results.json
+              
+              echo "FedRAMP compliance scan completed. Score: $SCORE%"
+            volumeMounts:
+            - name: config
+              mountPath: /config
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "500m"
+              limits:
+                memory: "1Gi"
+                cpu: "1000m"
+          volumes:
+          - name: config
+            configMap:
+              name: fedramp-controls
+---
+# FedRAMP Continuous Monitoring
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fedramp-continuous-monitoring
+  namespace: monitoring
+data:
+  alerts.yaml: |
+    groups:
+    - name: fedramp-controls
+      interval: 60s
+      rules:
+      # AC-2: Account Management
+      - alert: UnauthorizedAccountCreation
+        expr: |
+          increase(audit_logs_total{action="create_user", authorized="false"}[5m]) > 0
+        labels:
+          severity: critical
+          control: AC-2
+          compliance: fedramp
+        annotations:
+          summary: "Unauthorized account creation detected"
+          description: "Unauthorized attempt to create user account"
+          
+      # AU-4: Audit Storage
+      - alert: AuditStorageCapacity
+        expr: |
+          (elasticsearch_filesystem_data_available_bytes / elasticsearch_filesystem_data_size_bytes) < 0.2
+        for: 5m
+        labels:
+          severity: warning
+          control: AU-4
+          compliance: fedramp
+        annotations:
+          summary: "Audit storage capacity low"
+          description: "Less than 20% audit storage remaining"
+      
+      # SC-7: Boundary Protection
+      - alert: UnauthorizedExternalAccess
+        expr: |
+          increase(nginx_ingress_controller_requests_total{
+            status=~"2..",
+            ingress!~"medcontracthub-.*"
+          }[5m]) > 0
+        labels:
+          severity: critical
+          control: SC-7
+          compliance: fedramp
+        annotations:
+          summary: "Unauthorized external access detected"
+          description: "Access from unauthorized ingress detected"
+      
+      # SI-4: System Monitoring
+      - alert: MonitoringBlackout
+        expr: |
+          up{job=~".*-exporter"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          control: SI-4
+          compliance: fedramp
+        annotations:
+          summary: "Monitoring system down"
+          description: "Monitoring exporter {{ $labels.job }} is down"

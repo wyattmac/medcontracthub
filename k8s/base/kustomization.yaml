@@ -112,6 +112,12 @@ resources:
   - monitoring/prometheus-config.yaml
   - monitoring/grafana-dashboards.yaml
   - monitoring/jaeger-deployment.yaml
+  
+  # Backup Jobs
+  - backup/backup-rbac.yaml
+  - backup/postgres-backup-cronjob.yaml
+  - backup/weaviate-backup-cronjob.yaml
+  - backup/clickhouse-backup-cronjob.yaml
 
 commonLabels:
   app.kubernetes.io/name: medcontracthub

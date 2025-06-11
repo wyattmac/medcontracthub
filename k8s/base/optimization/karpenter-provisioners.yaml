@@ -1,0 +1,170 @@
+# Karpenter provisioners for cost-optimized node scaling
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: medcontracthub-spot
+  namespace: karpenter
+spec:
+  # Spot instance provisioner for cost savings
+  requirements:
+    - key: karpenter.sh/capacity-type
+      operator: In
+      values: ["spot"]
+    - key: node.kubernetes.io/instance-type
+      operator: In
+      values:
+        # Cost-optimized instance types
+        - t3.medium
+        - t3.large
+        - t3a.medium
+        - t3a.large
+        - m5.large
+        - m5a.large
+        - c5.large
+        - c5a.large
+    - key: kubernetes.io/arch
+      operator: In
+      values: ["amd64"]
+  
+  # Node properties
+  providerRef:
+    name: medcontracthub-nodepool
+  
+  # Taints for spot instances
+  taints:
+    - key: instance-type
+      value: spot
+      effect: NoSchedule
+  
+  # Disruption handling
+  ttlSecondsAfterEmpty: 30  # Quick deprovisioning
+  ttlSecondsUntilExpired: 604800  # 7 days
+  
+  # Resource limits
+  limits:
+    resources:
+      cpu: 1000
+      memory: 4000Gi
+  
+  # Consolidation policy
+  consolidation:
+    enabled: true
+---
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: medcontracthub-on-demand
+  namespace: karpenter
+spec:
+  # On-demand instances for critical workloads
+  requirements:
+    - key: karpenter.sh/capacity-type
+      operator: In
+      values: ["on-demand"]
+    - key: node.kubernetes.io/instance-type
+      operator: In
+      values:
+        # Reliable instance types
+        - m5.large
+        - m5.xlarge
+        - m5.2xlarge
+        - c5.large
+        - c5.xlarge
+        - r5.large
+        - r5.xlarge
+  
+  providerRef:
+    name: medcontracthub-nodepool
+  
+  # Labels for workload placement
+  labels:
+    instance-type: on-demand
+    workload: critical
+  
+  # Longer TTL for stability
+  ttlSecondsAfterEmpty: 300  # 5 minutes
+  ttlSecondsUntilExpired: 2592000  # 30 days
+  
+  # Resource limits
+  limits:
+    resources:
+      cpu: 500
+      memory: 2000Gi
+---
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: medcontracthub-gpu
+  namespace: karpenter
+spec:
+  # GPU instances for AI workloads
+  requirements:
+    - key: node.kubernetes.io/instance-type
+      operator: In
+      values:
+        - g4dn.xlarge
+        - g4dn.2xlarge
+        - p3.2xlarge
+    - key: karpenter.sh/capacity-type
+      operator: In
+      values: ["spot", "on-demand"]  # Prefer spot for cost
+  
+  providerRef:
+    name: medcontracthub-nodepool
+  
+  # GPU-specific taints
+  taints:
+    - key: nvidia.com/gpu
+      value: "true"
+      effect: NoSchedule
+  
+  labels:
+    workload-type: gpu
+    node.kubernetes.io/accelerator: nvidia-tesla
+  
+  # Startup script for GPU drivers
+  userData: |
+    #!/bin/bash
+    /etc/eks/bootstrap.sh medcontracthub-prod
+    nvidia-smi
+  
+  # GPU resource limits
+  limits:
+    resources:
+      cpu: 100
+      memory: 500Gi
+      nvidia.com/gpu: 10
+---
+# Node pool configuration
+apiVersion: karpenter.k8s.aws/v1alpha1
+kind: AWSNodeInstanceProfile
+metadata:
+  name: medcontracthub-nodepool
+  namespace: karpenter
+spec:
+  # Instance profile for nodes
+  instanceProfileName: "MedContractHubNodeInstanceProfile"
+  
+  # Subnet selection
+  subnetSelector:
+    karpenter.sh/discovery: "medcontracthub-prod"
+  
+  # Security group selection
+  securityGroupSelector:
+    karpenter.sh/discovery: "medcontracthub-prod"
+  
+  # User data for node initialization
+  userData: |
+    #!/bin/bash
+    /etc/eks/bootstrap.sh medcontracthub-prod
+    
+    # Install monitoring agents
+    curl -s https://monitoring.medcontracthub.com/install.sh | bash
+    
+    # Configure log shipping
+    echo "*.* @@logging.medcontracthub.com:514" >> /etc/rsyslog.conf
+    systemctl restart rsyslog
+    
+    # Set resource reservations
+    echo "KUBELET_EXTRA_ARGS=--system-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi" >> /etc/sysconfig/kubelet
+    systemctl restart kubelet

@@ -1,0 +1,157 @@
+# Harbor Helm Chart Values for Production
+expose:
+  type: ingress
+  tls:
+    enabled: true
+    certSource: cert-manager
+    cert-manager:
+      clusterIssuer: letsencrypt-prod
+  ingress:
+    hosts:
+      core: registry.medcontracthub.com
+      notary: notary.medcontracthub.com
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "0"
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+
+# External database (production PostgreSQL)
+database:
+  type: external
+  external:
+    host: "postgres-primary.medcontracthub.svc.cluster.local"
+    port: "5432"
+    username: "harbor"
+    password: "harbor-password"  # Use ESO in production
+    coreDatabase: "harbor_core"
+    notaryServerDatabase: "harbor_notary_server"
+    notarySignerDatabase: "harbor_notary_signer"
+
+# External Redis (production Redis cluster)
+redis:
+  type: external
+  external:
+    addr: "redis-cluster.medcontracthub.svc.cluster.local:6379"
+    password: ""  # Use ESO in production
+
+# External storage (S3-compatible)
+persistence:
+  enabled: true
+  imageChartStorage:
+    type: s3
+    s3:
+      bucket: medcontracthub-registry
+      region: us-east-1
+      regionendpoint: https://s3.us-east-1.amazonaws.com
+      encrypt: true
+      secure: true
+      v4auth: true
+      multipartcopythresholdsize: "5368709120"  # 5GB
+
+# High Availability
+portal:
+  replicas: 2
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+core:
+  replicas: 2
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 200m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+
+jobservice:
+  replicas: 2
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 200m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+
+registry:
+  replicas: 3
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 200m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+
+trivy:
+  enabled: true
+  replicas: 2
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 200m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+
+notary:
+  enabled: true
+  server:
+    replicas: 2
+  signer:
+    replicas: 2
+
+chartmuseum:
+  enabled: true
+  replicas: 2
+
+# Metrics for monitoring
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+
+# Security scanning
+scanner:
+  trivy:
+    enabled: true
+    vulnerability:
+      enabled: true
+    compliance:
+      enabled: true
+
+# Authentication
+auth:
+  mode: oidc
+  oidc:
+    name: "MedContractHub SSO"
+    endpoint: "https://auth.medcontracthub.com"
+    clientId: "harbor-client"
+    clientSecret: ""  # Use ESO
+    scope: "openid profile email"
+    autoOnboard: true
+    userClaim: "email"
+
+# Harbor admin password
+harborAdminPassword: ""  # Use ESO
+
+# Proxy cache for Docker Hub
+proxy:
+  httpProxy: ""
+  httpsProxy: ""
+  noProxy: "127.0.0.1,localhost,.local,.internal,medcontracthub.svc.cluster.local"
+
+# Image labels for compliance
+imageLabels:
+  - name: "security-scan"
+    value: "required"
+  - name: "compliance-check"
+    value: "passed"

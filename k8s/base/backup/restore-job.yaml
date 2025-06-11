@@ -1,0 +1,78 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-restore
+  namespace: medcontracthub
+spec:
+  template:
+    metadata:
+      labels:
+        app: postgres-restore
+        component: backup
+    spec:
+      restartPolicy: Never
+      serviceAccountName: backup-operator
+      containers:
+      - name: postgres-restore
+        image: postgres:15-alpine
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Starting PostgreSQL restore..."
+          
+          # Check if BACKUP_FILE is specified
+          if [ -z "$BACKUP_FILE" ]; then
+            echo "Error: BACKUP_FILE environment variable not set"
+            echo "Available backups:"
+            ls -la /backups/postgres-backup-*.sql.gz
+            exit 1
+          fi
+          
+          # Check if backup file exists
+          if [ ! -f "/backups/$BACKUP_FILE" ]; then
+            echo "Error: Backup file not found: $BACKUP_FILE"
+            echo "Available backups:"
+            ls -la /backups/postgres-backup-*.sql.gz
+            exit 1
+          fi
+          
+          echo "Restoring from: $BACKUP_FILE"
+          
+          # Drop existing connections
+          PGPASSWORD=$POSTGRES_PASSWORD psql \
+            -h postgres-primary \
+            -U postgres \
+            -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'medcontracthub' AND pid <> pg_backend_pid();"
+          
+          # Restore database
+          gunzip -c /backups/$BACKUP_FILE | PGPASSWORD=$POSTGRES_PASSWORD psql \
+            -h postgres-primary \
+            -U postgres \
+            -d medcontracthub \
+            -v ON_ERROR_STOP=1
+          
+          echo "Restore completed successfully"
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-primary-secrets
+              key: password
+        - name: BACKUP_FILE
+          value: ""  # Must be set when creating the job
+        volumeMounts:
+        - name: backup-storage
+          mountPath: /backups
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      volumes:
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: backup-storage-pvc

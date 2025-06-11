@@ -1,0 +1,188 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alerts
+  namespace: monitoring
+data:
+  medcontracthub-alerts.yml: |
+    groups:
+    - name: medcontracthub-slo
+      interval: 30s
+      rules:
+      # Multi-window multi-burn-rate SLO alerts
+      - alert: MedContractHubHighErrorRate
+        expr: |
+          (
+            sum(rate(medcontracthub_errors_total[5m])) / sum(rate(medcontracthub_requests_total[5m])) > 0.001 * 14.4
+          ) and (
+            sum(rate(medcontracthub_errors_total[1h])) / sum(rate(medcontracthub_requests_total[1h])) > 0.001 * 14.4
+          )
+        for: 2m
+        labels:
+          severity: page
+          team: platform
+        annotations:
+          summary: "High error rate detected (>14.4x burn rate)"
+          description: "Error rate is {{ $value | humanizePercentage }} which is above SLO threshold"
+          dashboard: "https://grafana.medcontracthub.com/d/medcontract-slo"
+          runbook: "https://wiki.medcontracthub.com/runbooks/high-error-rate"
+
+      - alert: MedContractHubModerateErrorRate
+        expr: |
+          (
+            sum(rate(medcontracthub_errors_total[30m])) / sum(rate(medcontracthub_requests_total[30m])) > 0.001 * 6
+          ) and (
+            sum(rate(medcontracthub_errors_total[6h])) / sum(rate(medcontracthub_requests_total[6h])) > 0.001 * 6
+          )
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Moderate error rate detected (>6x burn rate)"
+          description: "Error rate is {{ $value | humanizePercentage }} which requires attention"
+
+      - alert: MedContractHubHighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="medcontracthub-app"}[5m])) by (le)) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High API latency detected"
+          description: "95th percentile latency is {{ $value }}s (SLO: <500ms)"
+
+    - name: medcontracthub-business
+      interval: 1m
+      rules:
+      - alert: ProposalGenerationFailures
+        expr: |
+          sum(rate(medcontracthub_proposal_failures_total[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          team: product
+        annotations:
+          summary: "Proposal generation failures detected"
+          description: "{{ $value | humanize }} proposals/sec are failing"
+          impact: "Users cannot generate proposals for contracts"
+
+      - alert: AIProcessingDown
+        expr: |
+          sum(up{job="ai-service"}) == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: ml-platform
+        annotations:
+          summary: "AI service is completely down"
+          description: "No AI service instances are responding"
+          impact: "All AI-powered features are unavailable"
+
+      - alert: LowOpportunityIngestion
+        expr: |
+          sum(rate(medcontracthub_opportunities_ingested_total[1h])) < 10
+        for: 30m
+        labels:
+          severity: warning
+          team: data-eng
+        annotations:
+          summary: "Low opportunity ingestion rate"
+          description: "Only {{ $value | humanize }} opportunities/hour being ingested"
+
+    - name: medcontracthub-infrastructure
+      interval: 1m
+      rules:
+      - alert: HighMemoryUsage
+        expr: |
+          (sum by (pod) (container_memory_usage_bytes{pod=~"medcontracthub.*"}) / sum by (pod) (container_spec_memory_limit_bytes{pod=~"medcontracthub.*"})) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Pod {{ $labels.pod }} has high memory usage"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+
+      - alert: PodCrashLooping
+        expr: |
+          sum by (pod) (increase(kube_pod_container_status_restarts_total{pod=~"medcontracthub.*"}[1h])) > 5
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Pod {{ $labels.pod }} is crash looping"
+          description: "Pod has restarted {{ $value | humanize }} times in the last hour"
+
+      - alert: PVCSpaceRunningLow
+        expr: |
+          (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "PVC {{ $labels.persistentvolumeclaim }} space running low"
+          description: "Only {{ $value | humanizePercentage }} space remaining"
+
+    - name: medcontracthub-databases
+      interval: 30s
+      rules:
+      - alert: PostgreSQLDown
+        expr: |
+          up{job="postgres-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: data-platform
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL master is not responding"
+          impact: "All database operations will fail"
+
+      - alert: RedisClusterUnhealthy
+        expr: |
+          redis_cluster_state != 1
+        for: 5m
+        labels:
+          severity: critical
+          team: data-platform
+        annotations:
+          summary: "Redis cluster is unhealthy"
+          description: "Redis cluster state is not OK"
+
+      - alert: KafkaConsumerLag
+        expr: |
+          kafka_consumer_lag_sum{topic=~"medcontracthub.*"} > 10000
+        for: 10m
+        labels:
+          severity: warning
+          team: data-eng
+        annotations:
+          summary: "High Kafka consumer lag"
+          description: "Consumer group {{ $labels.consumergroup }} has {{ $value | humanize }} messages lag on topic {{ $labels.topic }}"
+
+    - name: medcontracthub-cost
+      interval: 5m
+      rules:
+      - alert: HighMonthlyCost
+        expr: |
+          sum(medcontracthub_cloud_cost_dollars{period="month"}) > 8000
+        labels:
+          severity: warning
+          team: finops
+        annotations:
+          summary: "Monthly cloud costs exceeding budget"
+          description: "Current monthly spend is ${{ $value | humanize }}"
+
+      - alert: AIAPICostSpike
+        expr: |
+          sum(rate(medcontracthub_ai_api_cost_dollars[1h])) > 10
+        for: 30m
+        labels:
+          severity: warning
+          team: ml-platform
+        annotations:
+          summary: "AI API costs spiking"
+          description: "AI API costs at ${{ $value | humanize }}/hour"

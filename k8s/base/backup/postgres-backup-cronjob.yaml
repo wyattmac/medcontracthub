@@ -1,0 +1,87 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: medcontracthub
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: postgres-backup
+            component: backup
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: backup-operator
+          containers:
+          - name: postgres-backup
+            image: postgres:15-alpine
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Starting PostgreSQL backup..."
+              
+              # Generate backup filename with timestamp
+              BACKUP_FILE="postgres-backup-$(date +%Y%m%d-%H%M%S).sql.gz"
+              
+              # Perform backup
+              PGPASSWORD=$POSTGRES_PASSWORD pg_dump \
+                -h postgres-primary \
+                -U postgres \
+                -d medcontracthub \
+                --no-owner \
+                --no-acl \
+                --verbose | gzip > /tmp/$BACKUP_FILE
+              
+              # Upload to S3 (or your preferred storage)
+              # aws s3 cp /tmp/$BACKUP_FILE s3://$BACKUP_BUCKET/postgres/$BACKUP_FILE
+              
+              # For now, just save to persistent volume
+              cp /tmp/$BACKUP_FILE /backups/$BACKUP_FILE
+              
+              # Clean up old backups (keep last 7 days)
+              find /backups -name "postgres-backup-*.sql.gz" -mtime +7 -delete
+              
+              echo "Backup completed: $BACKUP_FILE"
+            env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-primary-secrets
+                  key: password
+            - name: BACKUP_BUCKET
+              value: "medcontracthub-backups"
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "1Gi"
+                cpu: "500m"
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: backup-storage-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backup-storage-pvc
+  namespace: medcontracthub
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: fast-ssd

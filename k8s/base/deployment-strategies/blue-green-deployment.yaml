@@ -1,0 +1,206 @@
+# Blue-Green Deployment Strategy for MedContractHub
+# Blue deployment (current version)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medcontracthub-app-blue
+  namespace: medcontract-prod
+  labels:
+    version: blue
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: medcontracthub-app
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: medcontracthub-app
+        version: blue
+    spec:
+      containers:
+      - name: app
+        image: registry.medcontracthub.com/medcontracthub/app:v1.9.0
+        ports:
+        - containerPort: 3000
+        env:
+        - name: VERSION
+          value: "blue"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+---
+# Green deployment (new version)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medcontracthub-app-green
+  namespace: medcontract-prod
+  labels:
+    version: green
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: medcontracthub-app
+      version: green
+  template:
+    metadata:
+      labels:
+        app: medcontracthub-app
+        version: green
+    spec:
+      containers:
+      - name: app
+        image: registry.medcontracthub.com/medcontracthub/app:v2.0.0
+        ports:
+        - containerPort: 3000
+        env:
+        - name: VERSION
+          value: "green"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+---
+# Service for blue-green switching
+apiVersion: v1
+kind: Service
+metadata:
+  name: medcontracthub-app
+  namespace: medcontract-prod
+spec:
+  selector:
+    app: medcontracthub-app
+    version: blue  # Switch this to 'green' to deploy new version
+  ports:
+  - port: 80
+    targetPort: 3000
+---
+# Preview service for testing green deployment
+apiVersion: v1
+kind: Service
+metadata:
+  name: medcontracthub-app-preview
+  namespace: medcontract-prod
+spec:
+  selector:
+    app: medcontracthub-app
+    version: green
+  ports:
+  - port: 80
+    targetPort: 3000
+---
+# Automated blue-green switching with Flagger
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: medcontracthub-app-bluegreen
+  namespace: medcontract-prod
+spec:
+  provider: kubernetes
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: medcontracthub-app
+  progressDeadlineSeconds: 300
+  service:
+    name: medcontracthub-app
+    port: 80
+    targetPort: 3000
+    gateways:
+    - public-gateway.istio-system.svc.cluster.local
+    hosts:
+    - medcontracthub.com
+  analysis:
+    # Blue-green specific settings
+    iterations: 1  # Single iteration for blue-green
+    threshold: 1   # Single failure triggers rollback
+    stepWeight: 100  # 100% traffic shift at once
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99.5
+      interval: 1m
+    - name: request-duration
+      thresholdRange:
+        max: 500
+      interval: 30s
+    - name: error-rate
+      thresholdRange:
+        max: 0.5
+      interval: 1m
+    # Pre-deployment validation
+    webhooks:
+    - name: smoke-test
+      url: http://flagger-loadtester.medcontract-prod/
+      timeout: 60s
+      metadata:
+        type: pre-rollout
+        cmd: |
+          curl -s http://medcontracthub-app-preview/api/health | jq -e '.status == "healthy"'
+    # Post-deployment validation
+    - name: integration-test
+      url: http://flagger-loadtester.medcontract-prod/
+      timeout: 300s
+      metadata:
+        type: post-rollout
+        cmd: |
+          npm run test:integration -- --endpoint=http://medcontracthub-app/api
+---
+# Blue-green switch script
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blue-green-switch
+  namespace: medcontract-prod
+data:
+  switch.sh: |
+    #!/bin/bash
+    set -e
+    
+    CURRENT=$(kubectl get service medcontracthub-app -o jsonpath='{.spec.selector.version}')
+    
+    if [ "$CURRENT" == "blue" ]; then
+      TARGET="green"
+    else
+      TARGET="blue"
+    fi
+    
+    echo "Switching from $CURRENT to $TARGET..."
+    
+    # Run pre-switch tests
+    echo "Running smoke tests on $TARGET..."
+    curl -f http://medcontracthub-app-preview/api/health || exit 1
+    
+    # Update service selector
+    kubectl patch service medcontracthub-app -p '{"spec":{"selector":{"version":"'$TARGET'"}}}'
+    
+    echo "Switch complete! Now serving $TARGET version."
+    
+    # Monitor for 5 minutes
+    echo "Monitoring new deployment..."
+    for i in {1..60}; do
+      ERROR_RATE=$(kubectl exec -n monitoring prometheus-0 -- \
+        promtool query instant 'rate(http_requests_total{status=~"5.."}[1m])' | \
+        awk '{print $2}')
+      
+      if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )); then
+        echo "High error rate detected! Rolling back..."
+        kubectl patch service medcontracthub-app -p '{"spec":{"selector":{"version":"'$CURRENT'"}}}'
+        exit 1
+      fi
+      
+      sleep 5
+    done
+    
+    echo "Deployment successful! Scaling down old version..."
+    kubectl scale deployment medcontracthub-app-$CURRENT --replicas=0

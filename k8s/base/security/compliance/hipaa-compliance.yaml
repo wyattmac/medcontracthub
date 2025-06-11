@@ -1,0 +1,250 @@
+# HIPAA Compliance Automation for MedContractHub
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hipaa-compliance-config
+  namespace: medcontracthub
+data:
+  compliance-checks.yaml: |
+    # HIPAA Technical Safeguards
+    checks:
+      # Access Control (164.312(a)(1))
+      - name: access-control-unique-user-id
+        description: "Ensure unique user identification"
+        query: |
+          SELECT COUNT(*) as violations
+          FROM audit_logs
+          WHERE user_id IS NULL OR user_id = 'anonymous'
+          AND timestamp > NOW() - INTERVAL '24 hours'
+        threshold: 0
+        
+      - name: access-control-automatic-logoff
+        description: "Verify automatic logoff is configured"
+        check: |
+          kubectl get configmap app-config -o jsonpath='{.data.SESSION_TIMEOUT}' | \
+          awk '{if ($1 <= 900) print "PASS"; else print "FAIL"}'
+        expected: "PASS"
+      
+      # Audit Controls (164.312(b))
+      - name: audit-log-retention
+        description: "Ensure audit logs are retained for 6 years"
+        query: |
+          SELECT COUNT(*) as retained_days
+          FROM information_schema.tables
+          WHERE table_name LIKE 'audit_logs_%'
+        minimum: 2190  # 6 years in days
+      
+      - name: audit-log-integrity
+        description: "Verify audit log integrity"
+        check: |
+          kubectl exec -n medcontracthub deployment/audit-integrity-checker -- \
+          /bin/check-integrity --verify-hashes
+        expected: "OK"
+      
+      # Integrity (164.312(c)(1))
+      - name: data-integrity-phi
+        description: "Ensure PHI data integrity"
+        query: |
+          SELECT COUNT(*) as violations
+          FROM data_integrity_checks
+          WHERE resource_type = 'PHI'
+          AND status != 'valid'
+          AND checked_at > NOW() - INTERVAL '1 hour'
+        threshold: 0
+      
+      # Transmission Security (164.312(e)(1))
+      - name: encryption-in-transit
+        description: "Verify all PHI transmission is encrypted"
+        check: |
+          kubectl get ingress -A -o json | \
+          jq -r '.items[] | select(.spec.tls == null) | .metadata.name' | \
+          wc -l
+        threshold: 0
+      
+      - name: encryption-at-rest
+        description: "Verify PHI encryption at rest"
+        query: |
+          SELECT COUNT(*) as unencrypted
+          FROM pg_stat_user_tables
+          WHERE NOT encrypted
+          AND schemaname = 'public'
+          AND tablename IN ('patients', 'medical_records', 'prescriptions')
+        threshold: 0
+    
+    # Administrative Safeguards
+    administrative:
+      - name: workforce-training
+        description: "Verify HIPAA training completion"
+        query: |
+          SELECT COUNT(*) as untrained
+          FROM users u
+          LEFT JOIN training_records t ON u.id = t.user_id
+          WHERE t.course_name = 'HIPAA_2024'
+          AND (t.completed_at IS NULL OR t.completed_at < NOW() - INTERVAL '1 year')
+        threshold: 0
+      
+      - name: access-authorization
+        description: "Ensure proper access authorization"
+        query: |
+          SELECT COUNT(*) as violations
+          FROM user_permissions
+          WHERE resource_type = 'PHI'
+          AND NOT approved_by IS NOT NULL
+        threshold: 0
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hipaa-compliance-scanner
+  namespace: medcontracthub
+spec:
+  schedule: "0 0 * * *"  # Daily at midnight
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: compliance-scanner
+            compliance: hipaa
+        spec:
+          serviceAccountName: compliance-scanner
+          restartPolicy: OnFailure
+          containers:
+          - name: scanner
+            image: registry.medcontracthub.com/medcontracthub/compliance-scanner:v1.0.0
+            env:
+            - name: COMPLIANCE_TYPE
+              value: "HIPAA"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: url
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Starting HIPAA compliance scan..."
+              
+              # Run technical safeguards checks
+              /app/compliance-scanner --config /config/compliance-checks.yaml \
+                --output-format json > /tmp/hipaa-results.json
+              
+              # Store results
+              kubectl create configmap hipaa-scan-$(date +%Y%m%d) \
+                --from-file=/tmp/hipaa-results.json \
+                --dry-run=client -o yaml | kubectl apply -f -
+              
+              # Check for violations
+              VIOLATIONS=$(jq '.violations | length' /tmp/hipaa-results.json)
+              
+              if [ $VIOLATIONS -gt 0 ]; then
+                echo "HIPAA violations detected: $VIOLATIONS"
+                # Send alert
+                curl -X POST $WEBHOOK_URL \
+                  -H "Content-Type: application/json" \
+                  -d "{\"text\": \"⚠️ HIPAA Compliance Alert: $VIOLATIONS violations detected\"}"
+              fi
+              
+              # Update compliance dashboard
+              curl -X POST http://analytics-service:8300/api/compliance/hipaa \
+                -H "Content-Type: application/json" \
+                -d @/tmp/hipaa-results.json
+              
+              echo "HIPAA compliance scan completed"
+            volumeMounts:
+            - name: config
+              mountPath: /config
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "200m"
+              limits:
+                memory: "512Mi"
+                cpu: "500m"
+          volumes:
+          - name: config
+            configMap:
+              name: hipaa-compliance-config
+---
+# HIPAA Audit Log Shipping
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hipaa-audit-config
+  namespace: logging
+data:
+  hipaa-pipeline.conf: |
+    input {
+      kafka {
+        bootstrap_servers => "kafka-cluster:9092"
+        topics => ["audit-logs"]
+        group_id => "hipaa-audit-consumer"
+        codec => json
+      }
+    }
+    
+    filter {
+      # Identify PHI access
+      if [resource_type] == "patient" or [resource_type] == "medical_record" {
+        mutate {
+          add_tag => ["PHI_ACCESS"]
+          add_field => {
+            "hipaa_relevant" => "true"
+            "retention_years" => "6"
+          }
+        }
+      }
+      
+      # Add user details
+      elasticsearch {
+        hosts => ["elasticsearch:9200"]
+        index => "users"
+        query => "id:%{user_id}"
+        fields => {
+          "name" => "user_name"
+          "role" => "user_role"
+          "department" => "user_department"
+        }
+      }
+      
+      # Detect potential violations
+      if [action] == "unauthorized_access" or [action] == "failed_authentication" {
+        mutate {
+          add_tag => ["POTENTIAL_VIOLATION"]
+        }
+      }
+    }
+    
+    output {
+      # Long-term HIPAA audit storage
+      elasticsearch {
+        hosts => ["elasticsearch:9200"]
+        index => "hipaa-audit-%{+YYYY.MM}"
+        template_name => "hipaa-audit"
+        template => "/etc/logstash/templates/hipaa-audit.json"
+        ilm_enabled => false  # Manage retention manually for compliance
+      }
+      
+      # Real-time violation alerts
+      if "POTENTIAL_VIOLATION" in [tags] {
+        http {
+          url => "http://analytics-service:8300/api/compliance/violations"
+          http_method => "post"
+          format => "json"
+        }
+      }
+      
+      # Archive to S3 for 6-year retention
+      s3 {
+        access_key_id => "${AWS_ACCESS_KEY_ID}"
+        secret_access_key => "${AWS_SECRET_ACCESS_KEY}"
+        region => "us-east-1"
+        bucket => "medcontracthub-hipaa-audit"
+        prefix => "audit-logs/%{+YYYY}/%{+MM}/%{+dd}/"
+        encoding => "gzip"
+        rotation_strategy => "time"
+        time_file => 3600  # Hourly rotation
+      }
+    }

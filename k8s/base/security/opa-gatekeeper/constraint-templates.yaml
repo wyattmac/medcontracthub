@@ -1,0 +1,220 @@
+# Container Image Security
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredregistries
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredRegistries
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            registries:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredregistries
+        
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          satisfied := [good | registry = input.parameters.registries[_] ; good = startswith(container.image, registry)]
+          not any(satisfied)
+          msg := sprintf("Container image '%v' is not from an allowed registry %v", [container.image, input.parameters.registries])
+        }
+        
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.initContainers[_]
+          satisfied := [good | registry = input.parameters.registries[_] ; good = startswith(container.image, registry)]
+          not any(satisfied)
+          msg := sprintf("Init container image '%v' is not from an allowed registry %v", [container.image, input.parameters.registries])
+        }
+---
+# Required Security Context
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredsecuritycontext
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredSecurityContext
+      validation:
+        openAPIV3Schema:
+          type: object
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredsecuritycontext
+        
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.runAsNonRoot
+          msg := sprintf("Container %v must set runAsNonRoot: true", [container.name])
+        }
+        
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.allowPrivilegeEscalation == false
+          msg := sprintf("Container %v must set allowPrivilegeEscalation: false", [container.name])
+        }
+        
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.readOnlyRootFilesystem
+          msg := sprintf("Container %v must set readOnlyRootFilesystem: true", [container.name])
+        }
+        
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.capabilities.drop[_] == "ALL"
+          msg := sprintf("Container %v must drop ALL capabilities", [container.name])
+        }
+---
+# Required Labels
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredlabels
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredLabels
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            labels:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredlabels
+        
+        violation[{"msg": msg}] {
+          required := input.parameters.labels
+          provided := input.review.object.metadata.labels
+          missing := required[_]
+          not provided[missing]
+          msg := sprintf("Label '%v' is required", [missing])
+        }
+---
+# Resource Limits
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8sresourcelimits
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sResourceLimits
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            cpu:
+              type: string
+            memory:
+              type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sresourcelimits
+        
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.limits.memory
+          msg := sprintf("Container %v must set memory limits", [container.name])
+        }
+        
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.limits.cpu
+          msg := sprintf("Container %v must set CPU limits", [container.name])
+        }
+        
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.requests.memory
+          msg := sprintf("Container %v must set memory requests", [container.name])
+        }
+        
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.requests.cpu
+          msg := sprintf("Container %v must set CPU requests", [container.name])
+        }
+---
+# No Latest Tag
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8snolatesttag
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sNoLatestTag
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8snolatesttag
+        
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          endswith(container.image, ":latest")
+          msg := sprintf("Container %v uses 'latest' tag which is not allowed", [container.name])
+        }
+        
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not contains(container.image, ":")
+          msg := sprintf("Container %v has no image tag specified", [container.name])
+        }
+---
+# HIPAA Compliance
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8shipaacompliance
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sHIPAACompliance
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8shipaacompliance
+        
+        # Ensure encryption at rest
+        violation[{"msg": msg}] {
+          input.review.object.kind == "PersistentVolumeClaim"
+          not input.review.object.metadata.annotations["volume.beta.kubernetes.io/storage-class"]
+          msg := "PVC must specify encrypted storage class for HIPAA compliance"
+        }
+        
+        # Ensure audit logging
+        violation[{"msg": msg}] {
+          input.review.object.kind == "Deployment"
+          not input.review.object.metadata.annotations["audit.medcontracthub.com/enabled"]
+          msg := "Deployment must enable audit logging for HIPAA compliance"
+        }
+        
+        # Ensure network policies
+        violation[{"msg": msg}] {
+          input.review.object.kind == "Service"
+          input.review.object.spec.type == "LoadBalancer"
+          not input.review.object.metadata.annotations["security.medcontracthub.com/approved"]
+          msg := "External LoadBalancer services must be security-approved for HIPAA compliance"
+        }

@@ -1,0 +1,234 @@
+# Automated Secret Rotation for MedContractHub
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: database-password-rotation
+  namespace: medcontracthub
+spec:
+  schedule: "0 2 * * 0"  # Weekly on Sunday at 2 AM
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: secret-rotation
+            component: database
+        spec:
+          serviceAccountName: secret-rotation-operator
+          restartPolicy: OnFailure
+          containers:
+          - name: rotate-passwords
+            image: registry.medcontracthub.com/medcontracthub/secret-rotator:v1.0.0
+            env:
+            - name: ROTATION_TYPE
+              value: "database"
+            - name: SECRET_NAMES
+              value: "postgres-credentials,redis-credentials"
+            - name: AWS_REGION
+              value: "us-east-1"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Starting database password rotation..."
+              
+              # Generate new password
+              NEW_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
+              
+              # Update PostgreSQL password
+              PGPASSWORD=$CURRENT_PASSWORD psql -h postgres-primary -U postgres -c \
+                "ALTER USER medcontract PASSWORD '$NEW_PASSWORD';"
+              
+              # Update secret in Kubernetes
+              kubectl create secret generic postgres-credentials \
+                --from-literal=password=$NEW_PASSWORD \
+                --dry-run=client -o yaml | kubectl apply -f -
+              
+              # Update secret in AWS Secrets Manager
+              aws secretsmanager update-secret \
+                --secret-id medcontracthub/prod/postgres \
+                --secret-string "{\"password\":\"$NEW_PASSWORD\"}"
+              
+              # Trigger pod restarts to pick up new secret
+              kubectl rollout restart deployment -l uses-postgres=true
+              
+              echo "Database password rotation completed"
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "100m"
+              limits:
+                memory: "256Mi"
+                cpu: "200m"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: api-key-rotation
+  namespace: medcontracthub
+spec:
+  schedule: "0 3 1 * *"  # Monthly on the 1st at 3 AM
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: secret-rotation
+            component: api-keys
+        spec:
+          serviceAccountName: secret-rotation-operator
+          restartPolicy: OnFailure
+          containers:
+          - name: rotate-api-keys
+            image: registry.medcontracthub.com/medcontracthub/secret-rotator:v1.0.0
+            env:
+            - name: ROTATION_TYPE
+              value: "api_keys"
+            - name: PROVIDERS
+              value: "openai,anthropic,mistral"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Starting API key rotation..."
+              
+              # Rotate OpenAI key
+              echo "Rotating OpenAI API key..."
+              # Call OpenAI API to create new key and delete old
+              # This would include actual API calls to each provider
+              
+              # Update secrets
+              kubectl create secret generic ai-api-keys \
+                --from-literal=openai-key=$NEW_OPENAI_KEY \
+                --from-literal=anthropic-key=$NEW_ANTHROPIC_KEY \
+                --from-literal=mistral-key=$NEW_MISTRAL_KEY \
+                --dry-run=client -o yaml | kubectl apply -f -
+              
+              # Update in AWS Secrets Manager
+              aws secretsmanager update-secret \
+                --secret-id medcontracthub/prod/ai-keys \
+                --secret-string "$API_KEYS_JSON"
+              
+              # Restart AI services
+              kubectl rollout restart deployment ai-service
+              
+              echo "API key rotation completed"
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "100m"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: tls-certificate-renewal
+  namespace: medcontracthub
+spec:
+  schedule: "0 4 * * *"  # Daily at 4 AM to check for expiring certs
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: secret-rotation
+            component: tls
+        spec:
+          serviceAccountName: cert-renewal-operator
+          restartPolicy: OnFailure
+          containers:
+          - name: renew-certificates
+            image: registry.medcontracthub.com/medcontracthub/cert-manager:v1.0.0
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Checking TLS certificates..."
+              
+              # Check all certificates in the namespace
+              for cert in $(kubectl get certificates -o name); do
+                EXPIRY=$(kubectl get $cert -o jsonpath='{.status.notAfter}')
+                DAYS_LEFT=$(( ($(date -d "$EXPIRY" +%s) - $(date +%s)) / 86400 ))
+                
+                if [ $DAYS_LEFT -lt 30 ]; then
+                  echo "Certificate $cert expires in $DAYS_LEFT days, renewing..."
+                  kubectl annotate $cert cert-manager.io/issue-temporary-certificate="true" --overwrite
+                  kubectl delete secret $(kubectl get $cert -o jsonpath='{.spec.secretName}')
+                fi
+              done
+              
+              echo "Certificate check completed"
+---
+# Service Account for secret rotation
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: secret-rotation-operator
+  namespace: medcontracthub
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: secret-rotation-operator
+  namespace: medcontracthub
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list", "create", "update", "patch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "patch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: secret-rotation-operator
+  namespace: medcontracthub
+subjects:
+- kind: ServiceAccount
+  name: secret-rotation-operator
+  namespace: medcontracthub
+roleRef:
+  kind: Role
+  name: secret-rotation-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+# Monitoring for secret rotation
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: secret-rotation-alerts
+  namespace: monitoring
+data:
+  alerts.yaml: |
+    groups:
+    - name: secret-rotation
+      rules:
+      - alert: SecretRotationFailed
+        expr: |
+          kube_job_status_failed{job_name=~".*-rotation-.*"} > 0
+        for: 5m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "Secret rotation job failed"
+          description: "Secret rotation job {{ $labels.job_name }} has failed"
+      
+      - alert: SecretExpiringS
+        expr: |
+          (cert_expiry_timestamp - time()) / 86400 < 7
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "Certificate expiring soon"
+          description: "Certificate {{ $labels.name }} expires in {{ $value }} days"

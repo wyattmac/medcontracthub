@@ -1,0 +1,118 @@
+# Vertical Pod Autoscaler for MedContractHub
+# VPA for main application
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: medcontracthub-app-vpa
+  namespace: medcontracthub
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: medcontracthub-app
+  updatePolicy:
+    updateMode: "Auto"  # Can be "Auto", "Recreate", or "Initial"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: app
+      minAllowed:
+        cpu: 100m
+        memory: 256Mi
+      maxAllowed:
+        cpu: 2
+        memory: 4Gi
+      controlledResources: ["cpu", "memory"]
+---
+# VPA for AI Service
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: ai-service-vpa
+  namespace: medcontracthub
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-service
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: ai-service
+      minAllowed:
+        cpu: 500m
+        memory: 1Gi
+      maxAllowed:
+        cpu: 8
+        memory: 16Gi
+      controlledResources: ["cpu", "memory"]
+      controlledValues: RequestsAndLimits
+---
+# VPA for OCR Service
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: ocr-service-vpa
+  namespace: medcontracthub
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ocr-service
+  updatePolicy:
+    updateMode: "Recreate"  # OCR service handles large files, recreate is safer
+  resourcePolicy:
+    containerPolicies:
+    - containerName: ocr-service
+      minAllowed:
+        cpu: 200m
+        memory: 512Mi
+      maxAllowed:
+        cpu: 4
+        memory: 8Gi
+---
+# VPA for Analytics Service
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: analytics-service-vpa
+  namespace: medcontracthub
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: analytics-service
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: analytics-service
+      minAllowed:
+        cpu: 200m
+        memory: 512Mi
+      maxAllowed:
+        cpu: 4
+        memory: 8Gi
+---
+# VPA for Worker Service
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: worker-service-vpa
+  namespace: medcontracthub
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worker-service
+  updatePolicy:
+    updateMode: "Initial"  # Workers process jobs, only set initial resources
+  resourcePolicy:
+    containerPolicies:
+    - containerName: worker
+      minAllowed:
+        cpu: 100m
+        memory: 256Mi
+      maxAllowed:
+        cpu: 2
+        memory: 4Gi

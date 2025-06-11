@@ -220,14 +220,18 @@ class ProposalGeneratorTester {
       if (!this.page) throw new Error('Page not initialized')
 
       await this.page.goto(`${BASE_URL}/opportunities`)
-      await this.page.waitForSelector('[data-testid="opportunity-card"], .opportunity-card', { 
+      
+      // Wait for opportunities to load - look for various possible selectors
+      await this.page.waitForSelector('table tbody tr, [data-testid="opportunity-card"], .opportunity-card, [href*="/opportunities/"]', { 
         timeout: 15000 
       })
 
-      // Count opportunities
-      const opportunityCount = await this.page.locator(
-        '[data-testid="opportunity-card"], .opportunity-card'
-      ).count()
+      // Count opportunities - check table rows or cards
+      const tableRows = await this.page.locator('table tbody tr').count()
+      const opportunityCards = await this.page.locator('[data-testid="opportunity-card"], .opportunity-card').count()
+      const opportunityLinks = await this.page.locator('a[href*="/opportunities/"]').count()
+      
+      const opportunityCount = Math.max(tableRows, opportunityCards, opportunityLinks)
 
       if (opportunityCount === 0) {
         throw new Error('No opportunities found')
@@ -260,11 +264,28 @@ class ProposalGeneratorTester {
     try {
       if (!this.page) throw new Error('Page not initialized')
 
-      // Click first opportunity
-      await this.page.click('[data-testid="opportunity-card"]:first-child, .opportunity-card:first-child')
+      // Take screenshot to see what we're working with
+      await this.page.screenshot({ path: 'opportunities-page.png' })
+
+      // Find and click the first opportunity link in the table
+      const firstLink = await this.page.locator('table tbody tr:first-child a[href*="/opportunities/"]').first()
+      
+      if (await firstLink.count() > 0) {
+        const href = await firstLink.getAttribute('href')
+        console.log(`Clicking opportunity link: ${href}`)
+        await firstLink.click()
+      } else {
+        // Fallback: try to find any link to an opportunity
+        const anyOpportunityLink = await this.page.locator('a[href*="/opportunities/"]:not([href="/opportunities"])').first()
+        if (await anyOpportunityLink.count() > 0) {
+          await anyOpportunityLink.click()
+        } else {
+          throw new Error('Could not find any opportunity link to click')
+        }
+      }
       
       // Wait for detail page
-      await this.page.waitForSelector('button:has-text("Mark for Proposal")', { 
+      await this.page.waitForSelector('button:has-text("Mark for Proposal"), button:has-text("Create Proposal")', { 
         timeout: 10000 
       })
 

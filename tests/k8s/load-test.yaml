@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-load-test
+  namespace: test
+data:
+  load-test.js: |
+    import http from 'k6/http';
+    import { check, sleep } from 'k6';
+    import { Rate } from 'k6/metrics';
+    
+    const errorRate = new Rate('errors');
+    const BASE_URL = __ENV.BASE_URL || 'http://medcontracthub-app:3000';
+    
+    export const options = {
+      stages: [
+        { duration: '2m', target: 100 },   // Ramp up to 100 users
+        { duration: '5m', target: 100 },   // Stay at 100 users
+        { duration: '3m', target: 200 },   // Ramp up to 200 users
+        { duration: '5m', target: 200 },   // Stay at 200 users
+        { duration: '2m', target: 0 },     // Ramp down to 0 users
+      ],
+      thresholds: {
+        http_req_duration: ['p(95)<500', 'p(99)<1000'],  // 95% of requests < 500ms
+        http_req_failed: ['rate<0.1'],                    // Error rate < 10%
+        errors: ['rate<0.1'],                             // Custom error rate < 10%
+      },
+    };
+    
+    export default function () {
+      // Test home page
+      let res = http.get(`${BASE_URL}/`);
+      check(res, {
+        'home page status is 200': (r) => r.status === 200,
+        'home page loads fast': (r) => r.timings.duration < 500,
+      });
+      errorRate.add(res.status !== 200);
+      
+      sleep(1);
+      
+      // Test opportunities search
+      res = http.get(`${BASE_URL}/api/opportunities/search?keywords=medical`);
+      check(res, {
+        'search status is 200': (r) => r.status === 200,
+        'search returns results': (r) => {
+          const body = JSON.parse(r.body);
+          return body.opportunities && body.opportunities.length > 0;
+        },
+      });
+      errorRate.add(res.status !== 200);
+      
+      sleep(1);
+      
+      // Test AI analysis (if authenticated)
+      const payload = JSON.stringify({
+        opportunityId: 'test-123',
+        analysisType: 'compliance',
+      });
+      
+      const params = {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${__ENV.AUTH_TOKEN || 'test-token'}`,
+        },
+      };
+      
+      res = http.post(`${BASE_URL}/api/ai/analyze`, payload, params);
+      check(res, {
+        'AI analysis status ok': (r) => r.status === 200 || r.status === 401,
+      });
+      
+      sleep(2);
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-stress-test
+  namespace: test
+data:
+  stress-test.js: |
+    import http from 'k6/http';
+    import { check } from 'k6';
+    
+    export const options = {
+      stages: [
+        { duration: '2m', target: 200 },    // Ramp to 200 users
+        { duration: '5m', target: 200 },    // Stay at 200 users
+        { duration: '2m', target: 400 },    // Ramp to 400 users
+        { duration: '5m', target: 400 },    // Stay at 400 users
+        { duration: '2m', target: 600 },    // Ramp to 600 users
+        { duration: '5m', target: 600 },    // Stay at 600 users
+        { duration: '10m', target: 0 },     // Ramp down
+      ],
+      thresholds: {
+        http_req_duration: ['p(95)<2000'],  // 95% of requests < 2s under stress
+        http_req_failed: ['rate<0.5'],      // Error rate < 50% under stress
+      },
+    };
+    
+    export default function () {
+      const res = http.get(`${__ENV.BASE_URL}/api/health`);
+      check(res, {
+        'status is 200': (r) => r.status === 200,
+      });
+    }
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6-load-test
+  namespace: test
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: k6
+        image: grafana/k6:latest
+        args: ["run", "/scripts/load-test.js"]
+        env:
+        - name: BASE_URL
+          value: "http://medcontracthub-app.medcontracthub:3000"
+        volumeMounts:
+        - name: k6-scripts
+          mountPath: /scripts
+      volumes:
+      - name: k6-scripts
+        configMap:
+          name: k6-load-test

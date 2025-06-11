@@ -1,0 +1,189 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+  namespace: logging
+data:
+  logstash.yml: |
+    http.host: "0.0.0.0"
+    xpack.monitoring.elasticsearch.hosts: ["https://elasticsearch-master:9200"]
+    xpack.monitoring.enabled: true
+    xpack.monitoring.elasticsearch.ssl.certificate_authority: /usr/share/logstash/config/certs/ca.crt
+    xpack.monitoring.elasticsearch.ssl.verification_mode: certificate
+    
+  pipelines.yml: |
+    - pipeline.id: medcontracthub-logs
+      path.config: "/usr/share/logstash/pipeline/medcontracthub.conf"
+      pipeline.workers: 4
+      pipeline.batch.size: 250
+      
+  medcontracthub.conf: |
+    input {
+      beats {
+        port => 5044
+        ssl => true
+        ssl_certificate_authorities => ["/usr/share/logstash/config/certs/ca.crt"]
+        ssl_certificate => "/usr/share/logstash/config/certs/logstash.crt"
+        ssl_key => "/usr/share/logstash/config/certs/logstash.key"
+        ssl_verify_mode => "force_peer"
+      }
+    }
+    
+    filter {
+      # Parse JSON logs
+      if [message] =~ /^\{.*\}$/ {
+        json {
+          source => "message"
+          target => "parsed"
+        }
+        
+        # Extract common fields
+        mutate {
+          add_field => {
+            "service" => "%{[parsed][service]}"
+            "level" => "%{[parsed][level]}"
+            "trace_id" => "%{[parsed][trace_id]}"
+            "span_id" => "%{[parsed][span_id]}"
+            "user_id" => "%{[parsed][user_id]}"
+            "proposal_id" => "%{[parsed][proposal_id]}"
+            "opportunity_id" => "%{[parsed][opportunity_id]}"
+          }
+        }
+      }
+      
+      # Parse Kubernetes metadata
+      if [kubernetes] {
+        mutate {
+          add_field => {
+            "k8s_namespace" => "%{[kubernetes][namespace]}"
+            "k8s_pod" => "%{[kubernetes][pod][name]}"
+            "k8s_container" => "%{[kubernetes][container][name]}"
+            "k8s_node" => "%{[kubernetes][node][name]}"
+          }
+        }
+      }
+      
+      # Detect and parse errors
+      if [level] == "error" or [message] =~ /(?i)(error|exception|failed)/ {
+        mutate {
+          add_tag => ["error"]
+          add_field => { "alert_required" => "true" }
+        }
+        
+        # Extract stack traces
+        if [message] =~ /\n\s+at\s+/ {
+          grok {
+            match => { "message" => "(?<error_message>.*?)\n(?<stack_trace>.*)" }
+          }
+        }
+      }
+      
+      # Security event detection
+      if [message] =~ /(?i)(unauthorized|forbidden|auth.*fail|invalid.*token|security)/ {
+        mutate {
+          add_tag => ["security_event"]
+          add_field => { 
+            "security_severity" => "high"
+            "alert_security_team" => "true"
+          }
+        }
+      }
+      
+      # Performance metrics extraction
+      if [parsed][duration_ms] {
+        mutate {
+          convert => { "[parsed][duration_ms]" => "float" }
+        }
+        
+        if [parsed][duration_ms] > 1000 {
+          mutate {
+            add_tag => ["slow_request"]
+          }
+        }
+      }
+      
+      # AI/ML specific parsing
+      if [service] == "ai-service" {
+        if [parsed][model] {
+          mutate {
+            add_field => {
+              "ai_model" => "%{[parsed][model]}"
+              "ai_tokens_used" => "%{[parsed][tokens_used]}"
+              "ai_cost" => "%{[parsed][estimated_cost]}"
+            }
+          }
+        }
+      }
+      
+      # Business metrics
+      if [parsed][event_type] == "proposal_generated" {
+        mutate {
+          add_field => {
+            "business_event" => "proposal_generated"
+            "contract_value" => "%{[parsed][contract_value]}"
+            "agency" => "%{[parsed][agency]}"
+          }
+        }
+      }
+      
+      # Add timestamp
+      date {
+        match => [ "[parsed][timestamp]", "ISO8601" ]
+        target => "@timestamp"
+      }
+      
+      # Clean up
+      mutate {
+        remove_field => ["message", "parsed"]
+      }
+    }
+    
+    output {
+      # Main output to Elasticsearch
+      elasticsearch {
+        hosts => ["https://elasticsearch-master:9200"]
+        ssl => true
+        ssl_certificate_verification => true
+        cacert => "/usr/share/logstash/config/certs/ca.crt"
+        user => "${ELASTIC_USER}"
+        password => "${ELASTIC_PASSWORD}"
+        
+        # Dynamic index naming
+        index => "medcontracthub-%{[service]}-%{+YYYY.MM.dd}"
+        
+        # Apply ILM policy
+        ilm_enabled => true
+        ilm_rollover_alias => "medcontracthub-logs"
+        ilm_pattern => "{now/d}-000001"
+        ilm_policy => "medcontracthub-logs"
+      }
+      
+      # Security events to separate index
+      if "security_event" in [tags] {
+        elasticsearch {
+          hosts => ["https://elasticsearch-master:9200"]
+          ssl => true
+          ssl_certificate_verification => true
+          cacert => "/usr/share/logstash/config/certs/ca.crt"
+          user => "${ELASTIC_USER}"
+          password => "${ELASTIC_PASSWORD}"
+          index => "medcontracthub-security-%{+YYYY.MM.dd}"
+        }
+      }
+      
+      # Metrics to monitoring index
+      if [parsed][metric_type] {
+        elasticsearch {
+          hosts => ["https://elasticsearch-master:9200"]
+          ssl => true
+          ssl_certificate_verification => true
+          cacert => "/usr/share/logstash/config/certs/ca.crt"
+          user => "${ELASTIC_USER}"
+          password => "${ELASTIC_PASSWORD}"
+          index => "medcontracthub-metrics-%{+YYYY.MM.dd}"
+        }
+      }
+      
+      # Debug output (disable in production)
+      # stdout { codec => rubydebug }
+    }

@@ -35,25 +35,25 @@ replicas:
 
 images:
   - name: localhost:5001/medcontracthub-app
-    newName: medcontracthub/app
+    newName: registry.medcontracthub.com/medcontracthub/medcontracthub-app
     newTag: v1.0.0
   - name: localhost:5001/ocr-service
-    newName: medcontracthub/ocr-service
+    newName: registry.medcontracthub.com/medcontracthub/ocr-service
     newTag: v1.0.0
   - name: localhost:5001/integration-adapter
-    newName: medcontracthub/integration-adapter
+    newName: registry.medcontracthub.com/medcontracthub/integration-adapter
     newTag: v1.0.0
   - name: localhost:5001/ai-service
-    newName: medcontracthub/ai-service
+    newName: registry.medcontracthub.com/medcontracthub/ai-service
     newTag: v1.0.0
   - name: localhost:5001/analytics-service
-    newName: medcontracthub/analytics-service
+    newName: registry.medcontracthub.com/medcontracthub/analytics-service
     newTag: v1.0.0
   - name: localhost:5001/realtime-service
-    newName: medcontracthub/realtime-service
+    newName: registry.medcontracthub.com/medcontracthub/realtime-service
     newTag: v1.0.0
   - name: localhost:5001/worker-service
-    newName: medcontracthub/worker-service
+    newName: registry.medcontracthub.com/medcontracthub/worker-service
     newTag: v1.0.0
 
 configMapGenerator:

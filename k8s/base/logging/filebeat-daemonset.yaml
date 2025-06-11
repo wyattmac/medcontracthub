@@ -1,0 +1,190 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+  namespace: logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: filebeat
+rules:
+- apiGroups: [""]
+  resources:
+  - namespaces
+  - pods
+  - nodes
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups: ["apps"]
+  resources:
+  - replicasets
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat
+subjects:
+- kind: ServiceAccount
+  name: filebeat
+  namespace: logging
+roleRef:
+  kind: ClusterRole
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-config
+  namespace: logging
+data:
+  filebeat.yml: |
+    filebeat.inputs:
+    - type: container
+      paths:
+        - /var/log/containers/*medcontracthub*.log
+        - /var/log/containers/*kong*.log
+        - /var/log/containers/*postgres*.log
+        - /var/log/containers/*redis*.log
+      processors:
+        - add_kubernetes_metadata:
+            host: ${NODE_NAME}
+            matchers:
+            - logs_path:
+                logs_path: "/var/log/containers/"
+        - add_docker_metadata:
+            host: "unix:///var/run/docker.sock"
+        - add_fields:
+            target: ''
+            fields:
+              environment: ${ENVIRONMENT:production}
+              cluster: ${CLUSTER_NAME:medcontracthub-prod}
+    
+    # Exclude system logs
+    filebeat.inputs.exclude_files: ['\.gz$', 'kube-system', 'istio-system']
+    
+    # Multiline configuration for stack traces
+    multiline.pattern: '^\s+at\s+|^Caused by:|^\s+\.\.\.'
+    multiline.negate: false
+    multiline.match: after
+    multiline.timeout: 5s
+    
+    # Output to Logstash
+    output.logstash:
+      hosts: ["logstash:5044"]
+      ssl.enabled: true
+      ssl.certificate_authorities: ["/etc/filebeat/certs/ca.crt"]
+      ssl.certificate: "/etc/filebeat/certs/filebeat.crt"
+      ssl.key: "/etc/filebeat/certs/filebeat.key"
+      ssl.verification_mode: full
+      bulk_max_size: 2048
+      
+    # Monitoring
+    monitoring.enabled: true
+    monitoring.elasticsearch:
+      hosts: ["https://elasticsearch-master:9200"]
+      ssl.enabled: true
+      ssl.certificate_authorities: ["/etc/filebeat/certs/ca.crt"]
+      ssl.verification_mode: certificate
+      
+    # Logging
+    logging.level: info
+    logging.to_files: true
+    logging.files:
+      path: /var/log/filebeat
+      name: filebeat
+      keepfiles: 7
+      permissions: 0644
+      
+    # Performance tuning
+    queue.mem:
+      events: 4096
+      flush.min_events: 512
+      flush.timeout: 5s
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: filebeat
+  namespace: logging
+spec:
+  selector:
+    matchLabels:
+      app: filebeat
+  template:
+    metadata:
+      labels:
+        app: filebeat
+    spec:
+      serviceAccountName: filebeat
+      terminationGracePeriodSeconds: 30
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+      - name: filebeat
+        image: elastic/filebeat:8.11.1
+        args: [
+          "-c", "/etc/filebeat.yml",
+          "-e",
+        ]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: ENVIRONMENT
+          value: "production"
+        - name: CLUSTER_NAME
+          value: "medcontracthub-prod"
+        securityContext:
+          runAsUser: 0
+          # Required to access container logs
+          privileged: true
+        resources:
+          limits:
+            memory: 500Mi
+            cpu: 200m
+          requests:
+            memory: 200Mi
+            cpu: 100m
+        volumeMounts:
+        - name: config
+          mountPath: /etc/filebeat.yml
+          readOnly: true
+          subPath: filebeat.yml
+        - name: data
+          mountPath: /usr/share/filebeat/data
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: varlog
+          mountPath: /var/log
+          readOnly: true
+        - name: certs
+          mountPath: /etc/filebeat/certs
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          defaultMode: 0640
+          name: filebeat-config
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: data
+        hostPath:
+          path: /var/lib/filebeat-data
+          type: DirectoryOrCreate
+      - name: certs
+        secret:
+          secretName: elastic-certificates

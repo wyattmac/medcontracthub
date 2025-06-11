@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: falco-custom-rules
+  namespace: falco
+data:
+  medcontracthub-rules.yaml: |
+    # MedContractHub-specific security rules
+    
+    - rule: Unauthorized Database Access
+      desc: Detect unauthorized access to database ports
+      condition: >
+        inbound and
+        fd.sport in (5432, 6379, 8080, 8123, 9092) and
+        not proc.name in (postgres, redis-server, weaviate, clickhouse, kafka) and
+        not container.image.repository in (registry.medcontracthub.com/medcontracthub)
+      output: >
+        Unauthorized database access attempt (user=%user.name command=%proc.cmdline 
+        container=%container.id image=%container.image.repository sport=%fd.sport)
+      priority: CRITICAL
+      tags: [database, unauthorized_access, compliance]
+    
+    - rule: Sensitive File Access
+      desc: Detect access to sensitive configuration files
+      condition: >
+        open_read and
+        (fd.name contains "secret" or
+         fd.name contains "token" or
+         fd.name contains "password" or
+         fd.name contains ".env" or
+         fd.name pmatch "/etc/medcontracthub/*") and
+        not proc.name in (cat, grep, test) and
+        not container.image.repository contains "medcontracthub"
+      output: >
+        Sensitive file accessed (user=%user.name command=%proc.cmdline file=%fd.name 
+        container=%container.id image=%container.image.repository)
+      priority: WARNING
+      tags: [filesystem, sensitive_data, compliance]
+    
+    - rule: Suspicious Network Activity
+      desc: Detect unusual outbound connections
+      condition: >
+        outbound and
+        not fd.sip in (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16) and
+        not fd.sport in (80, 443, 53) and
+        container.image.repository contains "medcontracthub"
+      output: >
+        Suspicious outbound connection (user=%user.name command=%proc.cmdline 
+        connection=%fd.sip:%fd.sport container=%container.id)
+      priority: WARNING
+      tags: [network, suspicious_activity]
+    
+    - rule: Container Privilege Escalation
+      desc: Detect privilege escalation attempts
+      condition: >
+        spawned_process and
+        proc.pname exists and
+        proc.name != proc.pname and
+        (proc.uid != proc.puid or
+         proc.gid != proc.pgid) and
+        proc.uid = 0
+      output: >
+        Privilege escalation detected (user=%user.name command=%proc.cmdline 
+        parent=%proc.pname container=%container.id)
+      priority: CRITICAL
+      tags: [process, privilege_escalation, security]
+    
+    - rule: Crypto Mining Detection
+      desc: Detect cryptocurrency mining activity
+      condition: >
+        spawned_process and
+        (proc.name in (xmrig, minerd, minergate, ethminer) or
+         proc.cmdline contains "stratum+tcp" or
+         proc.cmdline contains "mining.pool")
+      output: >
+        Crypto mining activity detected (user=%user.name command=%proc.cmdline 
+        container=%container.id image=%container.image.repository)
+      priority: CRITICAL
+      tags: [process, cryptomining, security]
+    
+    - rule: Unauthorized API Key Access
+      desc: Detect attempts to access API keys
+      condition: >
+        open_read and
+        (fd.name contains "openai" or
+         fd.name contains "anthropic" or
+         fd.name contains "mistral" or
+         fd.name contains "api_key" or
+         fd.name contains "credentials") and
+        not proc.name in (node, python, java) and
+        not user.name = "medcontract"
+      output: >
+        Unauthorized API key access attempt (user=%user.name command=%proc.cmdline 
+        file=%fd.name container=%container.id)
+      priority: CRITICAL
+      tags: [api_keys, unauthorized_access, compliance]
+    
+    - rule: HIPAA Compliance Violation
+      desc: Detect potential HIPAA violations
+      condition: >
+        (open_write or open_read) and
+        (fd.name contains "patient" or
+         fd.name contains "medical" or
+         fd.name contains "health" or
+         fd.name contains "phi") and
+        not fd.name contains "/tmp" and
+        not proc.name in (postgres, node) and
+        not container.image.repository contains "medcontracthub"
+      output: >
+        Potential HIPAA violation - unauthorized PHI access (user=%user.name 
+        command=%proc.cmdline file=%fd.name container=%container.id)
+      priority: CRITICAL
+      tags: [hipaa, compliance, phi]
+    
+    - rule: Suspicious Binary Execution
+      desc: Detect execution of suspicious binaries
+      condition: >
+        spawned_process and
+        (proc.name in (nc, ncat, netcat, socat, tcpdump, nmap) or
+         proc.name contains "reverse" or
+         proc.name contains "shell") and
+        not user.name = "root"
+      output: >
+        Suspicious binary execution (user=%user.name command=%proc.cmdline 
+        container=%container.id image=%container.image.repository)
+      priority: WARNING
+      tags: [process, suspicious_binary, security]
+    
+    - rule: Log Tampering Attempt
+      desc: Detect attempts to tamper with logs
+      condition: >
+        (open_write or rename or remove) and
+        (fd.name contains "/var/log" or
+         fd.name contains "audit" or
+         fd.name contains ".log") and
+        not proc.name in (logrotate, rsyslog, filebeat, fluentd)
+      output: >
+        Log tampering attempt detected (user=%user.name command=%proc.cmdline 
+        file=%fd.name container=%container.id)
+      priority: CRITICAL
+      tags: [logs, tampering, security]
+    
+    - rule: Kubernetes Secret Access
+      desc: Detect unauthorized access to Kubernetes secrets
+      condition: >
+        open_read and
+        (fd.name startswith "/var/run/secrets/kubernetes.io" or
+         fd.name contains "serviceaccount") and
+        not proc.name in (kubectl, kubelet, kube-proxy) and
+        not container.image.repository contains "medcontracthub"
+      output: >
+        Unauthorized Kubernetes secret access (user=%user.name command=%proc.cmdline 
+        file=%fd.name container=%container.id)
+      priority: CRITICAL
+      tags: [kubernetes, secrets, security]
+    
+    # Compliance macros
+    - macro: compliance_relevant_operation
+      condition: >
+        (fd.name contains "audit" or
+         fd.name contains "compliance" or
+         fd.name contains "hipaa" or
+         fd.name contains "fedramp")
+    
+    - macro: medcontracthub_container
+      condition: container.image.repository contains "medcontracthub"
+    
+    - macro: production_namespace
+      condition: k8s.ns.name = "medcontract-prod"

@@ -1,0 +1,215 @@
+# Least privilege RBAC for MedContractHub
+# Developer Role - Read-only access to non-production
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: medcontracthub-developer
+rules:
+- apiGroups: ["", "apps", "batch", "networking.k8s.io"]
+  resources: ["pods", "services", "deployments", "replicasets", "jobs", "cronjobs", "ingresses", "configmaps"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods/log", "pods/status"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get", "list", "watch"]
+---
+# Platform Engineer Role - Full access to non-production, limited production
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: medcontracthub-platform-engineer
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+  namespaces: ["medcontracthub", "medcontract-staging"]
+- apiGroups: ["", "apps"]
+  resources: ["pods", "services", "deployments", "replicasets"]
+  verbs: ["get", "list", "watch"]
+  namespaces: ["medcontract-prod"]
+- apiGroups: [""]
+  resources: ["pods/log", "pods/exec", "pods/portforward"]
+  verbs: ["create", "get", "list"]
+  namespaces: ["medcontracthub", "medcontract-staging"]
+---
+# SRE Role - Production access with restrictions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: medcontracthub-sre
+rules:
+- apiGroups: ["", "apps", "batch", "networking.k8s.io"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch", "update", "patch"]
+  namespaces: ["medcontract-prod"]
+- apiGroups: [""]
+  resources: ["pods/exec", "pods/portforward"]
+  verbs: ["create"]
+  namespaces: ["medcontract-prod"]
+- apiGroups: ["apps"]
+  resources: ["deployments/scale", "replicasets/scale"]
+  verbs: ["update", "patch"]
+  namespaces: ["medcontract-prod"]
+- apiGroups: [""]
+  resources: ["secrets", "configmaps"]
+  verbs: ["get", "list"]
+  namespaces: ["medcontract-prod"]
+---
+# Security Admin Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: medcontracthub-security-admin
+rules:
+- apiGroups: ["policy", "networking.k8s.io"]
+  resources: ["podsecuritypolicies", "networkpolicies", "poddisruptionbudgets"]
+  verbs: ["*"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+- apiGroups: ["certificates.k8s.io"]
+  resources: ["certificatesigningrequests"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["audit.k8s.io"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+---
+# Compliance Auditor Role - Read-only access to everything
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: medcontracthub-compliance-auditor
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["*"]
+  verbs: ["get", "list"]
+---
+# Service Account for each microservice with minimal permissions
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: medcontracthub-app
+  namespace: medcontracthub
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: medcontracthub-app
+  namespace: medcontracthub
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+  resourceNames: ["app-config", "feature-flags"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+  resourceNames: ["app-secrets", "database-credentials"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: medcontracthub-app
+  namespace: medcontracthub
+subjects:
+- kind: ServiceAccount
+  name: medcontracthub-app
+  namespace: medcontracthub
+roleRef:
+  kind: Role
+  name: medcontracthub-app
+  apiGroup: rbac.authorization.k8s.io
+---
+# Service Account for AI Service with model access
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ai-service
+  namespace: medcontracthub
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ai-service
+  namespace: medcontracthub
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+  resourceNames: ["ai-models", "ai-config"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+  resourceNames: ["ai-api-keys", "model-credentials"]
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  verbs: ["get", "list"]
+  resourceNames: ["ai-model-cache"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ai-service
+  namespace: medcontracthub
+subjects:
+- kind: ServiceAccount
+  name: ai-service
+  namespace: medcontracthub
+roleRef:
+  kind: Role
+  name: ai-service
+  apiGroup: rbac.authorization.k8s.io
+---
+# Network policies for service accounts
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restrict-service-account-access
+  namespace: medcontracthub
+spec:
+  podSelector:
+    matchLabels:
+      app: medcontracthub-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    - podSelector:
+        matchLabels:
+          app: kong
+    ports:
+    - protocol: TCP
+      port: 3000
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres-primary
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis-cluster
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    podSelector:
+      matchLabels:
+        k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53

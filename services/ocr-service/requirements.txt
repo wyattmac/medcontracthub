@@ -1,0 +1,54 @@
+# FastAPI framework
+fastapi==0.110.0
+uvicorn[standard]==0.27.1
+pydantic==2.6.1
+pydantic-settings==2.2.1
+
+# OCR and document processing
+mistralai==0.1.8
+pytesseract==0.3.10
+pdf2image==1.17.0
+pypdf==4.0.1
+Pillow==10.2.0
+opencv-python==4.9.0.80
+
+# ML/AI libraries
+transformers==4.38.1
+torch==2.2.0
+layoutparser==0.3.4
+numpy==1.26.4
+scikit-learn==1.4.1
+
+# API clients and utilities
+httpx==0.27.0
+aiofiles==23.2.1
+python-multipart==0.0.9
+
+# Monitoring and logging
+prometheus-client==0.20.0
+structlog==24.1.0
+python-json-logger==2.0.7
+
+# Redis for caching
+redis==5.0.1
+aiocache==0.12.2
+
+# Testing
+pytest==8.0.2
+pytest-asyncio==0.23.5
+pytest-cov==4.1.0
+
+# Health checks
+healthcheck==1.3.3
+
+# Environment and config
+python-dotenv==1.0.1
+
+# Message queue
+aiokafka==0.10.0
+
+# Tracing
+opentelemetry-api==1.22.0
+opentelemetry-sdk==1.22.0
+opentelemetry-instrumentation-fastapi==0.43b0
+opentelemetry-exporter-jaeger==1.22.0

@@ -1,0 +1,229 @@
+# Canary Deployment Strategy for MedContractHub
+# Flagger Canary configuration
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: medcontracthub-app
+  namespace: medcontract-prod
+spec:
+  # Target deployment
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: medcontracthub-app
+  
+  # HPA reference for auto-scaling during canary
+  autoscalerRef:
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscaler
+    name: medcontracthub-app
+  
+  # Service mesh provider
+  provider: istio
+  
+  # Progressive delivery settings
+  progressDeadlineSeconds: 600
+  
+  service:
+    name: medcontracthub-app
+    port: 80
+    targetPort: 3000
+    gateways:
+    - public-gateway.istio-system.svc.cluster.local
+    hosts:
+    - app.medcontracthub.com
+    trafficPolicy:
+      tls:
+        mode: ISTIO_MUTUAL
+    retries:
+      attempts: 3
+      perTryTimeout: 30s
+      retryOn: "gateway-error,connect-failure,refused-stream"
+  
+  # Canary analysis configuration
+  analysis:
+    # Schedule
+    interval: 1m
+    threshold: 10  # Max number of failed checks
+    maxWeight: 50  # Max traffic to canary
+    stepWeight: 5  # Traffic increment
+    stepWeightPromotion: 100  # Final promotion step
+    
+    # Metrics for canary analysis
+    metrics:
+    - name: request-success-rate
+      templateRef:
+        name: request-success-rate
+        namespace: istio-system
+      thresholdRange:
+        min: 99
+      interval: 1m
+    
+    - name: request-duration
+      templateRef:
+        name: request-duration
+        namespace: istio-system
+      thresholdRange:
+        max: 500  # Max 500ms p99 latency
+      interval: 30s
+    
+    - name: business-metric-conversion
+      templateRef:
+        name: custom-business-metrics
+        namespace: medcontract-prod
+      thresholdRange:
+        min: 95  # Min 95% of baseline conversion rate
+      interval: 2m
+    
+    # Load testing during canary
+    webhooks:
+    - name: load-test
+      url: http://flagger-loadtester.medcontract-prod/
+      timeout: 5s
+      metadata:
+        cmd: "hey -z 2m -q 10 -c 2 http://medcontracthub-app-canary.medcontract-prod/"
+    
+    # Custom business logic validation
+    - name: acceptance-test
+      url: http://flagger-loadtester.medcontract-prod/
+      timeout: 60s
+      metadata:
+        type: pre-rollout
+        cmd: "npm run test:acceptance -- --url=http://medcontracthub-app-canary/"
+    
+    # Alerts
+    alerts:
+    - name: "canary-promotion"
+      severity: info
+      providerRef:
+        name: slack
+        namespace: medcontract-prod
+    - name: "canary-rollback"
+      severity: warning
+      providerRef:
+        name: pagerduty
+        namespace: medcontract-prod
+---
+# Custom metrics for business KPIs
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: custom-business-metrics
+  namespace: medcontract-prod
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus-server.monitoring:9090
+  query: |
+    (
+      sum(rate(business_conversion_total{app="{{name}}",version="canary"}[{{interval}}])) /
+      sum(rate(business_requests_total{app="{{name}}",version="canary"}[{{interval}}]))
+    ) / (
+      sum(rate(business_conversion_total{app="{{name}}",version="primary"}[{{interval}}])) /
+      sum(rate(business_requests_total{app="{{name}}",version="primary"}[{{interval}}]))
+    ) * 100
+---
+# A/B testing configuration
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: medcontracthub-app-ab
+  namespace: medcontract-prod
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: medcontracthub-app
+  
+  provider: istio
+  
+  service:
+    name: medcontracthub-app-ab
+    port: 80
+    targetPort: 3000
+    
+  # A/B testing specific configuration
+  analysis:
+    interval: 1m
+    threshold: 10
+    iterations: 100  # Run for 100 iterations
+    
+    # A/B test with header-based routing
+    match:
+    - headers:
+        x-variant:
+          exact: "b"
+    - headers:
+        cookie:
+          regex: "^(.*?;)?(variant=b)(;.*)?$"
+    
+    # Split 50/50 for A/B test
+    canaryWeight: 50
+    
+    metrics:
+    - name: conversion-rate-improvement
+      templateRef:
+        name: ab-test-conversion
+        namespace: medcontract-prod
+      thresholdRange:
+        min: 5  # Require 5% improvement
+    
+    # Statistical significance check
+    webhooks:
+    - name: statistical-significance
+      url: http://ab-testing-service.medcontract-prod/significance
+      metadata:
+        variant_a: "primary"
+        variant_b: "canary"
+        metric: "conversion_rate"
+        confidence: "0.95"
+---
+# Rollout stages for complex deployments
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: canary-stages
+  namespace: medcontract-prod
+data:
+  stages.yaml: |
+    stages:
+      - name: "Internal Testing"
+        weight: 0
+        duration: 10m
+        match:
+          headers:
+            x-internal-user: "true"
+      
+      - name: "Beta Users"
+        weight: 5
+        duration: 30m
+        match:
+          headers:
+            x-beta-user: "true"
+      
+      - name: "5% Traffic"
+        weight: 5
+        duration: 1h
+        analysis:
+          errorRate: 0.1
+          latency: 500
+      
+      - name: "25% Traffic"
+        weight: 25
+        duration: 2h
+        analysis:
+          errorRate: 0.5
+          latency: 600
+      
+      - name: "50% Traffic"
+        weight: 50
+        duration: 4h
+        analysis:
+          errorRate: 1.0
+          latency: 700
+      
+      - name: "Full Rollout"
+        weight: 100
+        analysis:
+          errorRate: 1.0
+          latency: 700

@@ -1,0 +1,261 @@
+{
+  "dashboard": {
+    "title": "MedContractHub Cost Monitoring",
+    "uid": "medcontract-costs",
+    "version": 1,
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Monthly Cloud Spend",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 6, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(medcontracthub_cloud_cost_dollars{period=\"month\"})",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 5000},
+                {"color": "red", "value": 10000}
+              ]
+            },
+            "unit": "currencyUSD",
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Cost per Proposal",
+        "type": "stat",
+        "gridPos": {"x": 6, "y": 0, "w": 6, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(medcontracthub_cloud_cost_dollars{period=\"day\"}) / sum(increase(medcontracthub_proposals_generated_total[1d]))",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 5},
+                {"color": "red", "value": 10}
+              ]
+            },
+            "unit": "currencyUSD",
+            "decimals": 2
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "AI API Costs",
+        "type": "gauge",
+        "gridPos": {"x": 12, "y": 0, "w": 6, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(medcontracthub_ai_api_cost_dollars{period=\"month\"})",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 1000},
+                {"color": "red", "value": 2000}
+              ]
+            },
+            "unit": "currencyUSD",
+            "max": 3000
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Resource Efficiency",
+        "type": "stat",
+        "gridPos": {"x": 18, "y": 0, "w": 6, "h": 8},
+        "targets": [
+          {
+            "expr": "(sum(rate(container_cpu_usage_seconds_total{pod=~\"medcontracthub.*\"}[5m])) / sum(container_spec_cpu_quota{pod=~\"medcontracthub.*\"}/100000)) * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 30},
+                {"color": "green", "value": 60},
+                {"color": "red", "value": 90}
+              ]
+            },
+            "unit": "percent",
+            "decimals": 1
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Cost by Service",
+        "type": "piechart",
+        "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum by (service) (medcontracthub_service_cost_dollars)",
+            "legendFormat": "{{service}}",
+            "refId": "A"
+          }
+        ],
+        "pieType": "donut",
+        "displayLabels": ["name", "percent"],
+        "legendDisplayMode": "table",
+        "legendPlacement": "right",
+        "unit": "currencyUSD"
+      },
+      {
+        "id": 6,
+        "title": "Daily Cost Trend",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(medcontracthub_cloud_cost_dollars{period=\"day\"})",
+            "legendFormat": "Infrastructure",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(medcontracthub_ai_api_cost_dollars{period=\"day\"})",
+            "legendFormat": "AI APIs",
+            "refId": "B"
+          },
+          {
+            "expr": "sum(medcontracthub_storage_cost_dollars{period=\"day\"})",
+            "legendFormat": "Storage",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "currencyUSD",
+            "label": "Daily Cost"
+          }
+        ],
+        "stack": true,
+        "fill": 5,
+        "aliasColors": {
+          "Infrastructure": "#5794F2",
+          "AI APIs": "#FF9830",
+          "Storage": "#73BF69"
+        }
+      },
+      {
+        "id": 7,
+        "title": "Cost Optimization Opportunities",
+        "type": "table",
+        "gridPos": {"x": 0, "y": 16, "w": 24, "h": 8},
+        "targets": [
+          {
+            "expr": "topk(10, (1 - (sum by (pod) (rate(container_cpu_usage_seconds_total{pod=~\"medcontracthub.*\"}[1h])) / sum by (pod) (container_spec_cpu_quota{pod=~\"medcontracthub.*\"}/100000))) * sum by (pod) (container_spec_cpu_quota{pod=~\"medcontracthub.*\"}/1000) * 0.05)",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true
+              },
+              "renameByName": {
+                "pod": "Pod",
+                "Value": "Potential Monthly Savings ($)"
+              }
+            }
+          },
+          {
+            "id": "sortBy",
+            "options": {
+              "fields": {},
+              "sort": [
+                {
+                  "field": "Potential Monthly Savings ($)",
+                  "desc": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Budget vs Actual",
+        "type": "bargauge",
+        "gridPos": {"x": 0, "y": 24, "w": 24, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(medcontracthub_cloud_cost_dollars{period=\"month\"}) / 10000 * 100",
+            "legendFormat": "Infrastructure Budget",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(medcontracthub_ai_api_cost_dollars{period=\"month\"}) / 2000 * 100",
+            "legendFormat": "AI API Budget",
+            "refId": "B"
+          },
+          {
+            "expr": "sum(medcontracthub_storage_cost_dollars{period=\"month\"}) / 500 * 100",
+            "legendFormat": "Storage Budget",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 80},
+                {"color": "red", "value": 100}
+              ]
+            },
+            "unit": "percent",
+            "max": 120,
+            "displayName": "${__field.name}"
+          }
+        },
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 38,
+    "tags": ["cost", "finops", "medcontracthub"],
+    "time": {
+      "from": "now-30d",
+      "to": "now"
+    }
+  }
+}

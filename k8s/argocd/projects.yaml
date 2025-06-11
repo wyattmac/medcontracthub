@@ -1,0 +1,138 @@
+# ArgoCD Projects for MedContractHub
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: production
+  namespace: argocd
+spec:
+  description: Production applications
+  sourceRepos:
+  - 'https://github.com/medcontracthub/*'
+  - 'https://charts.bitnami.com/bitnami'
+  - 'https://prometheus-community.github.io/helm-charts'
+  destinations:
+  - namespace: 'medcontract-prod'
+    server: https://kubernetes.default.svc
+  - namespace: 'harbor'
+    server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+  - group: 'rbac.authorization.k8s.io'
+    kind: ClusterRole
+  - group: 'rbac.authorization.k8s.io'
+    kind: ClusterRoleBinding
+  namespaceResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  roles:
+  - name: prod-admin
+    policies:
+    - p, proj:production:prod-admin, applications, *, production/*, allow
+    - p, proj:production:prod-admin, certificates, *, production/*, allow
+    - p, proj:production:prod-admin, repositories, *, production/*, allow
+    groups:
+    - medcontracthub:platform-team
+  - name: prod-readonly
+    policies:
+    - p, proj:production:prod-readonly, applications, get, production/*, allow
+    - p, proj:production:prod-readonly, certificates, get, production/*, allow
+    groups:
+    - medcontracthub:developers
+  syncWindows:
+  - kind: deny
+    schedule: '0 14 * * 5'  # No deployments Friday after 2 PM
+    duration: 66h           # Until Monday morning
+    timeZone: America/New_York
+  - kind: allow
+    schedule: '0 9 * * 1-5'  # Deployments allowed weekdays 9 AM - 2 PM
+    duration: 5h
+    timeZone: America/New_York
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: staging
+  namespace: argocd
+spec:
+  description: Staging applications
+  sourceRepos:
+  - 'https://github.com/medcontracthub/*'
+  destinations:
+  - namespace: 'medcontract-staging'
+    server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+  namespaceResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  roles:
+  - name: staging-admin
+    policies:
+    - p, proj:staging:staging-admin, applications, *, staging/*, allow
+    groups:
+    - medcontracthub:developers
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: development
+  namespace: argocd
+spec:
+  description: Development applications
+  sourceRepos:
+  - '*'
+  destinations:
+  - namespace: 'medcontracthub'
+    server: https://kubernetes.default.svc
+  - namespace: 'medcontract-dev'
+    server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  namespaceResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  roles:
+  - name: dev-admin
+    policies:
+    - p, proj:development:dev-admin, *, *, development/*, allow
+    groups:
+    - medcontracthub:developers
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: infrastructure
+  namespace: argocd
+spec:
+  description: Infrastructure components (monitoring, logging, etc)
+  sourceRepos:
+  - 'https://github.com/medcontracthub/*'
+  - 'https://prometheus-community.github.io/helm-charts'
+  - 'https://grafana.github.io/helm-charts'
+  - 'https://helm.elastic.co'
+  destinations:
+  - namespace: 'monitoring'
+    server: https://kubernetes.default.svc
+  - namespace: 'logging'
+    server: https://kubernetes.default.svc
+  - namespace: 'cert-manager'
+    server: https://kubernetes.default.svc
+  - namespace: 'ingress-nginx'
+    server: https://kubernetes.default.svc
+  - namespace: 'external-secrets'
+    server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  namespaceResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  roles:
+  - name: infra-admin
+    policies:
+    - p, proj:infrastructure:infra-admin, *, *, infrastructure/*, allow
+    groups:
+    - medcontracthub:platform-team

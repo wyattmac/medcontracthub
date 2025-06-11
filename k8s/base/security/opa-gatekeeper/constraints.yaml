@@ -1,0 +1,105 @@
+# Enforce approved registries
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredRegistries
+metadata:
+  name: must-use-approved-registries
+spec:
+  match:
+    kinds:
+    - apiGroups: ["apps", ""]
+      kinds: ["Deployment", "StatefulSet", "DaemonSet", "Pod"]
+    namespaces:
+    - "medcontracthub"
+    - "medcontract-staging"
+    - "medcontract-prod"
+  parameters:
+    registries:
+    - "registry.medcontracthub.com/"
+    - "docker.io/library/"  # For base images only
+    - "ghcr.io/medcontracthub/"
+    - "public.ecr.aws/medcontracthub/"
+---
+# Enforce security context
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredSecurityContext
+metadata:
+  name: must-have-security-context
+spec:
+  match:
+    kinds:
+    - apiGroups: ["apps", ""]
+      kinds: ["Deployment", "StatefulSet", "DaemonSet", "Pod"]
+    namespaces:
+    - "medcontracthub"
+    - "medcontract-staging"
+    - "medcontract-prod"
+  enforcementAction: deny
+---
+# Enforce required labels
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata:
+  name: must-have-required-labels
+spec:
+  match:
+    kinds:
+    - apiGroups: ["apps", ""]
+      kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    namespaces:
+    - "medcontracthub"
+    - "medcontract-staging"
+    - "medcontract-prod"
+  parameters:
+    labels:
+    - "app.kubernetes.io/name"
+    - "app.kubernetes.io/version"
+    - "app.kubernetes.io/component"
+    - "app.kubernetes.io/part-of"
+    - "app.kubernetes.io/managed-by"
+---
+# Enforce resource limits
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sResourceLimits
+metadata:
+  name: must-have-resource-limits
+spec:
+  match:
+    kinds:
+    - apiGroups: ["apps", ""]
+      kinds: ["Deployment", "StatefulSet", "DaemonSet", "Pod"]
+    namespaces:
+    - "medcontracthub"
+    - "medcontract-staging"
+    - "medcontract-prod"
+  parameters:
+    cpu: "2000m"
+    memory: "4Gi"
+---
+# Prevent latest tag
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sNoLatestTag
+metadata:
+  name: no-latest-tag
+spec:
+  match:
+    kinds:
+    - apiGroups: ["apps", ""]
+      kinds: ["Deployment", "StatefulSet", "DaemonSet", "Pod"]
+    namespaces:
+    - "medcontract-staging"
+    - "medcontract-prod"
+  enforcementAction: deny
+---
+# HIPAA compliance
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sHIPAACompliance
+metadata:
+  name: hipaa-compliance-required
+spec:
+  match:
+    kinds:
+    - apiGroups: ["", "apps"]
+      kinds: ["PersistentVolumeClaim", "Deployment", "Service"]
+    namespaces:
+    - "medcontract-prod"
+  enforcementAction: deny

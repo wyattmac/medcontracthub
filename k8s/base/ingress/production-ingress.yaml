@@ -1,0 +1,145 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: medcontracthub-production
+  namespace: medcontracthub
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/limit-rps: "50"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+      more_set_headers "Content-Security-Policy: default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:;";
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - medcontracthub.com
+    - www.medcontracthub.com
+    - app.medcontracthub.com
+    - api.medcontracthub.com
+    secretName: medcontracthub-wildcard-tls
+  rules:
+  # Main application
+  - host: medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: medcontracthub-app
+            port:
+              number: 3000
+  - host: www.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: medcontracthub-app
+            port:
+              number: 3000
+  - host: app.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: medcontracthub-app
+            port:
+              number: 3000
+  
+  # API Gateway
+  - host: api.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kong-proxy
+            port:
+              number: 80
+---
+# Service-specific ingresses
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: medcontracthub-services
+  namespace: medcontracthub
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header l5d-dst-override $service_name.$namespace.svc.cluster.local:$service_port;
+      grpc_set_header l5d-dst-override $service_name.$namespace.svc.cluster.local:$service_port;
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - ocr.api.medcontracthub.com
+    - ai.api.medcontracthub.com
+    - analytics.api.medcontracthub.com
+    - realtime.api.medcontracthub.com
+    secretName: medcontracthub-wildcard-tls
+  rules:
+  # OCR Service
+  - host: ocr.api.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ocr-service
+            port:
+              number: 8100
+  
+  # AI Service
+  - host: ai.api.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ai-service
+            port:
+              number: 8200
+  
+  # Analytics Service
+  - host: analytics.api.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: analytics-service
+            port:
+              number: 8300
+  
+  # Realtime Service (WebSocket)
+  - host: realtime.api.medcontracthub.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: realtime-service
+            port:
+              number: 8400

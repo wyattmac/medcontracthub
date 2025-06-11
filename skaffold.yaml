@@ -1,0 +1,133 @@
+apiVersion: skaffold/v4beta8
+kind: Config
+metadata:
+  name: medcontracthub
+build:
+  local:
+    push: true
+  artifacts:
+    - image: localhost:5001/medcontracthub-app
+      context: .
+      docker:
+        dockerfile: Dockerfile.dev
+      sync:
+        manual:
+          - src: "app/**/*"
+            dest: /app/app
+          - src: "components/**/*"
+            dest: /app/components
+          - src: "lib/**/*"
+            dest: /app/lib
+    
+    - image: localhost:5001/ocr-service
+      context: services/ocr-service
+      docker:
+        dockerfile: Dockerfile
+        target: development
+      sync:
+        manual:
+          - src: "**/*.py"
+            dest: /app
+    
+    - image: localhost:5001/integration-adapter
+      context: services/integration-adapter
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "src/**/*.ts"
+            dest: /app/src
+
+manifests:
+  kustomize:
+    paths:
+      - k8s/overlays/dev
+
+deploy:
+  kubectl:
+    hooks:
+      before:
+        - host:
+            command: ["sh", "-c", "kubectl apply -f k8s/base/namespace.yaml"]
+      after:
+        - host:
+            command: ["sh", "-c", "kubectl wait --for=condition=ready pod -l app=medcontracthub -n medcontracthub --timeout=300s"]
+
+portForward:
+  - resourceType: service
+    resourceName: medcontracthub-app
+    namespace: medcontracthub
+    port: 3000
+    localPort: 3000
+  
+  - resourceType: service
+    resourceName: ocr-service
+    namespace: medcontracthub
+    port: 8100
+    localPort: 8100
+  
+  - resourceType: service
+    resourceName: integration-adapter
+    namespace: medcontracthub
+    port: 8080
+    localPort: 8080
+  
+  - resourceType: service
+    resourceName: kafka-ui
+    namespace: kafka
+    port: 8080
+    localPort: 8090
+  
+  - resourceType: service
+    resourceName: jaeger-query
+    namespace: observability
+    port: 16686
+    localPort: 16686
+
+profiles:
+  - name: dev
+    activation:
+      - command: dev
+    build:
+      local:
+        push: false
+      artifacts:
+        - image: localhost:5001/medcontracthub-app
+          docker:
+            target: development
+        - image: localhost:5001/ocr-service
+          docker:
+            target: development
+    patches:
+      - op: add
+        path: /build/tagPolicy
+        value:
+          dateTime: {}
+  
+  - name: staging
+    build:
+      artifacts:
+        - image: localhost:5001/medcontracthub-app
+          docker:
+            dockerfile: Dockerfile.staging
+        - image: localhost:5001/ocr-service
+          docker:
+            target: production
+    manifests:
+      kustomize:
+        paths:
+          - k8s/overlays/staging
+  
+  - name: prod
+    build:
+      artifacts:
+        - image: localhost:5001/medcontracthub-app
+          docker:
+            dockerfile: Dockerfile.prod
+        - image: localhost:5001/ocr-service
+          docker:
+            target: production
+    manifests:
+      kustomize:
+        paths:
+          - k8s/overlays/prod

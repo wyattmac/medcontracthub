@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: clickhouse-backup
+  namespace: medcontracthub
+spec:
+  schedule: "0 4 * * *"  # Daily at 4 AM
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: clickhouse-backup
+            component: backup
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: backup-operator
+          containers:
+          - name: clickhouse-backup
+            image: clickhouse/clickhouse-server:23.8
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting ClickHouse backup..."
+              
+              # Generate backup name with timestamp
+              BACKUP_NAME="clickhouse-backup-$(date +%Y%m%d-%H%M%S)"
+              
+              # Create backup
+              clickhouse-client \
+                --host clickhouse \
+                --user default \
+                --password "$CLICKHOUSE_PASSWORD" \
+                --query "BACKUP DATABASE medcontract_analytics TO Disk('backups', '$BACKUP_NAME')"
+              
+              # Compress backup
+              cd /var/lib/clickhouse/backups
+              tar -czf "${BACKUP_NAME}.tar.gz" "$BACKUP_NAME"
+              
+              # Copy to persistent storage
+              cp "${BACKUP_NAME}.tar.gz" /backups/
+              
+              # Clean up local backup
+              rm -rf "$BACKUP_NAME" "${BACKUP_NAME}.tar.gz"
+              
+              # Clean up old backups (keep last 7 days)
+              find /backups -name "clickhouse-backup-*.tar.gz" -mtime +7 -delete
+              
+              echo "Backup completed: $BACKUP_NAME"
+            env:
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: clickhouse-secrets
+                  key: password
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "200m"
+              limits:
+                memory: "2Gi"
+                cpu: "1000m"
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: backup-storage-pvc

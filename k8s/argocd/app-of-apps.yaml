@@ -1,0 +1,183 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: medcontracthub-platform
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/medcontracthub/platform
+    targetRevision: HEAD
+    path: k8s/argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+---
+# Production Applications
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: medcontracthub-prod-apps
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - name: medcontracthub-app
+        namespace: medcontract-prod
+      - name: ai-service
+        namespace: medcontract-prod
+      - name: ocr-service
+        namespace: medcontract-prod
+      - name: analytics-service
+        namespace: medcontract-prod
+      - name: realtime-service
+        namespace: medcontract-prod
+      - name: worker-service
+        namespace: medcontract-prod
+  template:
+    metadata:
+      name: '{{name}}-prod'
+      namespace: argocd
+      labels:
+        environment: production
+        service: '{{name}}'
+    spec:
+      project: production
+      source:
+        repoURL: https://github.com/medcontracthub/platform
+        targetRevision: main
+        path: k8s/overlays/prod
+        kustomize:
+          images:
+          - 'localhost:5001/{{name}}=registry.medcontracthub.com/medcontracthub/{{name}}:v1.0.0'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - PrunePropagationPolicy=foreground
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+      revisionHistoryLimit: 10
+---
+# Staging Applications
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: medcontracthub-staging-apps
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - name: medcontracthub-app
+        namespace: medcontract-staging
+      - name: ai-service
+        namespace: medcontract-staging
+      - name: ocr-service
+        namespace: medcontract-staging
+      - name: analytics-service
+        namespace: medcontract-staging
+      - name: realtime-service
+        namespace: medcontract-staging
+      - name: worker-service
+        namespace: medcontract-staging
+  template:
+    metadata:
+      name: '{{name}}-staging'
+      namespace: argocd
+      labels:
+        environment: staging
+        service: '{{name}}'
+    spec:
+      project: staging
+      source:
+        repoURL: https://github.com/medcontracthub/platform
+        targetRevision: develop
+        path: k8s/overlays/staging
+        kustomize:
+          images:
+          - 'localhost:5001/{{name}}=registry.medcontracthub.com/medcontracthub/{{name}}:develop-latest'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+        - CreateNamespace=true
+        retry:
+          limit: 3
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 1m
+---
+# Infrastructure Applications
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-stack
+  namespace: argocd
+spec:
+  project: infrastructure
+  source:
+    repoURL: https://github.com/medcontracthub/platform
+    targetRevision: HEAD
+    path: k8s/base/monitoring
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: logging-stack
+  namespace: argocd
+spec:
+  project: infrastructure
+  source:
+    repoURL: https://github.com/medcontracthub/platform
+    targetRevision: HEAD
+    path: k8s/base/logging
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: logging
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true

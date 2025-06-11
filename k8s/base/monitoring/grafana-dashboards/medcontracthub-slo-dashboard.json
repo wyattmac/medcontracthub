@@ -1,0 +1,267 @@
+{
+  "dashboard": {
+    "title": "MedContractHub SLI/SLO Dashboard",
+    "uid": "medcontract-slo",
+    "version": 1,
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Overall Uptime (99.9% SLO)",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "(1 - sum(rate(medcontracthub_errors_total[30d])) / sum(rate(medcontracthub_requests_total[30d]))) * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 99.5},
+                {"color": "green", "value": 99.9}
+              ]
+            },
+            "unit": "percent",
+            "decimals": 3
+          }
+        },
+        "options": {
+          "graphMode": "area",
+          "textMode": "value_and_name"
+        }
+      },
+      {
+        "id": 2,
+        "title": "API Latency P95 (<500ms SLO)",
+        "type": "stat",
+        "gridPos": {"x": 8, "y": 0, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"medcontracthub-app\"}[5m])) by (le)) * 1000",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 400},
+                {"color": "red", "value": 500}
+              ]
+            },
+            "unit": "ms",
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Error Budget Remaining",
+        "type": "gauge",
+        "gridPos": {"x": 16, "y": 0, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "(1 - (sum(increase(medcontracthub_errors_total[30d])) / sum(increase(medcontracthub_requests_total[30d]))) / 0.001) * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 20},
+                {"color": "green", "value": 50}
+              ]
+            },
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "SLI Status Grid",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 8, "w": 24, "h": 4},
+        "targets": [
+          {
+            "expr": "(1 - sum(rate(medcontracthub_errors_total[5m])) / sum(rate(medcontracthub_requests_total[5m]))) * 100",
+            "legendFormat": "Availability",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) < 0.5",
+            "legendFormat": "Latency OK",
+            "refId": "B"
+          },
+          {
+            "expr": "sum(rate(medcontracthub_proposals_generated_total[5m])) > 0.1",
+            "legendFormat": "Throughput OK",
+            "refId": "C"
+          },
+          {
+            "expr": "avg(container_memory_usage_bytes{pod=~\"medcontracthub.*\"}) / avg(container_spec_memory_limit_bytes{pod=~\"medcontracthub.*\"}) < 0.8",
+            "legendFormat": "Resources OK",
+            "refId": "D"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "type": "range",
+                "options": {
+                  "from": 0,
+                  "to": 0.5,
+                  "result": {"text": "FAIL", "color": "red"}
+                }
+              },
+              {
+                "type": "range",
+                "options": {
+                  "from": 0.5,
+                  "to": 100,
+                  "result": {"text": "PASS", "color": "green"}
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Error Rate by Service",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum by (service) (rate(medcontracthub_errors_total[5m]))",
+            "legendFormat": "{{service}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "reqps",
+            "label": "Errors/sec"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "SLO Burn Rate",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(medcontracthub_errors_total[1h])) / sum(rate(medcontracthub_requests_total[1h])) / 0.001",
+            "legendFormat": "1h burn rate",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(medcontracthub_errors_total[6h])) / sum(rate(medcontracthub_requests_total[6h])) / 0.001",
+            "legendFormat": "6h burn rate",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "short",
+            "label": "Burn Rate"
+          }
+        ],
+        "thresholds": [
+          {
+            "value": 14.4,
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "colorMode": "critical"
+          },
+          {
+            "value": 6,
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "colorMode": "warning"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Service Dependencies Health",
+        "type": "table",
+        "gridPos": {"x": 0, "y": 20, "w": 24, "h": 8},
+        "targets": [
+          {
+            "expr": "up{job=~\"postgres|redis|weaviate|clickhouse|kafka\"}",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "__name__": true
+              },
+              "renameByName": {
+                "job": "Service",
+                "instance": "Instance",
+                "Value": "Status"
+              }
+            }
+          },
+          {
+            "id": "calculateField",
+            "options": {
+              "mode": "binary",
+              "reduce": {
+                "reducer": "last"
+              },
+              "replaceFields": true
+            }
+          }
+        ]
+      }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 38,
+    "tags": ["slo", "reliability", "medcontracthub"],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "annotations": {
+      "list": [
+        {
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "ALERTS{alertname=~\"SLO.*\"}",
+          "name": "SLO Alerts",
+          "tagKeys": "alertname,severity",
+          "textFormat": "{{alertname}} - {{severity}}"
+        }
+      ]
+    }
+  }
+}

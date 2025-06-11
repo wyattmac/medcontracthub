@@ -1,0 +1,105 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: contract-tests
+  namespace: test
+data:
+  test-contracts.js: |
+    const axios = require('axios');
+    const assert = require('assert');
+    
+    const SERVICES = {
+      'medcontracthub-app': {
+        url: 'http://medcontracthub-app:3000',
+        endpoints: [
+          { path: '/api/health', expectedStatus: 200 },
+          { path: '/api/opportunities', expectedStatus: 200 },
+          { path: '/api/proposals', expectedStatus: 200 }
+        ]
+      },
+      'ai-service': {
+        url: 'http://ai-service:8200',
+        endpoints: [
+          { path: '/health', expectedStatus: 200 },
+          { path: '/api/models', expectedStatus: 200 },
+          { path: '/api/analyze', expectedStatus: 405 }  // Requires POST
+        ]
+      },
+      'ocr-service': {
+        url: 'http://ocr-service:8100',
+        endpoints: [
+          { path: '/health', expectedStatus: 200 },
+          { path: '/api/process', expectedStatus: 405 }  // Requires POST
+        ]
+      },
+      'analytics-service': {
+        url: 'http://analytics-service:8300',
+        endpoints: [
+          { path: '/health', expectedStatus: 200 },
+          { path: '/api/metrics', expectedStatus: 200 }
+        ]
+      }
+    };
+    
+    async function runContractTests() {
+      console.log('🔍 Running API Contract Tests...\n');
+      
+      let totalTests = 0;
+      let passedTests = 0;
+      
+      for (const [serviceName, config] of Object.entries(SERVICES)) {
+        console.log(`Testing ${serviceName}...`);
+        
+        for (const endpoint of config.endpoints) {
+          totalTests++;
+          try {
+            const response = await axios.get(`${config.url}${endpoint.path}`, {
+              validateStatus: () => true
+            });
+            
+            if (response.status === endpoint.expectedStatus) {
+              console.log(`  ✅ ${endpoint.path} - Status ${response.status}`);
+              passedTests++;
+            } else {
+              console.log(`  ❌ ${endpoint.path} - Expected ${endpoint.expectedStatus}, got ${response.status}`);
+            }
+          } catch (error) {
+            console.log(`  ❌ ${endpoint.path} - Error: ${error.message}`);
+          }
+        }
+        console.log('');
+      }
+      
+      console.log(`\nContract Tests: ${passedTests}/${totalTests} passed`);
+      
+      if (passedTests !== totalTests) {
+        process.exit(1);
+      }
+    }
+    
+    runContractTests();
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: contract-tests
+  namespace: test
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: test-runner
+        image: node:20-alpine
+        command: ["sh", "-c"]
+        args:
+          - |
+            npm install axios
+            node /tests/test-contracts.js
+        volumeMounts:
+        - name: test-scripts
+          mountPath: /tests
+      volumes:
+      - name: test-scripts
+        configMap:
+          name: contract-tests

@@ -1,0 +1,56 @@
+# Pod Disruption Budgets for high availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: medcontracthub-app-pdb
+  namespace: medcontracthub
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: medcontracthub-app
+  unhealthyPodEvictionPolicy: AlwaysAllow
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-service-pdb
+  namespace: medcontracthub
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ai-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-pdb
+  namespace: medcontracthub
+spec:
+  maxUnavailable: 0  # Don't allow primary DB disruption
+  selector:
+    matchLabels:
+      app: postgres-primary
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-cluster-pdb
+  namespace: medcontracthub
+spec:
+  minAvailable: 4  # Keep quorum in 6-node cluster
+  selector:
+    matchLabels:
+      app: redis-cluster
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kafka-pdb
+  namespace: medcontracthub
+spec:
+  minAvailable: 2  # Keep majority of brokers
+  selector:
+    matchLabels:
+      app: kafka
