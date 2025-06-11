@@ -124,7 +124,7 @@ export class EventProcessor {
     });
   }
 
-  private async getRecentViewCount(userId: string): Promise<number> {
+  private async getRecentViewCount(_userId: string): Promise<number> {
     // In production, query ClickHouse or use Redis cache
     // For now, return a mock value
     return 5;

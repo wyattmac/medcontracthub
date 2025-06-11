@@ -70,6 +70,10 @@ spec:
             configMapKeyRef:
               name: ocr-service-config
               key: kafka_bootstrap_servers
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         - name: JAEGER_AGENT_HOST
           valueFrom:
             fieldRef:

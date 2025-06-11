@@ -32,7 +32,7 @@ export class HealthServer {
 
   private setupRoutes(): void {
     // Health check endpoint
-    this.app.get('/health', async (req: Request, res: Response) => {
+    this.app.get('/health', async (_req: Request, res: Response) => {
       try {
         const health = await this.getHealthStatus();
         const statusCode = health.status === 'healthy' ? 200 : 503;
@@ -41,13 +41,13 @@ export class HealthServer {
         logger.error('Health check failed:', error);
         res.status(503).json({
           status: 'unhealthy',
-          error: 'Health check failed',
+          error: error instanceof Error ? error.message : 'Health check failed',
         });
       }
     });
 
     // Readiness check endpoint
-    this.app.get('/ready', async (req: Request, res: Response) => {
+    this.app.get('/ready', async (_req: Request, res: Response) => {
       try {
         const isReady = await this.checkReadiness();
         if (isReady) {
@@ -56,17 +56,20 @@ export class HealthServer {
           res.status(503).json({ ready: false });
         }
       } catch (error) {
-        res.status(503).json({ ready: false, error: error.message });
+        res.status(503).json({ 
+          ready: false, 
+          error: error instanceof Error ? error.message : 'Readiness check failed' 
+        });
       }
     });
 
     // Liveness check endpoint
-    this.app.get('/live', (req: Request, res: Response) => {
+    this.app.get('/live', (_req: Request, res: Response) => {
       res.status(200).json({ alive: true });
     });
 
     // Metrics endpoint
-    this.app.get('/metrics', async (req: Request, res: Response) => {
+    this.app.get('/metrics', async (_req: Request, res: Response) => {
       try {
         const metrics = await this.metrics.getMetricsText();
         res.set('Content-Type', 'text/plain');
@@ -78,10 +81,10 @@ export class HealthServer {
     });
 
     // Service info endpoint
-    this.app.get('/info', (req: Request, res: Response) => {
+    this.app.get('/info', (_req: Request, res: Response) => {
       res.json({
         service: 'analytics-service',
-        version: process.env.VERSION || '1.0.0',
+        version: process.env['VERSION'] || '1.0.0',
         environment: config.env,
         uptime: this.getUptime(),
         startTime: this.startTime.toISOString(),
@@ -98,7 +101,7 @@ export class HealthServer {
     });
 
     // SLO status endpoint
-    this.app.get('/slo', async (req: Request, res: Response) => {
+    this.app.get('/slo', async (_req: Request, res: Response) => {
       try {
         const sloStatus = await this.getSLOStatus();
         res.json(sloStatus);
@@ -144,7 +147,7 @@ export class HealthServer {
       status: isHealthy ? 'healthy' : 'unhealthy',
       timestamp: new Date().toISOString(),
       service: 'analytics-service',
-      version: process.env.VERSION || '1.0.0',
+      version: process.env['VERSION'] || '1.0.0',
       uptime: this.getUptime(),
       checks,
     };

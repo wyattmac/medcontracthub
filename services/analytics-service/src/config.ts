@@ -73,40 +73,40 @@ const configSchema = z.object({
 // Parse and validate configuration
 const parseConfig = () => {
   const env = {
-    env: process.env.NODE_ENV,
-    port: Number(process.env.PORT) || undefined,
+    env: process.env['NODE_ENV'],
+    port: Number(process.env['PORT']) || undefined,
     
     kafka: {
-      brokers: process.env.KAFKA_BROKERS?.split(','),
-      clientId: process.env.KAFKA_CLIENT_ID,
-      consumerGroup: process.env.KAFKA_CONSUMER_GROUP,
-      topics: process.env.KAFKA_TOPICS?.split(','),
+      brokers: process.env['KAFKA_BROKERS']?.split(','),
+      clientId: process.env['KAFKA_CLIENT_ID'],
+      consumerGroup: process.env['KAFKA_CONSUMER_GROUP'],
+      topics: process.env['KAFKA_TOPICS']?.split(','),
     },
     
     schemaRegistry: {
-      url: process.env.SCHEMA_REGISTRY_URL,
+      url: process.env['SCHEMA_REGISTRY_URL'],
     },
     
     clickhouse: {
-      host: process.env.CLICKHOUSE_HOST,
-      port: Number(process.env.CLICKHOUSE_PORT) || undefined,
-      database: process.env.CLICKHOUSE_DATABASE,
-      username: process.env.CLICKHOUSE_USERNAME,
-      password: process.env.CLICKHOUSE_PASSWORD,
+      host: process.env['CLICKHOUSE_HOST'],
+      port: Number(process.env['CLICKHOUSE_PORT']) || undefined,
+      database: process.env['CLICKHOUSE_DATABASE'],
+      username: process.env['CLICKHOUSE_USERNAME'],
+      password: process.env['CLICKHOUSE_PASSWORD'],
     },
     
     redis: {
-      host: process.env.REDIS_HOST,
-      port: Number(process.env.REDIS_PORT) || undefined,
+      host: process.env['REDIS_HOST'],
+      port: Number(process.env['REDIS_PORT']) || undefined,
     },
     
     processing: {
-      batchSize: Number(process.env.BATCH_SIZE) || undefined,
-      flushIntervalMs: Number(process.env.FLUSH_INTERVAL_MS) || undefined,
+      batchSize: Number(process.env['BATCH_SIZE']) || undefined,
+      flushIntervalMs: Number(process.env['FLUSH_INTERVAL_MS']) || undefined,
     },
     
     monitoring: {
-      metricsPort: Number(process.env.METRICS_PORT) || undefined,
+      metricsPort: Number(process.env['METRICS_PORT']) || undefined,
     },
   };
   

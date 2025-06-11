@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
     KAFKA_TOPIC_PREFIX: str = "medcontract"
     
+    # Hostname for processor ID
+    HOSTNAME: str = "ocr-service-default"
+    
     # Service limits
     MAX_FILE_SIZE: int = 50 * 1024 * 1024  # 50MB
     MAX_PAGES: int = 1000

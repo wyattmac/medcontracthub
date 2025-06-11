@@ -46,7 +46,7 @@ spec:
         env:
         - name: SERVICE_NAME
           value: "analytics-service"
-        - name: ENVIRONMENT
+        - name: NODE_ENV
           valueFrom:
             configMapKeyRef:
               name: analytics-service-config
@@ -100,16 +100,17 @@ spec:
             secretKeyRef:
               name: analytics-service-secrets
               key: clickhouse-password
-        - name: REDIS_URL
-          valueFrom:
-            configMapKeyRef:
-              name: analytics-service-config
-              key: redis_url
-        - name: KAFKA_BOOTSTRAP_SERVERS
+        - name: REDIS_HOST
+          value: "redis-cluster"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: KAFKA_BROKERS
           valueFrom:
             configMapKeyRef:
               name: analytics-service-config
               key: kafka_bootstrap_servers
+        - name: KAFKA_CLIENT_ID
+          value: "analytics-service"
         - name: KAFKA_CONSUMER_GROUP
           valueFrom:
             configMapKeyRef:
@@ -120,6 +121,11 @@ spec:
             configMapKeyRef:
               name: analytics-service-config
               key: kafka_topics
+        - name: SCHEMA_REGISTRY_URL
+          valueFrom:
+            configMapKeyRef:
+              name: analytics-service-config
+              key: schema_registry_url
         - name: ANALYTICS_CONFIG
           valueFrom:
             configMapKeyRef:

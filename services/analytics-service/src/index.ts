@@ -12,7 +12,7 @@ class AnalyticsService {
   constructor() {
     this.eventConsumer = new EventConsumer();
     this.healthServer = new HealthServer();
-    this.metricsCollector = new MetricsCollector();
+    this.metricsCollector = MetricsCollector.getInstance();
   }
 
   async start(): Promise<void> {

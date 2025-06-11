@@ -3,11 +3,6 @@ import { logger } from '../utils/logger';
 import { config } from '../config';
 import { MetricsCollector } from '../monitoring/metrics';
 
-interface EventBatch {
-  table: string;
-  data: any[];
-}
-
 export class ClickHouseWriter {
   private client: ClickHouseClient;
   private metrics: MetricsCollector;

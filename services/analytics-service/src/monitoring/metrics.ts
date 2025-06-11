@@ -1,5 +1,4 @@
 import * as promClient from 'prom-client';
-import { config } from '../config';
 
 export class MetricsCollector {
   private static instance: MetricsCollector;

@@ -6,11 +6,13 @@ Handles document processing, text extraction, and intelligent analysis
 from fastapi import FastAPI, HTTPException, File, UploadFile, BackgroundTasks
 from fastapi.responses import JSONResponse, Response
 from contextlib import asynccontextmanager
+import asyncio
 import structlog
 from prometheus_client import Counter, Histogram, generate_latest
 from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 import time
+from datetime import datetime
 from typing import Optional, Dict, Any
 import os
 
@@ -18,6 +20,7 @@ from app.config import settings
 from app.services.ocr_service import OCRService
 from app.services.cache_service import CacheService
 from app.services.kafka_producer import KafkaProducer
+from app.services.event_consumer import EventConsumer
 from app.models import OCRRequest, OCRResponse, HealthCheck
 from app.utils.circuit_breaker import CircuitBreaker
 
@@ -33,6 +36,7 @@ ocr_cache_hits = Counter('ocr_cache_hits_total', 'OCR cache hits')
 ocr_service = OCRService()
 cache_service = CacheService()
 kafka_producer = KafkaProducer()
+event_consumer = EventConsumer()
 circuit_breaker = CircuitBreaker(failure_threshold=5, recovery_timeout=60)
 
 @asynccontextmanager
@@ -43,14 +47,33 @@ async def lifespan(app: FastAPI):
                 environment=settings.ENVIRONMENT,
                 port=settings.PORT)
     
+    # Start services
     await kafka_producer.start()
     await cache_service.connect()
+    
+    # Start event consumer in background
+    consumer_task = asyncio.create_task(event_consumer.start())
     
     yield
     
     # Shutdown
+    logger.info("Shutting down OCR microservice")
+    
+    # Stop event consumer
+    await event_consumer.stop()
+    
+    # Cancel consumer task if still running
+    if not consumer_task.done():
+        consumer_task.cancel()
+        try:
+            await consumer_task
+        except asyncio.CancelledError:
+            pass
+    
+    # Stop other services
     await kafka_producer.stop()
     await cache_service.close()
+    
     logger.info("OCR microservice stopped")
 
 app = FastAPI(
@@ -257,6 +280,89 @@ async def list_models():
             }
         ]
     }
+
+@app.get("/status/{document_id}")
+async def get_document_status(document_id: str):
+    """Get processing status for a document"""
+    status_key = f"ocr:status:{document_id}"
+    status_data = await cache_service.get(status_key)
+    
+    if not status_data:
+        raise HTTPException(status_code=404, detail="Document status not found")
+        
+    return status_data
+
+@app.post("/process/async")
+async def process_document_async(request: OCRRequest):
+    """Submit document for asynchronous processing via events"""
+    import uuid
+    from app.models.events import DocumentProcessingRequest, DocumentSource
+    
+    # Generate document ID
+    document_id = str(uuid.uuid4())
+    
+    # Create processing request event
+    event = DocumentProcessingRequest(
+        event_id=str(uuid.uuid4()),
+        document_id=document_id,
+        document_url=request.document_url,
+        document_source=DocumentSource.URL,
+        ocr_model=request.model,
+        extract_tables=request.options.get("extract_tables", True) if request.options else True,
+        extract_requirements=request.options.get("extract_requirements", True) if request.options else True,
+        metadata=request.options or {}
+    )
+    
+    # Send event to Kafka
+    await kafka_producer.send_event(
+        "contracts.document.process_request",
+        event.dict()
+    )
+    
+    # Store initial status
+    await cache_service.set(
+        f"ocr:status:{document_id}",
+        {
+            "document_id": document_id,
+            "status": "pending",
+            "created_at": datetime.utcnow().isoformat()
+        },
+        ttl=3600
+    )
+    
+    return {
+        "document_id": document_id,
+        "status": "pending",
+        "message": "Document submitted for processing",
+        "status_url": f"/status/{document_id}"
+    }
+
+@app.get("/results/{document_id}")
+async def get_processing_results(document_id: str):
+    """Get processing results for a document"""
+    # Check status first
+    status_key = f"ocr:status:{document_id}"
+    status_data = await cache_service.get(status_key)
+    
+    if not status_data:
+        raise HTTPException(status_code=404, detail="Document not found")
+        
+    if status_data.get("status") != "completed":
+        raise HTTPException(
+            status_code=202, 
+            detail=f"Document still processing. Status: {status_data.get('status')}"
+        )
+        
+    # Get results from cache
+    result_cache_key = status_data.get("result_cache_key")
+    if not result_cache_key:
+        raise HTTPException(status_code=404, detail="Results not found")
+        
+    results = await cache_service.get(result_cache_key)
+    if not results:
+        raise HTTPException(status_code=404, detail="Results expired")
+        
+    return results
 
 # Error handlers
 @app.exception_handler(HTTPException)

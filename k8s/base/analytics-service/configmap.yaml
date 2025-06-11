@@ -24,8 +24,9 @@ data:
   
   # Kafka configuration
   kafka_bootstrap_servers: "kafka-cluster-kafka-bootstrap:9092"
-  kafka_consumer_group: "analytics-service"
-  kafka_topics: "opportunity-events,proposal-events,user-events,system-events"
+  kafka_consumer_group: "analytics-consumer-group"
+  kafka_topics: "contracts.opportunity.viewed,contracts.opportunity.saved,contracts.proposal.created,contracts.proposal.updated,ai.document.processed,user.activity"
+  schema_registry_url: "http://schema-registry:8081"
   
   # Analytics configuration
   analytics_config: |

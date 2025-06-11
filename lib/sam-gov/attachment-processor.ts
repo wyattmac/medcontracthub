@@ -7,6 +7,7 @@
 import { getSAMApiClient } from './client'
 import { mistralDocumentOCR } from '@/lib/ai/mistral-document-ocr-client'
 import { logger } from '@/lib/errors/logger'
+import { documentEventPublisher } from '@/lib/events/document-events'
 
 export interface AttachmentInfo {
   url: string
@@ -333,6 +334,166 @@ export class SAMAttachmentProcessor {
       logger.error('Error in complete opportunity processing', { noticeId, error })
       throw error
     }
+  }
+
+  /**
+   * Process opportunity attachments asynchronously using event-driven architecture
+   */
+  async processOpportunityAttachmentsAsync(
+    noticeId: string,
+    userId?: string,
+    organizationId?: string,
+    maxAttachments = 5
+  ): Promise<{
+    documentIds: string[]
+    attachments: AttachmentInfo[]
+  }> {
+    try {
+      logger.info('Starting async attachment processing', { noticeId })
+
+      const attachments = await this.getOpportunityAttachments(noticeId)
+      
+      if (attachments.length === 0) {
+        logger.info('No attachments found for opportunity', { noticeId })
+        return { documentIds: [], attachments: [] }
+      }
+
+      // Limit number of attachments to process
+      const attachmentsToProcess = attachments.slice(0, maxAttachments)
+      const documentIds: string[] = []
+
+      // Submit each attachment for async processing
+      for (const attachment of attachmentsToProcess) {
+        try {
+          const documentId = await documentEventPublisher.publishAttachmentProcessingRequest({
+            attachmentUrl: attachment.url,
+            noticeId: attachment.noticeId,
+            filename: attachment.filename,
+            userId,
+            organizationId
+          })
+          
+          documentIds.push(documentId)
+          logger.info('Submitted attachment for processing', {
+            documentId,
+            filename: attachment.filename,
+            noticeId
+          })
+        } catch (error) {
+          logger.warn('Failed to submit attachment for processing', {
+            filename: attachment.filename,
+            error
+          })
+        }
+      }
+
+      logger.info('Submitted attachments for async processing', {
+        noticeId,
+        total: attachments.length,
+        submitted: documentIds.length
+      })
+
+      return {
+        documentIds,
+        attachments: attachmentsToProcess
+      }
+    } catch (error) {
+      logger.error('Error in async attachment processing', { noticeId, error })
+      throw error
+    }
+  }
+
+  /**
+   * Check processing status for multiple documents
+   */
+  async checkAttachmentProcessingStatus(documentIds: string[]): Promise<{
+    completed: string[]
+    processing: string[]
+    failed: string[]
+    results: Map<string, any>
+  }> {
+    const completed: string[] = []
+    const processing: string[] = []
+    const failed: string[] = []
+    const results = new Map<string, any>()
+
+    for (const documentId of documentIds) {
+      try {
+        const status = await documentEventPublisher.checkDocumentStatus(documentId)
+        
+        if (status.status === 'completed') {
+          completed.push(documentId)
+          // Fetch results
+          try {
+            const result = await documentEventPublisher.getDocumentResults(documentId)
+            results.set(documentId, result)
+          } catch (error) {
+            logger.warn('Failed to fetch results for completed document', {
+              documentId,
+              error
+            })
+          }
+        } else if (status.status === 'processing' || status.status === 'pending') {
+          processing.push(documentId)
+        } else {
+          failed.push(documentId)
+        }
+      } catch (error) {
+        logger.warn('Failed to check document status', {
+          documentId,
+          error
+        })
+        failed.push(documentId)
+      }
+    }
+
+    return {
+      completed,
+      processing,
+      failed,
+      results
+    }
+  }
+
+  /**
+   * Wait for all documents to complete processing
+   */
+  async waitForAttachmentProcessing(
+    documentIds: string[],
+    timeoutMs = 300000, // 5 minutes
+    pollIntervalMs = 5000 // 5 seconds
+  ): Promise<Map<string, any>> {
+    const startTime = Date.now()
+    const results = new Map<string, any>()
+
+    while (Date.now() - startTime < timeoutMs) {
+      const status = await this.checkAttachmentProcessingStatus(documentIds)
+      
+      // Add completed results
+      for (const [docId, result] of status.results) {
+        results.set(docId, result)
+      }
+
+      // Check if all documents are processed
+      if (status.processing.length === 0) {
+        logger.info('All documents processed', {
+          completed: status.completed.length,
+          failed: status.failed.length
+        })
+        break
+      }
+
+      logger.info('Waiting for document processing', {
+        processing: status.processing.length,
+        completed: status.completed.length,
+        failed: status.failed.length
+      })
+
+      // Wait before next poll
+      await new Promise(resolve => setTimeout(resolve, pollIntervalMs))
+    }
+
+    return results
   }
 
   /**
