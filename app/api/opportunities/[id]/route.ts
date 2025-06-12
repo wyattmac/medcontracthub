@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 
 // Only import Kafka in production or when explicitly enabled
 let eventProducer: any = null
@@ -46,8 +47,17 @@ export async function GET(
       return NextResponse.json({ opportunity: mockOpportunity })
     }
     
-    // Create Supabase client
-    const supabase = await createClient()
+    // Create Supabase client - use service role in development with auth bypass
+    let supabase: any
+    
+    if (process.env.NODE_ENV === 'development' && process.env.DEVELOPMENT_AUTH_BYPASS === 'true') {
+      console.log('Development mode: Using service role for database access')
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+      supabase = createServiceClient(supabaseUrl, supabaseServiceKey)
+    } else {
+      supabase = await createClient()
+    }
     
     console.log('Fetching from database...')
     
