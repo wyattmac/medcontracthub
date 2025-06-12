@@ -7,7 +7,12 @@
 import { getSAMApiClient } from './client'
 import { mistralDocumentOCR } from '@/lib/ai/mistral-document-ocr-client'
 import { logger } from '@/lib/errors/logger'
-import { documentEventPublisher } from '@/lib/events/document-events'
+
+// Only import document events in production or when Kafka is enabled
+let documentEventPublisher: any = null
+if (process.env.ENABLE_KAFKA === 'true' && typeof window === 'undefined') {
+  documentEventPublisher = require('@/lib/events/document-events').documentEventPublisher
+}
 
 export interface AttachmentInfo {
   url: string
@@ -365,20 +370,22 @@ export class SAMAttachmentProcessor {
       // Submit each attachment for async processing
       for (const attachment of attachmentsToProcess) {
         try {
-          const documentId = await documentEventPublisher.publishAttachmentProcessingRequest({
-            attachmentUrl: attachment.url,
-            noticeId: attachment.noticeId,
-            filename: attachment.filename,
-            userId,
-            organizationId
-          })
-          
-          documentIds.push(documentId)
-          logger.info('Submitted attachment for processing', {
-            documentId,
-            filename: attachment.filename,
-            noticeId
-          })
+          if (documentEventPublisher) {
+            const documentId = await documentEventPublisher.publishAttachmentProcessingRequest({
+              attachmentUrl: attachment.url,
+              noticeId: attachment.noticeId,
+              filename: attachment.filename,
+              userId,
+              organizationId
+            })
+            
+            documentIds.push(documentId)
+            logger.info('Submitted attachment for processing', {
+              documentId,
+              filename: attachment.filename,
+              noticeId
+            })
+          }
         } catch (error) {
           logger.warn('Failed to submit attachment for processing', {
             filename: attachment.filename,
@@ -419,13 +426,17 @@ export class SAMAttachmentProcessor {
 
     for (const documentId of documentIds) {
       try {
-        const status = await documentEventPublisher.checkDocumentStatus(documentId)
+        const status = documentEventPublisher ? 
+          await documentEventPublisher.checkDocumentStatus(documentId) : 
+          'completed'
         
-        if (status.status === 'completed') {
+        if (status === 'completed' || (status && status.status === 'completed')) {
           completed.push(documentId)
           // Fetch results
           try {
-            const result = await documentEventPublisher.getDocumentResults(documentId)
+            const result = documentEventPublisher ? 
+              await documentEventPublisher.getDocumentResults(documentId) :
+              null
             results.set(documentId, result)
           } catch (error) {
             logger.warn('Failed to fetch results for completed document', {

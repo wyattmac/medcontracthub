@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { eventProducer } from '@/lib/events/kafka-producer'
+
+// Only import Kafka in production or when explicitly enabled
+let eventProducer: any = null
+if (process.env.ENABLE_KAFKA === 'true' && process.env.NODE_ENV !== 'development') {
+  eventProducer = require('@/lib/events/kafka-producer').eventProducer
+}
 
 // Simplified route for development
 export async function GET(
@@ -117,28 +122,30 @@ export async function GET(
         }
         
         // Fire and forget - don't await
-        eventProducer.publishOpportunityViewed(
-          user.id,
-          opportunity.id,
-          {
-            title: opportunity.title,
-            agency: opportunity.agency,
-            naicsCode: opportunity.naics_code,
-            setAsideType: opportunity.set_aside_type,
-            responseDeadline: opportunity.response_deadline,
-          },
-          {
-            source: viewSource,
-            searchQuery: fromSearch,
-            referrer,
-            sessionId,
-            userAgent,
-            ipAddress: request.headers.get('x-forwarded-for') || 
-                       request.headers.get('x-real-ip') || undefined,
-          }
-        ).catch(error => {
-          console.error('Failed to publish opportunity viewed event:', error)
-        })
+        if (eventProducer) {
+          eventProducer.publishOpportunityViewed(
+            user.id,
+            opportunity.id,
+            {
+              title: opportunity.title,
+              agency: opportunity.agency,
+              naicsCode: opportunity.naics_code,
+              setAsideType: opportunity.set_aside_type,
+              responseDeadline: opportunity.response_deadline,
+            },
+            {
+              source: viewSource,
+              searchQuery: fromSearch,
+              referrer,
+              sessionId,
+              userAgent,
+              ipAddress: request.headers.get('x-forwarded-for') || 
+                         request.headers.get('x-real-ip') || undefined,
+            }
+          ).catch(error => {
+            console.error('Failed to publish opportunity viewed event:', error)
+          })
+        }
       }
     } catch (error) {
       // Don't fail the request if event publishing fails
