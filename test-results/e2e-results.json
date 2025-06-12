@@ -74,21 +74,21 @@
   },
   "suites": [
     {
-      "title": "test-attachments-final.test.ts",
-      "file": "test-attachments-final.test.ts",
+      "title": "test-opportunity-navigation-fix.test.ts",
+      "file": "test-opportunity-navigation-fix.test.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Test Attachments Final",
-          "file": "test-attachments-final.test.ts",
+          "title": "Test Opportunity Navigation Fix",
+          "file": "test-opportunity-navigation-fix.test.ts",
           "line": 3,
           "column": 6,
           "specs": [
             {
-              "title": "Verify attachments display correctly",
-              "ok": true,
+              "title": "Verify correct opportunity opens when clicked",
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -101,12 +101,28 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 14635,
-                      "errors": [],
+                      "status": "timedOut",
+                      "duration": 30354,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/home/locklearwyatt/projects/medcontracthub/__tests__/e2e/test-opportunity-navigation-fix.test.ts",
+                            "column": 16,
+                            "line": 18
+                          },
+                          "message": "Error: page.waitForLoadState: Test timeout of 30000ms exceeded.\n\n  16 |     console.log('\\n2️⃣ Going to opportunities page...')\n  17 |     await page.goto('http://localhost:3000/opportunities')\n> 18 |     await page.waitForLoadState('networkidle')\n     |                ^\n  19 |     await page.waitForTimeout(2000)\n  20 |     \n  21 |     // Step 3: Find and click on different opportunities\n    at /home/locklearwyatt/projects/medcontracthub/__tests__/e2e/test-opportunity-navigation-fix.test.ts:18:16"
+                        }
+                      ],
                       "stdout": [
                         {
-                          "text": "🔍 Final test of attachment functionality...\n"
+                          "text": "🔍 Testing opportunity navigation fix...\n"
                         },
                         {
                           "text": "\n1️⃣ Logging in...\n"
@@ -115,33 +131,32 @@
                           "text": "✅ Logged in\n"
                         },
                         {
-                          "text": "\n2️⃣ Going to specific opportunity...\n"
-                        },
-                        {
-                          "text": "\n3️⃣ Checking attachment section...\n"
-                        },
-                        {
-                          "text": "❌ Attachment section not found\n"
-                        },
-                        {
-                          "text": "  Page title: Cask and Trailer HIC Transport\n"
-                        },
-                        {
-                          "text": "\n✅ Test complete!\n"
+                          "text": "\n2️⃣ Going to opportunities page...\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-12T02:25:07.804Z",
+                      "startTime": "2025-06-12T02:42:11.913Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/locklearwyatt/projects/medcontracthub/test-results/test-opportunity-navigatio-5bd3a-ortunity-opens-when-clicked-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/home/locklearwyatt/projects/medcontracthub/test-results/test-opportunity-navigatio-5bd3a-ortunity-opens-when-clicked-chromium/video.webm"
+                        }
+                      ]
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
-              "id": "8ece76ef65cfe948b8a6-4530cf5e861330ec29d1",
-              "file": "test-attachments-final.test.ts",
+              "id": "473f9851d9a626d9e367-cd4334a62497fb001eab",
+              "file": "test-opportunity-navigation-fix.test.ts",
               "line": 4,
               "column": 7
             }
@@ -152,11 +167,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-06-12T02:24:56.862Z",
-    "duration": 26505.328999999998,
-    "expected": 1,
+    "startTime": "2025-06-12T02:41:53.992Z",
+    "duration": 49404.709,
+    "expected": 0,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 1,
     "flaky": 0
   }
 }
