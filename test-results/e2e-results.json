@@ -1,0 +1,162 @@
+{
+  "config": {
+    "configFile": "/home/locklearwyatt/projects/medcontracthub/playwright.config.ts",
+    "rootDir": "/home/locklearwyatt/projects/medcontracthub/__tests__/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": "/home/locklearwyatt/projects/medcontracthub/__tests__/e2e/global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/e2e-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/home/locklearwyatt/projects/medcontracthub/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/locklearwyatt/projects/medcontracthub/__tests__/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "__tests__/e2e/**/*.spec.ts",
+          "__tests__/e2e/**/*.e2e.ts",
+          "__tests__/e2e/**/*.test.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.52.0",
+    "workers": 10,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000,
+      "env": {
+        "DEVELOPMENT_AUTH_BYPASS": "true"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "test-attachments-final.test.ts",
+      "file": "test-attachments-final.test.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Test Attachments Final",
+          "file": "test-attachments-final.test.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Verify attachments display correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14635,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔍 Final test of attachment functionality...\n"
+                        },
+                        {
+                          "text": "\n1️⃣ Logging in...\n"
+                        },
+                        {
+                          "text": "✅ Logged in\n"
+                        },
+                        {
+                          "text": "\n2️⃣ Going to specific opportunity...\n"
+                        },
+                        {
+                          "text": "\n3️⃣ Checking attachment section...\n"
+                        },
+                        {
+                          "text": "❌ Attachment section not found\n"
+                        },
+                        {
+                          "text": "  Page title: Cask and Trailer HIC Transport\n"
+                        },
+                        {
+                          "text": "\n✅ Test complete!\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-12T02:25:07.804Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8ece76ef65cfe948b8a6-4530cf5e861330ec29d1",
+              "file": "test-attachments-final.test.ts",
+              "line": 4,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-06-12T02:24:56.862Z",
+    "duration": 26505.328999999998,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

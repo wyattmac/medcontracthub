@@ -7,15 +7,8 @@ resources:
   # Core namespace
   - namespace.yaml
   
-  # PostgreSQL for Kong
-  - kong/postgres-deployment.yaml
-  
-  # Kong API Gateway (applied after PostgreSQL)
-  - kong/configmap.yaml
-  - kong/deployment.yaml
-  - kong/service.yaml
-  - kong/rbac.yaml
-  - kong/kong-plugins.yaml
+  # Kong API Gateway with all components
+  - kong/
   
   # Redis Cluster
   - redis/redis-cluster.yaml

@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-exporter
+  namespace: medcontracthub
+  labels:
+    app: redis-exporter
+    component: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-exporter
+  template:
+    metadata:
+      labels:
+        app: redis-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9121"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: redis-exporter
+        image: oliver006/redis_exporter:v1.55.0
+        ports:
+        - containerPort: 9121
+          name: metrics
+        env:
+        - name: REDIS_ADDR
+          value: "redis://redis-cluster.medcontracthub.svc.cluster.local:6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: redis-password
+              optional: true
+        - name: REDIS_EXPORTER_LOG_FORMAT
+          value: "json"
+        - name: REDIS_EXPORTER_CHECK_KEYS
+          value: "medcontract:*"
+        - name: REDIS_EXPORTER_CHECK_SINGLE_KEYS
+          value: "medcontract:queue:size,medcontract:cache:hits,medcontract:cache:misses"
+        resources:
+          limits:
+            memory: 128Mi
+            cpu: 100m
+          requests:
+            memory: 64Mi
+            cpu: 25m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-exporter
+  namespace: medcontracthub
+  labels:
+    app: redis-exporter
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9121
+    targetPort: 9121
+    name: metrics
+  selector:
+    app: redis-exporter

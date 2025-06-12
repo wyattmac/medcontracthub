@@ -1,0 +1,33 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: redis-exporter-monitor
+  namespace: medcontracthub
+  labels:
+    app: redis-exporter
+    component: monitoring
+    tier: infrastructure
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: redis-exporter
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+    scheme: http
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      targetLabel: pod
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      targetLabel: node
+    metricRelabelings:
+    # Add redis instance label
+    - sourceLabels: [addr]
+      targetLabel: redis_instance
+    # Rename redis_* metrics
+    - sourceLabels: [__name__]
+      regex: 'redis_(.+)'
+      targetLabel: __name__
+      replacement: 'medcontract_redis_$1'

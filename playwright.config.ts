@@ -44,8 +44,8 @@ export default defineConfig({
     // Take screenshot on failure
     screenshot: 'only-on-failure',
     
-    // Record video on failure
-    video: 'retain-on-failure',
+    // Record video on retry or when running headed
+    video: process.env.PWDEBUG || process.env.HEADED ? 'on' : 'retain-on-failure',
     
     // Global timeout for all actions
     actionTimeout: 15 * 1000,
@@ -63,8 +63,6 @@ export default defineConfig({
       name: 'chromium',
       use: { 
         ...devices['Desktop Chrome'],
-        // Use system-installed Chrome/Chromium in WSL
-        channel: 'chrome',
       },
     },
     

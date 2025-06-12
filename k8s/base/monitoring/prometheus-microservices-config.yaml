@@ -1,0 +1,204 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-microservices-config
+  namespace: monitoring
+data:
+  prometheus-microservices.yml: |
+    # Microservices-specific scrape configurations
+    scrape_configs:
+      # Kong API Gateway
+      - job_name: 'kong-gateway'
+        static_configs:
+          - targets: ['kong-proxy.medcontracthub.svc.cluster.local:8001']
+        metrics_path: '/metrics'
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+            replacement: 'kong-gateway'
+      
+      # OCR Service
+      - job_name: 'ocr-service'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ['medcontracthub']
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: ocr-service
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+        metrics_path: '/metrics'
+      
+      # AI Service
+      - job_name: 'ai-service'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ['medcontracthub']
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: ai-service
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+        metrics_path: '/metrics'
+      
+      # Analytics Service
+      - job_name: 'analytics-service'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ['medcontracthub']
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: analytics-service
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+        metrics_path: '/metrics'
+      
+      # Real-time Service
+      - job_name: 'realtime-service'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ['medcontracthub']
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: realtime-service
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+        metrics_path: '/metrics'
+      
+      # Worker Service
+      - job_name: 'worker-service'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ['medcontracthub']
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: worker-service
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+        metrics_path: '/metrics'
+      
+      # Kafka Exporter
+      - job_name: 'kafka-exporter'
+        static_configs:
+          - targets: ['kafka-exporter.medcontracthub.svc.cluster.local:9308']
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+            replacement: 'kafka-cluster'
+      
+      # Redis Exporter
+      - job_name: 'redis-exporter'
+        static_configs:
+          - targets: ['redis-exporter.medcontracthub.svc.cluster.local:9121']
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+            replacement: 'redis-cluster'
+      
+      # PostgreSQL Exporter
+      - job_name: 'postgres-exporter'
+        static_configs:
+          - targets: ['postgres-exporter.medcontracthub.svc.cluster.local:9187']
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+            replacement: 'postgres-primary'
+      
+      # ClickHouse Exporter
+      - job_name: 'clickhouse-exporter'
+        static_configs:
+          - targets: ['clickhouse-exporter.medcontracthub.svc.cluster.local:9116']
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+            replacement: 'clickhouse-analytics'
+      
+      # Weaviate Metrics
+      - job_name: 'weaviate'
+        static_configs:
+          - targets: ['weaviate.medcontracthub.svc.cluster.local:2112']
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+            replacement: 'weaviate-vector-db'
+
+    # Custom recording rules for microservices
+    rule_files:
+      - '/etc/prometheus/rules/microservices-rules.yml'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-microservices-rules
+  namespace: monitoring
+data:
+  microservices-rules.yml: |
+    groups:
+      - name: microservices_aggregations
+        interval: 30s
+        rules:
+          # Request rate across all microservices
+          - record: microservices:request_rate
+            expr: |
+              sum by (service) (
+                rate(http_requests_total{job=~"ocr-service|ai-service|analytics-service|realtime-service|worker-service"}[5m])
+              )
+          
+          # Error rate by service
+          - record: microservices:error_rate
+            expr: |
+              sum by (service) (
+                rate(http_requests_total{job=~"ocr-service|ai-service|analytics-service|realtime-service|worker-service",status=~"5.."}[5m])
+              ) / 
+              sum by (service) (
+                rate(http_requests_total{job=~"ocr-service|ai-service|analytics-service|realtime-service|worker-service"}[5m])
+              )
+          
+          # P95 latency by service
+          - record: microservices:latency_p95
+            expr: |
+              histogram_quantile(0.95,
+                sum by (service, le) (
+                  rate(http_request_duration_seconds_bucket{job=~"ocr-service|ai-service|analytics-service|realtime-service|worker-service"}[5m])
+                )
+              )
+          
+          # Kafka processing rate
+          - record: kafka:events_processed_rate
+            expr: |
+              sum by (topic) (
+                rate(kafka_events_processed_total[5m])
+              )
+          
+          # AI model inference rate
+          - record: ai:inference_rate
+            expr: |
+              sum by (model) (
+                rate(ai_model_inference_total[5m])
+              )
+          
+          # OCR processing success rate
+          - record: ocr:success_rate
+            expr: |
+              sum(rate(ocr_documents_processed_total{status="success"}[5m])) /
+              sum(rate(ocr_documents_processed_total[5m]))

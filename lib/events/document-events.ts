@@ -3,8 +3,21 @@
  * Publishes document processing events to Kafka for async OCR processing
  */
 
-import { Kafka, Producer } from 'kafkajs'
 import { logger } from '@/lib/errors/logger'
+
+// Only import Kafka in production or when explicitly enabled
+let Kafka: any = null
+let Producer: any = null
+
+if (process.env.ENABLE_KAFKA === 'true' && typeof window === 'undefined') {
+  try {
+    const kafkaModule = require('kafkajs')
+    Kafka = kafkaModule.Kafka
+    Producer = kafkaModule.Producer
+  } catch (error) {
+    console.warn('[Document Events] Kafka not available:', error)
+  }
+}
 
 interface DocumentProcessingRequest {
   event_id: string
@@ -32,19 +45,24 @@ class DocumentEventPublisher {
   private isConnected = false
 
   constructor() {
-    this.kafka = new Kafka({
-      clientId: 'medcontracthub-app',
-      brokers: (process.env.KAFKA_BROKERS || 'localhost:9092').split(','),
-      retry: {
-        initialRetryTime: 100,
-        retries: 8,
-      },
-    })
-    this.producer = this.kafka.producer()
+    if (Kafka && process.env.ENABLE_KAFKA === 'true') {
+      this.kafka = new Kafka({
+        clientId: 'medcontracthub-app',
+        brokers: (process.env.KAFKA_BROKERS || 'localhost:9092').split(','),
+        retry: {
+          initialRetryTime: 100,
+          retries: 8,
+        },
+      })
+      this.producer = this.kafka.producer()
+    }
   }
 
   async connect() {
-    if (this.isConnected || !this.producer) return
+    if (!Kafka || !this.producer || this.isConnected) {
+      logger.info('Document event publisher not connecting (Kafka disabled or already connected)')
+      return
+    }
 
     try {
       await this.producer.connect()
@@ -103,8 +121,13 @@ class DocumentEventPublisher {
       metadata: params.metadata || {},
     }
 
+    if (!this.producer) {
+      logger.warn('Document event publisher not available (Kafka disabled)')
+      return batchId
+    }
+
     try {
-      await this.producer!.send({
+      await this.producer.send({
         topic: 'contracts.document.process_request',
         messages: [
           {
@@ -204,8 +227,13 @@ class DocumentEventPublisher {
       parallel_processing: params.parallelProcessing ?? true,
     }
 
+    if (!this.producer) {
+      logger.warn('Document event publisher not available (Kafka disabled)')
+      return batchId
+    }
+
     try {
-      await this.producer!.send({
+      await this.producer.send({
         topic: 'contracts.document.batch_request',
         messages: [
           {
@@ -284,13 +312,16 @@ class DocumentEventPublisher {
   }
 }
 
-// Export singleton instance
-export const documentEventPublisher = new DocumentEventPublisher()
+// Export singleton instance only if Kafka is available
+let documentEventPublisher: DocumentEventPublisher | null = null
 
-// Initialize on first import
-if (typeof window === 'undefined') {
-  // Server-side only
+if (process.env.ENABLE_KAFKA === 'true' && typeof window === 'undefined') {
+  documentEventPublisher = new DocumentEventPublisher()
+  
+  // Initialize on first import
   documentEventPublisher.connect().catch(error => {
     logger.warn('Failed to initialize document event publisher', { error })
   })
 }
+
+export { documentEventPublisher }

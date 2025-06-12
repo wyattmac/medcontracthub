@@ -1,0 +1,101 @@
+# Global plugins that apply to all services
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: cors-global
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: cors
+config:
+  origins:
+  - https://medcontracthub.com
+  - https://staging.medcontracthub.com
+  - http://localhost:3000
+  - http://localhost:3001
+  - http://localhost:3002
+  methods:
+  - GET
+  - POST
+  - PUT
+  - DELETE
+  - OPTIONS
+  - PATCH
+  headers:
+  - Accept
+  - Accept-Version
+  - Content-Length
+  - Content-MD5
+  - Content-Type
+  - Date
+  - X-Auth-Token
+  - X-CSRF-Token
+  - Authorization
+  exposed_headers:
+  - X-Auth-Token
+  - X-Request-Id
+  - X-Response-Time
+  credentials: true
+  max_age: 3600
+  preflight_continue: false
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: rate-limiting-global
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: rate-limiting
+config:
+  minute: 300
+  hour: 10000
+  day: 100000
+  policy: redis
+  redis_host: redis-cluster.medcontracthub.svc.cluster.local
+  redis_port: 6379
+  redis_password: ""
+  redis_timeout: 2000
+  redis_database: 0
+  fault_tolerant: true
+  hide_client_headers: false
+  header_name: X-RateLimit
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: request-id-global
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: correlation-id
+config:
+  header_name: X-Request-ID
+  generator: uuid
+  echo_downstream: true
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: request-size-limiting-global
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: request-size-limiting
+config:
+  allowed_payload_size: 50
+  size_unit: megabytes
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: response-transformer-global
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: response-transformer
+config:
+  add:
+    headers:
+    - "X-Kong-Upstream-Status:$(upstream_status)"
+    - "X-Response-Time:$(kong_response_latency)ms"
+  remove:
+    headers:
+    - "Server"
+    - "X-Powered-By"

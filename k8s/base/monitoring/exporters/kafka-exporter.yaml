@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-exporter
+  namespace: medcontracthub
+  labels:
+    app: kafka-exporter
+    component: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-exporter
+  template:
+    metadata:
+      labels:
+        app: kafka-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9308"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: kafka-exporter
+        image: danielqsj/kafka-exporter:v1.7.0
+        ports:
+        - containerPort: 9308
+          name: metrics
+        env:
+        - name: KAFKA_BROKERS
+          value: "kafka-0.kafka-headless.medcontracthub.svc.cluster.local:9092,kafka-1.kafka-headless.medcontracthub.svc.cluster.local:9092,kafka-2.kafka-headless.medcontracthub.svc.cluster.local:9092"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: KAFKA_VERSION
+          value: "3.5.0"
+        args:
+        - "--kafka.server=kafka-0.kafka-headless.medcontracthub.svc.cluster.local:9092"
+        - "--kafka.server=kafka-1.kafka-headless.medcontracthub.svc.cluster.local:9092"
+        - "--kafka.server=kafka-2.kafka-headless.medcontracthub.svc.cluster.local:9092"
+        - "--web.listen-address=:9308"
+        - "--topic.filter=.*"
+        - "--group.filter=.*"
+        resources:
+          limits:
+            memory: 256Mi
+            cpu: 200m
+          requests:
+            memory: 128Mi
+            cpu: 50m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-exporter
+  namespace: medcontracthub
+  labels:
+    app: kafka-exporter
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9308
+    targetPort: 9308
+    name: metrics
+  selector:
+    app: kafka-exporter

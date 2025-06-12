@@ -1,0 +1,103 @@
+# Monitoring and observability plugins
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: prometheus-global
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: prometheus
+config:
+  per_consumer: false
+  status_code_metrics: true
+  latency_metrics: true
+  bandwidth_metrics: true
+  upstream_health_metrics: true
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: datadog-global
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: datadog
+config:
+  host: datadog-agent.monitoring.svc.cluster.local
+  port: 8125
+  prefix: kong.
+  service_name_tag: service
+  status_tag: status
+  consumer_tag: consumer
+  tags:
+  - "env:production"
+  - "service:kong"
+  - "team:platform"
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: zipkin-global
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: zipkin
+config:
+  http_endpoint: http://jaeger-collector.monitoring.svc.cluster.local:9411/api/v2/spans
+  sample_ratio: 0.1  # Sample 10% of requests
+  default_service_name: kong-gateway
+  include_credential: false
+  traceid_byte_count: 16
+  header_type: preserve
+  default_header_type: b3
+  tags_header: Zipkin-Tags
+  local_service_name: kong
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: http-log-global
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: http-log
+config:
+  http_endpoint: http://logstash.logging.svc.cluster.local:8080/kong-logs
+  method: POST
+  timeout: 10000
+  keepalive: 60000
+  flush_timeout: 2
+  retry_count: 3
+  queue_size: 1000
+  content_type: application/json
+  headers:
+    X-Log-Source: kong
+    X-Environment: production
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: syslog-global
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: syslog
+config:
+  successful_severity: info
+  client_errors_severity: warning
+  server_errors_severity: err
+  facility: user
+  custom_fields_by_lua:
+    request_id: "return ngx.var.request_id"
+    response_time: "return ngx.var.upstream_response_time"
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: request-transformer-monitoring
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: request-transformer
+config:
+  add:
+    headers:
+    - "X-Trace-ID:$(request_id)"
+    - "X-Kong-Request-Start:$(timestamp_ms)"
+    - "X-Forwarded-Proto:$(scheme)"
+    - "X-Real-IP:$(remote_addr)"

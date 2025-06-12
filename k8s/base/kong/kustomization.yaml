@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: medcontracthub
+
+resources:
+# Kong Core Components
+- rbac.yaml
+- postgres-kong.yaml
+- kong-configmap.yaml
+- kong-secrets.yaml
+- kong-deployment.yaml
+- kong-service.yaml
+- kong-ingress-controller.yaml
+
+# Service Configurations
+- services/main-app-service.yaml
+- services/ocr-service.yaml
+- services/ai-service.yaml
+- services/analytics-service.yaml
+- services/realtime-service.yaml
+- services/worker-service.yaml
+
+# Global Plugins
+- plugins/global-plugins.yaml
+- plugins/security-plugins.yaml
+- plugins/monitoring-plugins.yaml
+
+configMapGenerator:
+- name: kong-config
+  files:
+  - kong.conf
+  - kong-declarative.yaml
+
+secretGenerator:
+- name: kong-enterprise-license
+  literals:
+  - license=
+- name: kong-session-conf
+  literals:
+  - session_secret=
+  - admin_gui_session_conf=
+  - portal_session_conf=

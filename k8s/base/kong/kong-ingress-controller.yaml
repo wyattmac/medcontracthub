@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong-ingress-controller
+  namespace: medcontracthub
+  labels:
+    app: kong
+    component: ingress-controller
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kong
+      component: ingress-controller
+  template:
+    metadata:
+      labels:
+        app: kong
+        component: ingress-controller
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "10254"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: kong-serviceaccount
+      containers:
+      - name: ingress-controller
+        image: kong/kubernetes-ingress-controller:2.12
+        env:
+        - name: CONTROLLER_KONG_ADMIN_URL
+          value: "http://kong-admin:8001"
+        - name: CONTROLLER_KONG_ADMIN_TLS_SKIP_VERIFY
+          value: "true"
+        - name: CONTROLLER_PUBLISH_SERVICE
+          value: "medcontracthub/kong-proxy"
+        - name: CONTROLLER_INGRESS_CLASS
+          value: "kong"
+        - name: CONTROLLER_ELECTION_ID
+          value: "kong-ingress-controller-leader"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONTROLLER_LOG_LEVEL
+          value: "info"
+        - name: CONTROLLER_METRICS_BIND_ADDRESS
+          value: "0.0.0.0:10254"
+        - name: CONTROLLER_ANONYMOUS_REPORTS
+          value: "false"
+        - name: CONTROLLER_WATCH_NAMESPACE
+          value: "medcontracthub"
+        - name: CONTROLLER_KONG_WORKSPACE
+          value: "default"
+        ports:
+        - name: metrics
+          containerPort: 10254
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10254
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 10254
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-ingress-controller
+  namespace: medcontracthub
+  labels:
+    app: kong
+    component: ingress-controller
+spec:
+  type: ClusterIP
+  selector:
+    app: kong
+    component: ingress-controller
+  ports:
+  - name: metrics
+    port: 10254
+    targetPort: 10254
+    protocol: TCP

@@ -1,0 +1,241 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaeger-config
+  namespace: monitoring
+data:
+  sampling.json: |
+    {
+      "default_strategy": {
+        "type": "probabilistic",
+        "param": 0.01,
+        "max_traces_per_second": 100
+      },
+      "service_strategies": [
+        {
+          "service": "ocr-service",
+          "type": "adaptive",
+          "max_traces_per_second": 100,
+          "sampling_rate": 0.01
+        },
+        {
+          "service": "ai-service",
+          "type": "adaptive",
+          "max_traces_per_second": 50,
+          "sampling_rate": 0.05
+        },
+        {
+          "service": "analytics-service",
+          "type": "probabilistic",
+          "param": 0.001
+        },
+        {
+          "service": "realtime-service",
+          "type": "probabilistic",
+          "param": 0.01
+        },
+        {
+          "service": "worker-service",
+          "type": "probabilistic",
+          "param": 0.01
+        },
+        {
+          "service": "kong-gateway",
+          "type": "probabilistic",
+          "param": 0.001
+        }
+      ],
+      "operation_strategies": [
+        {
+          "operation": "POST /api/ocr/process",
+          "type": "probabilistic",
+          "param": 1.0
+        },
+        {
+          "operation": "POST /api/ai/analyze",
+          "type": "probabilistic",
+          "param": 1.0
+        },
+        {
+          "operation": "errors",
+          "type": "probabilistic",
+          "param": 1.0
+        }
+      ]
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger-collector
+  namespace: monitoring
+  labels:
+    app: jaeger
+    component: collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+      component: collector
+  template:
+    metadata:
+      labels:
+        app: jaeger
+        component: collector
+    spec:
+      containers:
+      - name: jaeger-collector
+        image: jaegertracing/jaeger-collector:1.52
+        ports:
+        - containerPort: 14250
+          name: grpc
+          protocol: TCP
+        - containerPort: 14268
+          name: http
+          protocol: TCP
+        - containerPort: 14269
+          name: admin
+          protocol: TCP
+        env:
+        - name: SPAN_STORAGE_TYPE
+          value: elasticsearch
+        - name: ES_SERVER_URLS
+          value: http://elasticsearch:9200
+        - name: ES_INDEX_PREFIX
+          value: medcontracthub
+        - name: COLLECTOR_ZIPKIN_HOST_PORT
+          value: ":9411"
+        - name: SAMPLING_CONFIG_FILE
+          value: /etc/jaeger/sampling.json
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: 500m
+          requests:
+            memory: 512Mi
+            cpu: 100m
+        volumeMounts:
+        - name: sampling-config
+          mountPath: /etc/jaeger
+      volumes:
+      - name: sampling-config
+        configMap:
+          name: jaeger-config
+          items:
+          - key: sampling.json
+            path: sampling.json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  namespace: monitoring
+  labels:
+    app: jaeger
+    component: collector
+spec:
+  type: ClusterIP
+  ports:
+  - port: 14250
+    targetPort: 14250
+    name: grpc
+  - port: 14268
+    targetPort: 14268
+    name: http
+  - port: 14269
+    targetPort: 14269
+    name: admin
+  selector:
+    app: jaeger
+    component: collector
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger-query
+  namespace: monitoring
+  labels:
+    app: jaeger
+    component: query
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+      component: query
+  template:
+    metadata:
+      labels:
+        app: jaeger
+        component: query
+    spec:
+      containers:
+      - name: jaeger-query
+        image: jaegertracing/jaeger-query:1.52
+        ports:
+        - containerPort: 16686
+          name: http
+          protocol: TCP
+        - containerPort: 16687
+          name: admin
+          protocol: TCP
+        env:
+        - name: SPAN_STORAGE_TYPE
+          value: elasticsearch
+        - name: ES_SERVER_URLS
+          value: http://elasticsearch:9200
+        - name: ES_INDEX_PREFIX
+          value: medcontracthub
+        - name: QUERY_BASE_PATH
+          value: /jaeger
+        resources:
+          limits:
+            memory: 512Mi
+            cpu: 250m
+          requests:
+            memory: 256Mi
+            cpu: 50m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-query
+  namespace: monitoring
+  labels:
+    app: jaeger
+    component: query
+spec:
+  type: ClusterIP
+  ports:
+  - port: 16686
+    targetPort: 16686
+    name: http
+  - port: 16687
+    targetPort: 16687
+    name: admin
+  selector:
+    app: jaeger
+    component: query
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaeger-agent-config
+  namespace: monitoring
+data:
+  agent.yaml: |
+    reporter:
+      grpc:
+        host-port: jaeger-collector.monitoring:14250
+    processor:
+      jaeger-compact:
+        server-host-port: 0.0.0.0:6831
+      jaeger-binary:
+        server-host-port: 0.0.0.0:6832
+    http_server:
+      host-port: 0.0.0.0:5778
+    metrics:
+      backend: prometheus
+      prometheus:
+        server-host-port: 0.0.0.0:14271

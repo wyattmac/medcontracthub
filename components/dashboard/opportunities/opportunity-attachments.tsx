@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { FileText, Download, ExternalLink, Loader2, AlertCircle } from 'lucide-react'
+import { FileText, Download, ExternalLink, Loader2, AlertCircle, DownloadCloud } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface OpportunityAttachmentsProps {
@@ -75,8 +75,14 @@ export function OpportunityAttachments({ noticeId, opportunityTitle }: Opportuni
       // Use the public download endpoint that adds the API key server-side
       const downloadUrl = `/api/sam-gov/attachments/download/public?url=${encodeURIComponent(attachment.url)}&filename=${encodeURIComponent(attachment.filename)}`
       
-      // Open in new tab to trigger download
-      window.open(downloadUrl, '_blank')
+      // Create a hidden anchor element to trigger download
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = attachment.filename
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
       
       toast.success('Download Started', {
         description: `Downloading ${attachment.filename}`
@@ -92,6 +98,47 @@ export function OpportunityAttachments({ noticeId, opportunityTitle }: Opportuni
   const handleDirectLink = (attachment: AttachmentInfo) => {
     // Open the SAM.gov link directly in a new tab
     window.open(attachment.url, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleDownloadAll = async () => {
+    if (attachments.length === 0) return
+    
+    toast.info('Download All Started', {
+      description: `Downloading ${attachments.length} file${attachments.length !== 1 ? 's' : ''}...`
+    })
+    
+    // Download each file with a small delay to avoid overwhelming the browser
+    for (let i = 0; i < attachments.length; i++) {
+      const attachment = attachments[i]
+      
+      // Add delay between downloads (except for the first one)
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+      
+      try {
+        const downloadUrl = `/api/sam-gov/attachments/download/public?url=${encodeURIComponent(attachment.url)}&filename=${encodeURIComponent(attachment.filename)}`
+        
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.download = attachment.filename
+        link.style.display = 'none'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        console.log(`Downloading ${i + 1}/${attachments.length}: ${attachment.filename}`)
+      } catch (error) {
+        console.error(`Failed to download ${attachment.filename}:`, error)
+        toast.error('Download Failed', {
+          description: `Failed to download ${attachment.filename}`
+        })
+      }
+    }
+    
+    toast.success('Download All Complete', {
+      description: `Downloaded ${attachments.length} file${attachments.length !== 1 ? 's' : ''}`
+    })
   }
 
   if (!noticeId) {
@@ -169,9 +216,22 @@ export function OpportunityAttachments({ noticeId, opportunityTitle }: Opportuni
                   {attachments.length} document{attachments.length !== 1 ? 's' : ''} available
                 </p>
               </div>
-              <Badge variant="outline">
-                Notice ID: {noticeId}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {attachments.length > 1 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadAll}
+                    className="text-xs"
+                  >
+                    <DownloadCloud className="h-3 w-3 mr-1" />
+                    Download All
+                  </Button>
+                )}
+                <Badge variant="outline">
+                  Notice ID: {noticeId}
+                </Badge>
+              </div>
             </div>
 
             <div className="grid gap-3">

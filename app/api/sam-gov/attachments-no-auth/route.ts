@@ -17,6 +17,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const noticeId = searchParams.get('noticeId')
     
+    console.log('[Attachments API] Called with noticeId:', noticeId)
+    
     // Validate input
     const validation = getAttachmentsSchema.safeParse({ noticeId })
     if (!validation.success) {
@@ -24,6 +26,24 @@ export async function GET(request: Request) {
         success: false,
         error: validation.error.errors[0].message
       }, { status: 400 })
+    }
+
+    // Check if the notice ID looks like a UUID (from our database) vs SAM.gov notice ID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(noticeId!)
+    console.log('[Attachments API] Notice ID type:', isUUID ? 'UUID (database ID)' : 'SAM.gov notice ID')
+    
+    // If it's a UUID from our database, we can't fetch attachments from SAM.gov
+    if (isUUID) {
+      console.log('[Attachments API] Cannot fetch attachments for database UUID')
+      return NextResponse.json({
+        success: true,
+        data: {
+          noticeId,
+          attachments: [],
+          count: 0,
+          message: 'This opportunity does not have a SAM.gov notice ID'
+        }
+      })
     }
 
     logger.info('Getting SAM.gov attachment list (no auth)', { noticeId })

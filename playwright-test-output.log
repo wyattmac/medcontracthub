@@ -1,0 +1,79 @@
+🔧 Setting up global test environment...
+🌐 Verifying application availability...
+✅ Application is accessible
+✅ Health check endpoint is working
+🧹 Cleaning up any existing test data...
+✅ Global setup completed successfully
+Cannot use({ video }) in a describe group, because it forces a new worker.
+Make it top-level in the test file or put in the configuration file.
+
+   at medcontracthub-complete.test.ts:25
+
+  23 | test.describe('MedContractHub - Complete Application Test', () => {
+  24 |   // Configure test settings
+> 25 |   test.use({
+     |        ^
+  26 |     // Slow down actions for visibility when running headed
+  27 |     actionTimeout: 20000,
+  28 |     navigationTimeout: 30000,
+Cannot use({ video }) in a describe group, because it forces a new worker.
+Make it top-level in the test file or put in the configuration file.
+
+   at medcontracthub-complete.test.ts:25
+
+  23 | test.describe('MedContractHub - Complete Application Test', () => {
+  24 |   // Configure test settings
+> 25 |   test.use({
+     |        ^
+  26 |     // Slow down actions for visibility when running headed
+  27 |     actionTimeout: 20000,
+  28 |     navigationTimeout: 30000,
+Cannot use({ video }) in a describe group, because it forces a new worker.
+Make it top-level in the test file or put in the configuration file.
+
+   at medcontracthub-complete.test.ts:25
+
+  23 | test.describe('MedContractHub - Complete Application Test', () => {
+  24 |   // Configure test settings
+> 25 |   test.use({
+     |        ^
+  26 |     // Slow down actions for visibility when running headed
+  27 |     actionTimeout: 20000,
+  28 |     navigationTimeout: 30000,
+Cannot use({ video }) in a describe group, because it forces a new worker.
+Make it top-level in the test file or put in the configuration file.
+
+   at medcontracthub-complete.test.ts:25
+
+  23 | test.describe('MedContractHub - Complete Application Test', () => {
+  24 |   // Configure test settings
+> 25 |   test.use({
+     |        ^
+  26 |     // Slow down actions for visibility when running headed
+  27 |     actionTimeout: 20000,
+  28 |     navigationTimeout: 30000,
+Cannot use({ video }) in a describe group, because it forces a new worker.
+Make it top-level in the test file or put in the configuration file.
+
+   at medcontracthub-complete.test.ts:25
+
+  23 | test.describe('MedContractHub - Complete Application Test', () => {
+  24 |   // Configure test settings
+> 25 |   test.use({
+     |        ^
+  26 |     // Slow down actions for visibility when running headed
+  27 |     actionTimeout: 20000,
+  28 |     navigationTimeout: 30000,
+Cannot use({ launchOptions }) in a describe group, because it forces a new worker.
+Make it top-level in the test file or put in the configuration file.
+
+   at medcontracthub-complete.test.ts:550
+
+  548 | // ========== CONFIGURATION FOR HEADED MODE ==========
+  549 | test.describe('Visual Testing Mode', () => {
+> 550 |   test.use({
+      |        ^
+  551 |     // Extra slow for demonstration
+  552 |     launchOptions: {
+  553 |       slowMo: 1000 // 1 second between actions
+

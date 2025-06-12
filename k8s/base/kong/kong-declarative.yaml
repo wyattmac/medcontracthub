@@ -1,0 +1,113 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  # Main Application Service
+  - name: main-app
+    url: http://medcontracthub-app.medcontracthub.svc.cluster.local:3000
+    routes:
+      - name: main-app-route
+        paths:
+          - /api/health
+          - /api/opportunities
+          - /api/proposals
+          - /api/analytics
+          - /api/billing
+          - /api/compliance
+          - /api/export
+          - /api/monitoring
+          - /api/quota
+          - /api/reminders
+          - /api/sam-gov
+          - /api/search
+          - /api/security
+          - /api/sync
+          - /api/webhooks
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS
+
+  # OCR Service
+  - name: ocr-service
+    url: http://ocr-service.medcontracthub.svc.cluster.local:8100
+    routes:
+      - name: ocr-service-route
+        paths:
+          - /api/ocr
+        strip_path: true
+        methods:
+          - GET
+          - POST
+          - OPTIONS
+    plugins:
+      - name: file-size
+        config:
+          allowed_payload_size: 52428800  # 50MB for document uploads
+
+  # AI Service
+  - name: ai-service
+    url: http://ai-service.medcontracthub.svc.cluster.local:8200
+    routes:
+      - name: ai-service-route
+        paths:
+          - /api/ai
+        strip_path: true
+        methods:
+          - GET
+          - POST
+          - OPTIONS
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: local
+
+  # Analytics Service
+  - name: analytics-service
+    url: http://analytics-service.medcontracthub.svc.cluster.local:8300
+    routes:
+      - name: analytics-service-route
+        paths:
+          - /api/analytics-v2
+        strip_path: true
+        methods:
+          - GET
+          - POST
+          - OPTIONS
+
+  # Real-time Service (WebSocket)
+  - name: realtime-service
+    url: http://realtime-service.medcontracthub.svc.cluster.local:8400
+    routes:
+      - name: realtime-service-route
+        paths:
+          - /ws
+          - /socket.io
+        strip_path: false
+        protocols:
+          - http
+          - https
+          - ws
+          - wss
+
+  # Worker Service
+  - name: worker-service
+    url: http://worker-service.medcontracthub.svc.cluster.local:8500
+    routes:
+      - name: worker-service-route
+        paths:
+          - /api/jobs
+          - /api/workers
+        strip_path: true
+        methods:
+          - GET
+          - POST
+          - DELETE
+          - OPTIONS
+
+# Global plugins are defined in plugins/*.yaml files

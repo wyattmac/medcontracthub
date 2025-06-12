@@ -1,0 +1,94 @@
+# Security plugins for authentication and authorization
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: jwt-auth
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: jwt
+config:
+  key_claim_name: iss
+  claims_to_verify:
+  - exp
+  - nbf
+  maximum_expiration: 86400
+  header_names:
+  - Authorization
+  cookie_names:
+  - jwt_token
+  uri_param_names:
+  - jwt
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: oidc-auth
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: oidc
+config:
+  issuer: https://auth.medcontracthub.com/
+  client_id: medcontracthub-api
+  client_secret: ""  # From secret
+  redirect_uri_path: /auth/callback
+  scope: "openid profile email"
+  session_secret: ""  # From secret
+  session_cookie_name: oidc_session
+  session_cookie_lifetime: 3600
+  session_cookie_samesite: Lax
+  session_cookie_httponly: true
+  session_cookie_secure: true
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: ip-restriction-global
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: ip-restriction
+config:
+  allow:
+  - 0.0.0.0/0  # Allow all by default, override per service
+  deny: null
+  status: 403
+  message: "Access denied"
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: bot-detection
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: bot-detection
+config:
+  allow:
+  - "(Chrome|Firefox|Safari|Edge)"
+  deny:
+  - "(Googlebot|bingbot|Baiduspider|Yandex)"
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: acl-global
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: acl
+config:
+  allow:
+  - admin
+  - user
+  - service
+  hide_groups_header: true
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: request-termination-maintenance
+  namespace: medcontracthub
+plugin: request-termination
+config:
+  status_code: 503
+  message: "Service temporarily unavailable for maintenance"
+  content_type: "application/json"
+  body: '{"error":"maintenance_mode","message":"Service temporarily unavailable for maintenance","retry_after":3600}'

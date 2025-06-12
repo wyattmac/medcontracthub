@@ -1,0 +1,182 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong-gateway
+  namespace: medcontracthub
+  labels:
+    app: kong
+    component: gateway
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kong
+      component: gateway
+  template:
+    metadata:
+      labels:
+        app: kong
+        component: gateway
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8001"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: kong-serviceaccount
+      initContainers:
+      - name: wait-for-postgres
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z kong-postgres 5432; do
+            echo "Waiting for Kong database..."
+            sleep 2
+          done
+      - name: kong-migrations
+        image: kong:3.4
+        env:
+        - name: KONG_DATABASE
+          value: postgres
+        - name: KONG_PG_HOST
+          value: kong-postgres
+        - name: KONG_PG_DATABASE
+          value: kong
+        - name: KONG_PG_USER
+          value: kong
+        - name: KONG_PG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kong-postgres-secret
+              key: password
+        command: ["kong", "migrations", "bootstrap"]
+      containers:
+      - name: kong
+        image: kong:3.4
+        env:
+        - name: KONG_DATABASE
+          value: postgres
+        - name: KONG_PG_HOST
+          value: kong-postgres
+        - name: KONG_PG_DATABASE
+          value: kong
+        - name: KONG_PG_USER
+          value: kong
+        - name: KONG_PG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kong-postgres-secret
+              key: password
+        - name: KONG_PROXY_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_PROXY_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ADMIN_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_ADMIN_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ADMIN_LISTEN
+          value: "0.0.0.0:8001"
+        - name: KONG_STATUS_LISTEN
+          value: "0.0.0.0:8100"
+        - name: KONG_NGINX_WORKER_PROCESSES
+          value: "2"
+        - name: KONG_PLUGINS
+          value: "bundled,prometheus,zipkin,oidc"
+        - name: KONG_LOG_LEVEL
+          value: info
+        - name: KONG_REAL_IP_HEADER
+          value: "X-Real-IP"
+        - name: KONG_TRUSTED_IPS
+          value: "0.0.0.0/0,::/0"
+        - name: KONG_NGINX_PROXY_PROXY_BUFFER_SIZE
+          value: "160k"
+        - name: KONG_NGINX_PROXY_PROXY_BUFFERS
+          value: "64 160k"
+        ports:
+        - name: proxy
+          containerPort: 8000
+          protocol: TCP
+        - name: proxy-ssl
+          containerPort: 8443
+          protocol: TCP
+        - name: admin
+          containerPort: 8001
+          protocol: TCP
+        - name: status
+          containerPort: 8100
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: 8100
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /status
+            port: 8100
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "2"
+        volumeMounts:
+        - name: kong-config
+          mountPath: /etc/kong/kong.conf
+          subPath: kong.conf
+      volumes:
+      - name: kong-config
+        configMap:
+          name: kong-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kong-serviceaccount
+  namespace: medcontracthub
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kong-ingress-controller
+rules:
+- apiGroups: [""]
+  resources: ["endpoints", "nodes", "pods", "secrets", "services"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses", "ingressclasses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses/status"]
+  verbs: ["update"]
+- apiGroups: ["configuration.konghq.com"]
+  resources: ["kongplugins", "kongclusterplugins", "kongconsumers", "kongingresses", "kongcredentials", "tcpingresses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["configuration.konghq.com"]
+  resources: ["kongingresses/status"]
+  verbs: ["update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kong-ingress-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kong-ingress-controller
+subjects:
+- kind: ServiceAccount
+  name: kong-serviceaccount
+  namespace: medcontracthub

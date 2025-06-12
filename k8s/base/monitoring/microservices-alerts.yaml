@@ -1,0 +1,237 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-microservices-alerts
+  namespace: monitoring
+data:
+  microservices-alerts.yml: |
+    groups:
+    - name: microservices-availability
+      interval: 30s
+      rules:
+      # Service Availability Alerts
+      - alert: MicroserviceDown
+        expr: up{job=~"ocr-service|ai-service|analytics-service|realtime-service|worker-service"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Microservice {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for more than 2 minutes"
+          dashboard: "https://grafana.medcontracthub.com/d/microservices-overview"
+          runbook: "https://wiki.medcontracthub.com/runbooks/service-down"
+
+      - alert: MicroserviceHighErrorRate
+        expr: |
+          (
+            sum by (job) (rate(http_requests_total{job=~"ocr-service|ai-service|analytics-service|realtime-service|worker-service",status=~"5.."}[5m]))
+            /
+            sum by (job) (rate(http_requests_total{job=~"ocr-service|ai-service|analytics-service|realtime-service|worker-service"}[5m]))
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High error rate in {{ $labels.job }}"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.job }}"
+          dashboard: "https://grafana.medcontracthub.com/d/microservices-overview"
+
+      - alert: MicroserviceHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum by (job, le) (
+              rate(http_request_duration_seconds_bucket{job=~"ocr-service|ai-service|analytics-service|realtime-service|worker-service"}[5m])
+            )
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High latency in {{ $labels.job }}"
+          description: "P95 latency is {{ $value }}s for {{ $labels.job }}"
+
+    - name: kafka-pipeline-alerts
+      interval: 30s
+      rules:
+      - alert: KafkaConsumerLagHigh
+        expr: medcontract_kafka_consumer_lag_sum > 1000
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High Kafka consumer lag"
+          description: "Consumer lag for {{ $labels.topic }}/{{ $labels.consumer_group }} is {{ $value }}"
+          dashboard: "https://grafana.medcontracthub.com/d/kafka-pipeline"
+
+      - alert: KafkaConsumerLagCritical
+        expr: medcontract_kafka_consumer_lag_sum > 10000
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Critical Kafka consumer lag"
+          description: "Consumer lag for {{ $labels.topic }}/{{ $labels.consumer_group }} is {{ $value }} - immediate action required"
+
+      - alert: KafkaBrokerDown
+        expr: up{job="kafka-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Kafka broker is down"
+          description: "Kafka broker has been down for more than 2 minutes"
+
+      - alert: EventProcessingErrorsHigh
+        expr: |
+          sum(rate(analytics_events_processing_errors_total[5m])) / sum(rate(analytics_events_consumed_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          team: analytics
+        annotations:
+          summary: "High event processing error rate"
+          description: "Event processing error rate is {{ $value | humanizePercentage }}"
+
+    - name: ai-service-alerts
+      interval: 30s
+      rules:
+      - alert: AIModelInferenceFailureRate
+        expr: |
+          sum by (model) (rate(ai_model_inference_total{status="failure"}[5m]))
+          /
+          sum by (model) (rate(ai_model_inference_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          team: ai
+        annotations:
+          summary: "High failure rate for AI model {{ $labels.model }}"
+          description: "Model {{ $labels.model }} has {{ $value | humanizePercentage }} failure rate"
+
+      - alert: AIModelInferenceTimeout
+        expr: |
+          histogram_quantile(0.95,
+            sum by (model, le) (rate(ai_model_inference_duration_seconds_bucket[5m]))
+          ) > 30
+        for: 5m
+        labels:
+          severity: warning
+          team: ai
+        annotations:
+          summary: "AI model {{ $labels.model }} inference timeout"
+          description: "P95 inference time for {{ $labels.model }} is {{ $value }}s"
+
+      - alert: AIServiceQueueBacklog
+        expr: ai_embedding_queue_size > 100 or ai_analysis_queue_size > 100
+        for: 10m
+        labels:
+          severity: warning
+          team: ai
+        annotations:
+          summary: "AI service queue backlog"
+          description: "Queue size is {{ $value }} - consider scaling up"
+
+    - name: ocr-service-alerts
+      interval: 30s
+      rules:
+      - alert: OCRProcessingFailureRate
+        expr: |
+          1 - (sum(rate(ocr_documents_processed_total{status="success"}[5m])) / sum(rate(ocr_documents_processed_total[5m]))) < 0.95
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "OCR processing success rate below 95%"
+          description: "OCR success rate is {{ $value | humanizePercentage }}"
+
+      - alert: OCRProcessingBacklog
+        expr: ocr_queue_size > 50
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "OCR processing backlog"
+          description: "OCR queue has {{ $value }} documents waiting"
+
+    - name: resource-alerts
+      interval: 30s
+      rules:
+      - alert: MicroserviceHighMemoryUsage
+        expr: |
+          (
+            container_memory_working_set_bytes{pod=~".*ocr-service.*|.*ai-service.*|.*analytics-service.*|.*realtime-service.*|.*worker-service.*"}
+            / 
+            container_spec_memory_limit_bytes
+          ) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High memory usage in {{ $labels.pod }}"
+          description: "Memory usage is {{ $value | humanizePercentage }} of limit"
+
+      - alert: MicroserviceHighCPUUsage
+        expr: |
+          rate(container_cpu_usage_seconds_total{pod=~".*ocr-service.*|.*ai-service.*|.*analytics-service.*|.*realtime-service.*|.*worker-service.*"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High CPU usage in {{ $labels.pod }}"
+          description: "CPU usage is {{ $value | humanizePercentage }}"
+
+      - alert: MicroservicePodRestarts
+        expr: |
+          increase(kube_pod_container_status_restarts_total{pod=~".*ocr-service.*|.*ai-service.*|.*analytics-service.*|.*realtime-service.*|.*worker-service.*"}[1h]) > 5
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Pod {{ $labels.pod }} restarting frequently"
+          description: "Pod has restarted {{ $value }} times in the last hour"
+
+    - name: business-alerts
+      interval: 30s
+      rules:
+      - alert: LowOpportunityProcessingRate
+        expr: |
+          sum(rate(opportunities_processed_total[1h])) < 10
+        for: 30m
+        labels:
+          severity: warning
+          team: business
+        annotations:
+          summary: "Low opportunity processing rate"
+          description: "Only {{ $value }} opportunities processed per hour"
+
+      - alert: WebSocketConnectionDrops
+        expr: |
+          rate(websocket_connection_drops_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High WebSocket disconnection rate"
+          description: "{{ $value }} disconnections per second"
+
+      - alert: DocumentProcessingStalled
+        expr: |
+          sum(rate(document_processing_completed_total[10m])) == 0 and ocr_queue_size > 0
+        for: 10m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Document processing pipeline stalled"
+          description: "No documents processed in 10 minutes despite queue having items"

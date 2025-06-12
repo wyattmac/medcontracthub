@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kafka-exporter-monitor
+  namespace: medcontracthub
+  labels:
+    app: kafka-exporter
+    component: monitoring
+    tier: infrastructure
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: kafka-exporter
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+    scheme: http
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      targetLabel: pod
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      targetLabel: node
+    metricRelabelings:
+    # Rename kafka_* metrics to be more descriptive
+    - sourceLabels: [__name__]
+      regex: 'kafka_(.+)'
+      targetLabel: __name__
+      replacement: 'medcontract_kafka_$1'

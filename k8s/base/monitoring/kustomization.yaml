@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring
+
+resources:
+# Prometheus Configuration
+- prometheus-config.yaml
+- prometheus-microservices-config.yaml
+- prometheus-alerts.yaml
+- microservices-alerts.yaml
+
+# ServiceMonitors
+- service-monitors/analytics-service-monitor.yaml
+- service-monitors/realtime-service-monitor.yaml
+- service-monitors/worker-service-monitor.yaml
+- service-monitors/kafka-exporter-monitor.yaml
+- service-monitors/redis-exporter-monitor.yaml
+
+# Grafana Dashboards
+- grafana-dashboards.yaml
+
+# Jaeger Distributed Tracing
+- jaeger-config.yaml
+- jaeger-deployment.yaml
+
+# Metrics Exporters
+- exporters/kafka-exporter.yaml
+- exporters/redis-exporter.yaml
+- exporters/postgres-exporter.yaml
+
+configMapGenerator:
+- name: grafana-dashboards-microservices
+  files:
+  - microservices-overview.json=grafana-dashboards/microservices-overview.json
+  - kafka-pipeline-metrics.json=grafana-dashboards/kafka-pipeline-metrics.json
+  - ai-service-performance.json=grafana-dashboards/ai-service-performance.json
+  - business-metrics.json=grafana-dashboards/medcontracthub-business-metrics.json
+  - cost-monitoring.json=grafana-dashboards/medcontracthub-cost-monitoring.json
+  - slo-dashboard.json=grafana-dashboards/medcontracthub-slo-dashboard.json

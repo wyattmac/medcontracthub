@@ -1,0 +1,91 @@
+apiVersion: configuration.konghq.com/v1
+kind: KongIngress
+metadata:
+  name: realtime-service-ingress
+  namespace: medcontracthub
+proxy:
+  connect_timeout: 60000
+  retries: 0  # No retries for WebSocket
+  read_timeout: 3600000  # 1 hour for long-lived connections
+  write_timeout: 3600000
+upstream:
+  healthchecks:
+    active:
+      healthy:
+        http_statuses:
+        - 200
+        interval: 30
+        successes: 2
+      http_path: "/health"
+      timeout: 5
+      unhealthy:
+        http_failures: 3
+        http_statuses:
+        - 500
+        - 503
+        interval: 30
+        tcp_failures: 3
+        timeouts: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: realtime-service-kong
+  namespace: medcontracthub
+  labels:
+    app: realtime-service
+  annotations:
+    konghq.com/plugins: cors-global,jwt-auth
+    konghq.com/override: realtime-service-ingress
+    konghq.com/protocol: "ws,wss"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8400
+    targetPort: 8400
+    protocol: TCP
+    name: http
+  selector:
+    app: realtime-service
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: realtime-service-routes
+  namespace: medcontracthub
+  annotations:
+    konghq.com/strip-path: "false"
+    konghq.com/preserve-host: "true"
+    konghq.com/protocols: "http,https,ws,wss"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/websocket-services: "realtime-service-kong"
+spec:
+  ingressClassName: kong
+  rules:
+  - http:
+      paths:
+      - path: /ws
+        pathType: Prefix
+        backend:
+          service:
+            name: realtime-service-kong
+            port:
+              number: 8400
+      - path: /socket.io
+        pathType: Prefix
+        backend:
+          service:
+            name: realtime-service-kong
+            port:
+              number: 8400
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: websocket-size-limit
+  namespace: medcontracthub
+plugin: request-size-limiting
+config:
+  allowed_payload_size: 10  # 10MB for WebSocket messages
+  size_unit: megabytes
