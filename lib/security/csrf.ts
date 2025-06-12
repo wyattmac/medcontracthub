@@ -12,6 +12,8 @@ const CSRF_HEADER_NAME = 'x-csrf-token'
 
 // CSRF secret must be provided via environment variable
 const CSRF_SECRET = process.env.CSRF_SECRET
+const isDevelopmentBypass = process.env.NODE_ENV === 'development' && process.env.DEVELOPMENT_AUTH_BYPASS === 'true'
+
 if (!CSRF_SECRET && process.env.NODE_ENV === 'production') {
   throw new Error('CSRF_SECRET environment variable is required in production')
 }
@@ -20,8 +22,13 @@ if (!CSRF_SECRET && process.env.NODE_ENV === 'production') {
  * Generate a cryptographically secure CSRF token
  */
 export function generateCSRFToken(): string {
-  if (!CSRF_SECRET) {
+  if (!CSRF_SECRET && !isDevelopmentBypass) {
     throw new Error('CSRF_SECRET environment variable is required')
+  }
+  
+  // In development with auth bypass, return a simple token
+  if (isDevelopmentBypass && !CSRF_SECRET) {
+    return 'dev-bypass-token'
   }
   
   const timestamp = Date.now().toString()
@@ -42,7 +49,12 @@ export function generateCSRFToken(): string {
  * Verify CSRF token validity
  */
 export function verifyCSRFToken(token: string): boolean {
-  if (!CSRF_SECRET) {
+  // In development with auth bypass, accept the bypass token
+  if (isDevelopmentBypass && token === 'dev-bypass-token') {
+    return true
+  }
+  
+  if (!CSRF_SECRET && !isDevelopmentBypass) {
     throw new Error('CSRF_SECRET environment variable is required')
   }
   

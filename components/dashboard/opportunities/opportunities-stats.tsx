@@ -48,7 +48,7 @@ async function fetchOpportunityStats({ signal }: { signal?: AbortSignal }) {
   }, 15000) // 15 second timeout for stats
 
   try {
-    const response = await fetch('/api/analytics', {
+    const response = await fetch('/api/analytics/stats', {
       signal,
       headers: {
         'Content-Type': 'application/json',
@@ -100,8 +100,8 @@ export function OpportunitiesStats() {
   } = useQuery({
     queryKey: ['opportunity-stats'],
     queryFn: fetchOpportunityStats,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes - increased for better performance
+    gcTime: 30 * 60 * 1000, // 30 minutes - keep cached longer
     retry: (failureCount, error) => {
       // Retry on timeouts and network errors
       if (error?.message?.includes('timeout') || 

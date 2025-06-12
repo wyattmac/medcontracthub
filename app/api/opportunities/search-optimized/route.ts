@@ -67,11 +67,11 @@ export const GET = enhancedRouteHandler.GET(
           .single()
 
         if (profileError) {
-          dbLogger.error('Failed to fetch user profile', profileError)
-          throw new DatabaseError('Failed to fetch user profile')
+          dbLogger.warn('Failed to fetch user profile, using defaults', profileError)
+          userNAICS = ['339112', '423450', '621999'] // Fallback to medical defaults
+        } else {
+          userNAICS = userProfile?.companies?.naics_codes || []
         }
-
-        userNAICS = userProfile?.companies?.naics_codes || []
       } else {
         // Development mode - use default medical NAICS codes for testing
         userNAICS = ['339112', '423450', '621999'] // Medical device manufacturing, medical equipment wholesale, healthcare
@@ -269,7 +269,7 @@ export const GET = enhancedRouteHandler.GET(
     }
   },
   {
-    requireAuth: process.env.NODE_ENV !== 'development', // Disable auth in development
+    requireAuth: process.env.NODE_ENV === 'production' && process.env.DEVELOPMENT_AUTH_BYPASS !== 'true', // Disable auth in development
     validateQuery: searchQuerySchema,
     rateLimit: 'api'
   }

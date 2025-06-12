@@ -94,7 +94,7 @@ export async function GET(request: Request) {
         
         return { opportunities, count }
       },
-      { ttl: 300 } // Cache for 5 minutes
+      { ttl: 600 } // Cache for 10 minutes for better performance
     )
     
     const { opportunities, count } = result

@@ -33,19 +33,32 @@ export function useCSRF() {
       }
 
       // Fallback: fetch from API
+      console.log('Fetching CSRF token from /api/csrf...')
       const response = await fetch('/api/csrf', {
         method: 'GET',
         credentials: 'include'
       })
+      console.log('CSRF fetch response:', response.status, response.statusText)
 
       if (!response.ok) {
-        throw new Error('Failed to fetch CSRF token')
+        const errorText = await response.text()
+        console.error('CSRF fetch failed:', errorText)
+        throw new Error(`Failed to fetch CSRF token: ${response.status}`)
       }
 
-      const data = await response.json()
+      let data
+      try {
+        data = await response.json()
+        console.log('CSRF response data:', data)
+      } catch (jsonError) {
+        console.error('Failed to parse CSRF response as JSON:', jsonError)
+        throw new Error('Invalid JSON response from CSRF endpoint')
+      }
+      
       const token = data.csrfToken || response.headers.get('X-CSRF-Token')
 
       if (!token) {
+        console.error('No CSRF token in response:', data)
         throw new Error('No CSRF token received')
       }
 
@@ -63,6 +76,16 @@ export function useCSRF() {
   // Initialize CSRF token on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Skip CSRF in development with auth bypass
+      const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost'
+      const authBypass = process.env.NEXT_PUBLIC_DEVELOPMENT_AUTH_BYPASS === 'true'
+      
+      if (isDevelopment && authBypass) {
+        console.log('Skipping CSRF token fetch in development with auth bypass')
+        setState({ token: 'dev-bypass-token', loading: false, error: null })
+        return
+      }
+      
       fetchCSRFToken()
     }
   }, [fetchCSRFToken])

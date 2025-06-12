@@ -48,6 +48,7 @@
     "dev-setup": "tsx scripts/dev-setup-user.ts",
     "validate:env:production": "tsx scripts/validate-production-env.ts",
     "db:migrate": "bash scripts/apply-db-indexes.sh",
+    "db:migrate:performance": "tsx scripts/apply-performance-migration.ts",
     "health:check": "curl -s http://localhost:3000/api/health?detailed=true | jq .",
     "monitor:test": "tsx scripts/test-monitoring.ts",
     "monitor:start": "curl -X POST http://localhost:3000/api/monitoring/control -H 'Content-Type: application/json' -d '{\"action\":\"start\"}'",

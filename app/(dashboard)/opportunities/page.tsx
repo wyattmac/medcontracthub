@@ -4,10 +4,12 @@ import { OpportunitiesContainer } from '@/components/dashboard/opportunities/opp
 import { OpportunitiesLayout } from '@/components/dashboard/opportunities/opportunities-layout'
 import { OpportunitiesStats } from '@/components/dashboard/opportunities/opportunities-stats'
 import { SectionErrorBoundary } from '@/components/ui/error-boundary'
+import { PerformanceIndicator } from '@/components/dashboard/opportunities/performance-indicator'
 import { TrendingUp, Zap, Database, RefreshCw } from 'lucide-react'
 
 // Force dynamic rendering since this page shows user-specific data
 export const dynamic = 'force-dynamic'
+export const revalidate = 60 // Revalidate every minute for better performance
 
 interface OpportunitiesPageProps {
   searchParams?: Promise<{
@@ -60,8 +62,15 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         </div>
       </div>
 
-      {/* Real-time Stats */}
-      <SectionErrorBoundary name="Statistics">
+      {/* Real-time Stats - Load after main content for better UX */}
+      <SectionErrorBoundary 
+        name="Statistics" 
+        fallback={
+          <Card className="p-6">
+            <p className="text-sm text-muted-foreground">Statistics temporarily unavailable</p>
+          </Card>
+        }
+      >
         <Suspense fallback={<StatsLoadingSkeleton />}>
           <OpportunitiesStats />
         </Suspense>
@@ -97,6 +106,9 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
           </div>
         </CardContent>
       </Card>
+      
+      {/* Performance Indicator (Development Only) */}
+      <PerformanceIndicator />
     </OpportunitiesLayout>
   )
 }
