@@ -14,16 +14,21 @@ import { enhancedRouteHandler } from '@/lib/api/enhanced-route-handler'
 import { DatabaseError } from '@/lib/errors/types'
 import { dbLogger } from '@/lib/errors/logger'
 import { calculateOpportunityMatch } from '@/lib/sam-gov/utils'
+import { createClient } from '@supabase/supabase-js'
 
 // Query validation schema
 const searchQuerySchema = z.object({
-  query: z.string().optional(),
-  status: z.enum(['active', 'closed', 'all']).default('active'),
-  sort: z.enum(['relevance', 'deadline', 'posted', 'value']).default('relevance'),
-  page: z.string().transform(Number).pipe(z.number().min(1)).default('1'),
-  limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('25'),
+  q: z.string().optional(), // Changed from 'query' to match frontend
+  status: z.enum(['active', 'closed', 'all']).optional().default('active'),
+  sort: z.enum(['relevance', 'deadline', 'posted', 'value']).optional().default('relevance'),
+  offset: z.string().transform(Number).pipe(z.number().min(0)).optional().default('0'),
+  limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional().default('25'),
   naics: z.string().optional(),
+  state: z.string().optional(), // Added state filter
+  set_aside: z.string().optional(), // Added set_aside filter
   agency: z.string().optional(),
+  deadline_from: z.string().optional(),
+  deadline_to: z.string().optional(),
   min_value: z.string().transform(Number).pipe(z.number().min(0)).optional(),
   max_value: z.string().transform(Number).pipe(z.number().min(0)).optional()
 })
@@ -36,26 +41,40 @@ export const GET = enhancedRouteHandler.GET(
     const url = new URL(request.url)
     const queryParams = Object.fromEntries(url.searchParams)
     const { 
-      query: searchQuery, 
+      q: searchQuery, 
       status, 
       sort, 
-      page, 
+      offset, 
       limit,
       naics: naicsFilter,
+      state: stateFilter,
+      set_aside: setAsideFilter,
       agency: agencyFilter,
+      deadline_from: deadlineFrom,
+      deadline_to: deadlineTo,
       min_value: minValue,
       max_value: maxValue
     } = searchQuerySchema.parse(queryParams)
+    
 
-    const offset = (page - 1) * limit
+    // Calculate page from offset for response
+    const page = Math.floor(offset / limit) + 1
 
     try {
+      // In development mode with no auth, use service role client for better access
+      let dbClient = supabase
+      if (!user && process.env.NODE_ENV === 'development') {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+        dbClient = createClient(supabaseUrl, supabaseServiceKey)
+      }
+      
       // Step 1: Get user's NAICS codes efficiently
       const userProfileStart = Date.now()
       let userNAICS: string[] = []
       
       if (user) {
-        const { data: userProfile, error: profileError } = await supabase
+        const { data: userProfile, error: profileError } = await dbClient
           .from('profiles')
           .select(`
             company_id,
@@ -82,31 +101,9 @@ export const GET = enhancedRouteHandler.GET(
       // Step 2: Build optimized query with all filters and joins
       const mainQueryStart = Date.now()
       
-      let query = supabase
+      let query = dbClient
         .from('opportunities')
-        .select(`
-          id,
-          title,
-          description,
-          agency,
-          solicitation_number,
-          naics_code,
-          posted_date,
-          response_deadline,
-          estimated_value_min,
-          estimated_value_max,
-          place_of_performance_state,
-          place_of_performance_city,
-          contract_type,
-          status,
-          created_at,
-          updated_at,
-          saved_opportunities!left (
-            id,
-            user_id
-          )
-        `, { count: 'exact' })
-        .range(offset, offset + limit - 1)
+        .select('*', { count: 'exact' })
 
       // Apply status filter
       if (status !== 'all') {
@@ -128,6 +125,24 @@ export const GET = enhancedRouteHandler.GET(
         query = query.ilike('agency', `%${agencyFilter}%`)
       }
 
+      // Apply state filter
+      if (stateFilter) {
+        query = query.eq('place_of_performance_state', stateFilter)
+      }
+      
+      // Apply set-aside filter
+      if (setAsideFilter && setAsideFilter !== 'all') {
+        query = query.eq('set_aside_type', setAsideFilter)
+      }
+      
+      // Apply deadline filters
+      if (deadlineFrom) {
+        query = query.gte('response_deadline', deadlineFrom)
+      }
+      if (deadlineTo) {
+        query = query.lte('response_deadline', deadlineTo)
+      }
+      
       // Apply value range filters
       if (minValue !== undefined) {
         query = query.gte('estimated_value_min', minValue)
@@ -154,12 +169,11 @@ export const GET = enhancedRouteHandler.GET(
           break
       }
 
-      // Filter saved opportunities to current user only (if user exists)
-      if (user) {
-        query = query.or('saved_opportunities.user_id.is.null,saved_opportunities.user_id.eq.' + user.id)
-      }
+      // Apply pagination after all filters
+      query = query.range(offset, offset + limit - 1)
 
       const { data: opportunities, error: oppsError, count } = await query
+
 
       if (oppsError) {
         dbLogger.error('Error fetching opportunities', oppsError)
@@ -168,7 +182,22 @@ export const GET = enhancedRouteHandler.GET(
 
       const mainQueryTime = Date.now() - mainQueryStart
 
-      // Step 3: Calculate match scores efficiently (server-side)
+      // Step 3: Get saved status for opportunities (if user is logged in)
+      let savedOpportunityIds: Set<string> = new Set()
+      if (user && opportunities && opportunities.length > 0) {
+        const opportunityIds = opportunities.map(o => o.id)
+        const { data: savedOps } = await dbClient
+          .from('saved_opportunities')
+          .select('opportunity_id')
+          .eq('user_id', user.id)
+          .in('opportunity_id', opportunityIds)
+        
+        if (savedOps) {
+          savedOpportunityIds = new Set(savedOps.map(so => so.opportunity_id))
+        }
+      }
+
+      // Step 4: Calculate match scores efficiently (server-side)
       const scoringStart = Date.now()
       
       const processedOpportunities = opportunities?.map(opp => {
@@ -176,15 +205,10 @@ export const GET = enhancedRouteHandler.GET(
         const matchScore = calculateOpportunityMatch(opp, userNAICS)
         
         // Determine if saved by current user
-        const isSaved = user ? opp.saved_opportunities?.some(
-          (saved: any) => saved.user_id === user.id
-        ) : false
-
-        // Clean up the response
-        const { saved_opportunities, ...cleanOpp } = opp
+        const isSaved = savedOpportunityIds.has(opp.id)
 
         return {
-          ...cleanOpp,
+          ...opp,
           match_score: matchScore,
           is_saved: isSaved,
           // Add computed fields for better UX
