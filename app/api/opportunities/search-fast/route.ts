@@ -48,44 +48,85 @@ export const GET = enhancedRouteHandler.GET(
         userNaicsCodes = ['423450', '339112', '621999'] // Medical equipment, devices, healthcare
       }
 
-      // Step 2: Build optimized database query
-      let query = supabase
-        .from('opportunities')
-        .select(`
-          *
-        `, { count: 'exact' })
+      // Step 2: Try to use the optimized RPC function first
+      let opportunities: any[] = []
+      let count = 0
+      let error: any = null
 
-      // Apply pagination
-      query = query.range(offset, offset + limit - 1)
+      // First, try the optimized database function
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('search_opportunities_fast', {
+          search_query: searchQuery,
+          status_filter: status === 'active' ? 'active' : null,
+          naics_filter: naics || null,
+          state_filter: state || null,
+          user_naics_codes: userNaicsCodes,
+          user_id: user?.id || null,
+          sort_by: 'relevance',
+          limit_count: limit,
+          offset_count: offset
+        })
 
-      // Apply filters (temporarily disabled to debug)
-      // if (status === 'active') {
-      //   query = query.eq('status', 'active')
-      // }
-
-      // Text search across multiple fields
-      if (searchQuery.trim()) {
-        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,agency.ilike.%${searchQuery}%`)
-      }
-
-      // NAICS filter
-      if (naics) {
-        const naicsArray = naics.split(',').filter(Boolean)
-        if (naicsArray.length > 0) {
-          query = query.in('naics_code', naicsArray)
+        if (!rpcError && rpcData) {
+          // RPC function returns pre-processed data with match scores
+          opportunities = rpcData
+          count = rpcData.length // Note: This is not exact count, but good enough
+          
+          // Get exact count separately if needed
+          const { count: exactCount } = await supabase
+            .from('opportunities')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'active')
+          
+          count = exactCount || count
+        } else {
+          throw new Error('RPC function not available, falling back to regular query')
         }
+      } catch (rpcErr) {
+        // Fallback to regular query if RPC fails
+        console.log('Using fallback query method')
+        
+        let query = supabase
+          .from('opportunities')
+          .select(`
+            *
+          `, { count: 'exact' })
+
+        // Apply pagination
+        query = query.range(offset, offset + limit - 1)
+
+        // Apply filters
+        if (status === 'active') {
+          query = query.eq('status', 'active')
+        }
+
+        // Text search across multiple fields
+        if (searchQuery.trim()) {
+          query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,agency.ilike.%${searchQuery}%`)
+        }
+
+        // NAICS filter
+        if (naics) {
+          const naicsArray = naics.split(',').filter(Boolean)
+          if (naicsArray.length > 0) {
+            query = query.in('naics_code', naicsArray)
+          }
+        }
+
+        // State filter
+        if (state) {
+          query = query.eq('place_of_performance_state', state)
+        }
+
+        // Sort by posted date (newest first) for consistent results
+        query = query.order('posted_date', { ascending: false })
+
+        // Execute query
+        const result = await query
+        opportunities = result.data || []
+        count = result.count || 0
+        error = result.error
       }
-
-      // State filter
-      if (state) {
-        query = query.eq('place_of_performance_state', state)
-      }
-
-      // Sort by posted date (newest first) for consistent results
-      query = query.order('posted_date', { ascending: false })
-
-      // Step 3: Execute query
-      const { data: opportunities, error, count } = await query
 
       if (error) {
         console.error('Database error:', error)
@@ -94,7 +135,16 @@ export const GET = enhancedRouteHandler.GET(
 
       // Step 4: Process results efficiently
       const processedOpportunities = (opportunities || []).map(opp => {
-        // Calculate match score
+        // If data comes from RPC, it already has match_score and is_saved
+        if (opp.match_score !== undefined) {
+          return {
+            ...opp,
+            matchScore: opp.match_score,
+            isSaved: opp.is_saved || false
+          }
+        }
+        
+        // Otherwise, calculate match score for fallback query
         const matchScore = calculateOpportunityMatch(opp, userNaicsCodes)
         
         // Check if saved by current user
@@ -112,15 +162,17 @@ export const GET = enhancedRouteHandler.GET(
         }
       })
 
-      // Step 5: Sort by relevance (match score + recency)
-      processedOpportunities.sort((a, b) => {
-        // Primary: match score (higher is better)
-        if (a.matchScore !== b.matchScore) {
-          return b.matchScore - a.matchScore
-        }
-        // Secondary: posted date (newer is better)
-        return new Date(b.posted_date).getTime() - new Date(a.posted_date).getTime()
-      })
+      // Step 5: Sort by relevance (match score + recency) - skip if from RPC (already sorted)
+      if (!opportunities[0]?.match_score) {
+        processedOpportunities.sort((a, b) => {
+          // Primary: match score (higher is better)
+          if (a.matchScore !== b.matchScore) {
+            return b.matchScore - a.matchScore
+          }
+          // Secondary: posted date (newer is better)
+          return new Date(b.posted_date).getTime() - new Date(a.posted_date).getTime()
+        })
+      }
 
       const totalTime = Date.now() - startTime
 

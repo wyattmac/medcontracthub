@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Saved Opportunities</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #0070f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0051cc;
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Saved Opportunities Test Page</h1>
+    
+    <div class="section">
+        <h2>Current State</h2>
+        <button onclick="checkState()">Check Current State</button>
+        <button onclick="clearSaved()">Clear Saved Opportunities</button>
+        <div id="state-output"></div>
+    </div>
+
+    <div class="section">
+        <h2>Test Saving</h2>
+        <button onclick="saveTestOpportunity()">Save Test Opportunity</button>
+        <button onclick="unsaveTestOpportunity()">Unsave Test Opportunity</button>
+        <div id="save-output"></div>
+    </div>
+
+    <div class="section">
+        <h2>Navigate</h2>
+        <button onclick="window.location.href='/opportunities'">Go to Opportunities</button>
+        <button onclick="window.location.href='/saved'">Go to Saved</button>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'mock_saved_opportunities';
+        const AUTH_KEY = 'mock_auth';
+
+        function checkState() {
+            const output = document.getElementById('state-output');
+            
+            try {
+                const authData = localStorage.getItem(AUTH_KEY);
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                
+                let html = '<h3>Current State:</h3>';
+                
+                if (authData) {
+                    const auth = JSON.parse(authData);
+                    html += `<p class="info">User ID: ${auth.user?.id || 'No user'}</p>`;
+                } else {
+                    html += '<p class="error">No auth data found</p>';
+                }
+                
+                if (savedData) {
+                    const saved = JSON.parse(savedData);
+                    const auth = authData ? JSON.parse(authData) : null;
+                    const userSaved = auth ? saved.filter(item => item.user_id === auth.user?.id) : [];
+                    
+                    html += `<p class="info">Total saved opportunities: ${saved.length}</p>`;
+                    html += `<p class="info">User's saved opportunities: ${userSaved.length}</p>`;
+                    
+                    if (userSaved.length > 0) {
+                        html += '<h4>User\'s Saved Opportunities:</h4>';
+                        html += '<pre>' + JSON.stringify(userSaved, null, 2) + '</pre>';
+                    }
+                } else {
+                    html += '<p class="info">No saved opportunities</p>';
+                }
+                
+                output.innerHTML = html;
+            } catch (error) {
+                output.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        function clearSaved() {
+            localStorage.removeItem(STORAGE_KEY);
+            document.getElementById('state-output').innerHTML = '<p class="success">Cleared saved opportunities</p>';
+            checkState();
+        }
+
+        function saveTestOpportunity() {
+            const output = document.getElementById('save-output');
+            
+            try {
+                const authData = localStorage.getItem(AUTH_KEY);
+                if (!authData) {
+                    output.innerHTML = '<p class="error">No user logged in</p>';
+                    return;
+                }
+                
+                const auth = JSON.parse(authData);
+                const userId = auth.user?.id;
+                
+                if (!userId) {
+                    output.innerHTML = '<p class="error">No user ID found</p>';
+                    return;
+                }
+                
+                // Get existing saved opportunities
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                const saved = savedData ? JSON.parse(savedData) : [];
+                
+                // Create test opportunity
+                const testOpp = {
+                    id: `saved_${Date.now()}_test`,
+                    user_id: userId,
+                    opportunity_id: 'test-opp-123',
+                    opportunity: {
+                        id: 'test-opp-123',
+                        title: 'Test Medical Equipment Supply Contract',
+                        description: 'This is a test opportunity for debugging',
+                        agency: 'Department of Veterans Affairs',
+                        response_deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                        estimated_value_min: 100000,
+                        estimated_value_max: 500000,
+                        naics_code: '339112',
+                        place_of_performance_city: 'Washington',
+                        place_of_performance_state: 'DC',
+                        status: 'active',
+                        matchScore: 0.85
+                    },
+                    is_pursuing: false,
+                    notes: 'Test notes',
+                    tags: ['test', 'medical'],
+                    reminder_date: null,
+                    created_at: new Date().toISOString()
+                };
+                
+                // Add to saved
+                saved.push(testOpp);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+                
+                output.innerHTML = '<p class="success">Saved test opportunity!</p><pre>' + 
+                    JSON.stringify(testOpp, null, 2) + '</pre>';
+                    
+                checkState();
+            } catch (error) {
+                output.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        function unsaveTestOpportunity() {
+            const output = document.getElementById('save-output');
+            
+            try {
+                const authData = localStorage.getItem(AUTH_KEY);
+                if (!authData) {
+                    output.innerHTML = '<p class="error">No user logged in</p>';
+                    return;
+                }
+                
+                const auth = JSON.parse(authData);
+                const userId = auth.user?.id;
+                
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (!savedData) {
+                    output.innerHTML = '<p class="error">No saved opportunities found</p>';
+                    return;
+                }
+                
+                const saved = JSON.parse(savedData);
+                const filtered = saved.filter(item => 
+                    !(item.user_id === userId && item.opportunity_id === 'test-opp-123')
+                );
+                
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+                
+                output.innerHTML = '<p class="success">Removed test opportunity!</p>';
+                checkState();
+            } catch (error) {
+                output.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        // Check state on load
+        window.onload = checkState;
+    </script>
+</body>
+</html>

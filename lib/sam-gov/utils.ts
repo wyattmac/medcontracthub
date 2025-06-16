@@ -340,12 +340,42 @@ export function formatCurrency(amount: number | null): string {
 /**
  * Format opportunity deadline with urgency indication
  */
-export function formatDeadline(deadline: string): {
+export function formatDeadline(deadline: string | null | undefined): {
   formatted: string
   daysRemaining: number
   urgency: 'high' | 'medium' | 'low' | 'expired'
 } {
-  const deadlineDate = new Date(deadline)
+  // Handle null/undefined/invalid dates
+  if (!deadline) {
+    return {
+      formatted: 'No deadline',
+      daysRemaining: -1,
+      urgency: 'expired'
+    }
+  }
+
+  // Try to parse the date
+  let deadlineDate: Date
+  try {
+    deadlineDate = new Date(deadline)
+    
+    // Check if date is valid
+    if (isNaN(deadlineDate.getTime())) {
+      return {
+        formatted: 'Invalid date',
+        daysRemaining: -1,
+        urgency: 'expired'
+      }
+    }
+  } catch (error) {
+    // If parsing fails, return invalid date
+    return {
+      formatted: 'Invalid date',
+      daysRemaining: -1,
+      urgency: 'expired'
+    }
+  }
+
   const now = new Date()
   const diffTime = deadlineDate.getTime() - now.getTime()
   const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
@@ -360,16 +390,24 @@ export function formatDeadline(deadline: string): {
     urgency = 'medium'
   }
   
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  })
+  // Format the date safely
+  let formatted: string
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    })
+    formatted = formatter.format(deadlineDate)
+  } catch (error) {
+    // Fallback formatting if Intl fails
+    formatted = deadlineDate.toLocaleString()
+  }
   
   return {
-    formatted: formatter.format(deadlineDate),
+    formatted,
     daysRemaining,
     urgency
   }

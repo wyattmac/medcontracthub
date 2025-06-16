@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { RefreshCw, AlertCircle, Grid, List } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { BulkExportButton } from './bulk-export-button'
+import { BulkExportButtonDynamic } from './bulk-export-button-dynamic'
 import { QuotaIndicator } from './quota-indicator'
 import { PerformanceIndicator } from './performance-indicator'
 
@@ -125,13 +125,35 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
       }, 30000) // 30 second timeout
 
       try {
-        // Use the optimized search endpoint for better performance
-        const response = await fetch(`/api/opportunities/search-optimized?${params.toString()}`, {
+        // Use the ultra-fast search endpoint for sub-1 second performance
+        let response = await fetch(`/api/opportunities/search-fast?${params.toString()}`, {
           signal,
           headers: {
             'Content-Type': 'application/json',
           }
         })
+        
+        // Fallback to optimized endpoint if fast endpoint fails
+        if (!response.ok && response.status === 404) {
+          console.log('Fast search endpoint not found, falling back to optimized search')
+          response = await fetch(`/api/opportunities/search-optimized?${params.toString()}`, {
+            signal,
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          })
+          
+          // Final fallback to regular search endpoint
+          if (!response.ok && response.status === 404) {
+            console.log('Optimized search endpoint not found, falling back to regular search')
+            response = await fetch(`/api/opportunities/search?${params.toString()}`, {
+              signal,
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            })
+          }
+        }
         
         clearTimeout(timeoutId)
         
@@ -154,8 +176,15 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
         const data = await response.json()
         
         // Transform the response to match expected format
+        // Map API response fields to component expected fields
+        const transformedOpportunities = (data.opportunities || []).map((opp: any) => ({
+          ...opp,
+          matchScore: opp.match_score || 0, // API returns match_score, component expects matchScore
+          isSaved: opp.is_saved || false // API returns is_saved, component expects isSaved
+        }))
+        
         return {
-          opportunities: data.opportunities || [],
+          opportunities: transformedOpportunities,
           totalCount: data.pagination?.total || 0,
           hasMore: data.pagination?.has_more || false,
           quotaStatus: {
@@ -177,8 +206,9 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
         }
       }
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes - increased for better caching
-    gcTime: 30 * 60 * 1000, // 30 minutes - keep data longer
+    staleTime: 5 * 60 * 1000, // 5 minutes - balanced for real-time updates
+    gcTime: 10 * 60 * 1000, // 10 minutes - keep data in cache
+    refetchInterval: false, // Don't auto-refetch
     retry: (failureCount, error) => {
       // Don't retry on client errors (4xx) except timeouts
       if (error?.message?.includes('Request timeout') || 
@@ -267,7 +297,7 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
         
         <div className="flex items-center gap-2">
           {/* Export Button */}
-          <BulkExportButton
+          <BulkExportButtonDynamic
             filters={filters}
             totalCount={totalCount}
             onExport={(type, options) => {

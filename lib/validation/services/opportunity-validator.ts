@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { opportunityBusinessSchema, opportunityWithComputedSchema } from '../business-rules'
+import { opportunityBusinessSchema } from '../business-rules'
+import { opportunityWithComputedSchema } from '../computed-properties'
 import { ValidationError } from '@/lib/errors/types'
 import { apiLogger } from '@/lib/errors/logger'
 

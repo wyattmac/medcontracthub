@@ -12,6 +12,8 @@ resources:
   
   # Redis Cluster
   - redis/redis-cluster.yaml
+  - redis/redis-l1-cache.yaml
+  - redis/redis-l2-cache.yaml
   
   # Kafka Event Streaming Platform
   - kafka/namespace.yaml
@@ -51,16 +53,6 @@ resources:
   - ai-service/rbac.yaml
   - ai-service/servicemonitor.yaml
   - ai-service/istio-virtualservice.yaml
-  
-  # Analytics Service
-  - analytics-service/configmap.yaml
-  - analytics-service/secret.yaml
-  - analytics-service/deployment.yaml
-  - analytics-service/service.yaml
-  - analytics-service/hpa.yaml
-  - analytics-service/pdb.yaml
-  - analytics-service/rbac.yaml
-  - analytics-service/cronjobs.yaml
   
   # Realtime Service
   - realtime-service/configmap.yaml
@@ -147,8 +139,6 @@ images:
   - name: localhost:5001/integration-adapter
     newTag: latest
   - name: localhost:5001/ai-service
-    newTag: latest
-  - name: localhost:5001/analytics-service
     newTag: latest
   - name: localhost:5001/realtime-service
     newTag: latest

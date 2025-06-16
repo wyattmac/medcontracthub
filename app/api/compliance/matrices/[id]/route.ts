@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { withErrorHandler } from '@/lib/api/error-interceptor'
 import { z } from 'zod'
-import { ValidationError, UnauthorizedError, NotFoundError } from '@/lib/errors/types'
+import { ValidationError, AuthenticationError, NotFoundError } from '@/lib/errors/types'
 
 // Request validation schemas
 const updateMatrixSchema = z.object({
@@ -19,12 +18,13 @@ interface RouteParams {
 }
 
 // GET /api/compliance/matrices/[id] - Get single compliance matrix with requirements
-export const GET = withErrorHandler(async (request: NextRequest, { params }: RouteParams) => {
+export const GET = async (request: NextRequest, { params }: RouteParams) => {
+  try {
   const supabase = createServiceClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
-    throw new UnauthorizedError('Authentication required')
+    throw new AuthenticationError('Authentication required')
   }
 
   const matrixId = params.id
@@ -95,15 +95,40 @@ export const GET = withErrorHandler(async (request: NextRequest, { params }: Rou
         : 0
     }
   })
-})
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 401 }
+      )
+    }
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { error: error.message, details: error.errors },
+        { status: 400 }
+      )
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 404 }
+      )
+    }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
 
 // PUT /api/compliance/matrices/[id] - Update compliance matrix
-export const PUT = withErrorHandler(async (request: NextRequest, { params }: RouteParams) => {
+export const PUT = async (request: NextRequest, { params }: RouteParams) => {
+  try {
   const supabase = createServiceClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
-    throw new UnauthorizedError('Authentication required')
+    throw new AuthenticationError('Authentication required')
   }
 
   const matrixId = params.id
@@ -156,15 +181,40 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: Rou
     success: true,
     data: updatedMatrix
   })
-})
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 401 }
+      )
+    }
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { error: error.message, details: error.errors },
+        { status: 400 }
+      )
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 404 }
+      )
+    }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
 
 // DELETE /api/compliance/matrices/[id] - Delete compliance matrix
-export const DELETE = withErrorHandler(async (request: NextRequest, { params }: RouteParams) => {
+export const DELETE = async (request: NextRequest, { params }: RouteParams) => {
+  try {
   const supabase = createServiceClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
-    throw new UnauthorizedError('Authentication required')
+    throw new AuthenticationError('Authentication required')
   }
 
   const matrixId = params.id
@@ -197,9 +247,31 @@ export const DELETE = withErrorHandler(async (request: NextRequest, { params }: 
     success: true,
     message: 'Compliance matrix deleted successfully'
   })
-}, {
-  requireAuth: true
-})
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 401 }
+      )
+    }
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { error: error.message, details: error.errors },
+        { status: 400 }
+      )
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 404 }
+      )
+    }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
 
 // Helper function to build hierarchical requirement tree
 function buildRequirementTree(requirements: any[]): any[] {

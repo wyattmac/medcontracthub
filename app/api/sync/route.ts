@@ -9,7 +9,7 @@ import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database.types'
 import { getSAMApiClient } from '@/lib/sam-gov'
 import { syncOpportunitiesToDatabase } from '@/lib/sam-gov/utils'
-import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
+import { routeHandler, IRouteContext } from '@/lib/api/route-handler-next15'
 import { ExternalAPIError, DatabaseError } from '@/lib/errors/types'
 import { syncLogger } from '@/lib/errors/logger'
 

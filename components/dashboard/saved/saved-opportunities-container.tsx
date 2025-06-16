@@ -13,11 +13,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { RefreshCw, AlertCircle } from 'lucide-react'
 
-interface ISavedOpportunitiesContainerProps {
-  userId: string
-}
-
-export function SavedOpportunitiesContainer({ userId }: ISavedOpportunitiesContainerProps) {
+export function SavedOpportunitiesContainer() {
   const [filters, setFilters] = useState({
     isPursuing: undefined as boolean | undefined,
     hasReminder: undefined as boolean | undefined,
@@ -49,9 +45,16 @@ export function SavedOpportunitiesContainer({ userId }: ISavedOpportunitiesConta
       }
       params.set('sort_by', filters.sortBy)
       
-      const response = await fetch(`/api/opportunities/saved?${params.toString()}`)
+      // Always use real endpoint
+      const endpoint = '/api/opportunities/saved'
+      const response = await fetch(`${endpoint}?${params.toString()}`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
       if (!response.ok) {
-        throw new Error('Failed to fetch saved opportunities')
+        throw new Error(`Failed to fetch saved opportunities: ${response.status}`)
       }
       return response.json()
     },

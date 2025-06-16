@@ -10,7 +10,11 @@ data:
   environment: "production"
   log_level: "INFO"
   redis_url: "redis://redis-master.medcontracthub.svc.cluster.local:6379"
+  redis_l1_url: "redis://redis-l1-cache.medcontracthub.svc.cluster.local:6379/0"
+  redis_l2_url: "redis://redis-l2-cache.medcontracthub.svc.cluster.local:6379/0"
   kafka_bootstrap_servers: "kafka-0.kafka-headless.medcontracthub.svc.cluster.local:9092,kafka-1.kafka-headless.medcontracthub.svc.cluster.local:9092,kafka-2.kafka-headless.medcontracthub.svc.cluster.local:9092"
+  weaviate_url: "http://weaviate.medcontracthub.svc.cluster.local:8080"
+  database_url: "postgresql://postgres:postgres@postgres-primary.medcontracthub.svc.cluster.local:5432/medcontracthub"
   cache_ttl: "3600"
   max_file_size: "52428800"  # 50MB
   max_pages: "1000"

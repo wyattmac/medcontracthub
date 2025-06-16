@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
+import { routeHandler, IRouteContext } from '@/lib/api/route-handler-next15'
 import { DatabaseError, ValidationError } from '@/lib/errors/types'
 import { apiLogger } from '@/lib/errors/logger'
 import { generatePDFReport } from '@/lib/export/pdf-generator'

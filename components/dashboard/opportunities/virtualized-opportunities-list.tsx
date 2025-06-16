@@ -175,6 +175,7 @@ const OpportunityCard = memo(({ opportunity }: { opportunity: OpportunityWithMat
             <SaveOpportunityButton 
               opportunityId={opportunity.id}
               isSaved={opportunity.isSaved}
+              opportunityData={opportunity}
             />
             
             {opportunity.sam_url && (

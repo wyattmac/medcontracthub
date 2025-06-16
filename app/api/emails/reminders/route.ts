@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { routeHandler } from '@/lib/api/route-handler'
+import { routeHandler } from '@/lib/api/route-handler-next15'
 import { emailService } from '@/lib/email/client'
 import { NotFoundError, ValidationError } from '@/lib/errors/types'
 import { emailLogger } from '@/lib/errors/logger'

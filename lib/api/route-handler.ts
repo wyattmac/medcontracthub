@@ -74,8 +74,8 @@ export function createRouteHandler(
   handler: RouteHandler,
   options: IRouteOptions = {}
 ) {
-  return async (request: NextRequest, context: { params?: any } = {}) => {
-    const params = context?.params
+  return async (request: NextRequest, context?: { params?: any }) => {
+    const params = context?.params || {}
     const requestId = generateRequestId()
     const startTime = Date.now()
     const routeName = `${method} ${request.nextUrl.pathname}`

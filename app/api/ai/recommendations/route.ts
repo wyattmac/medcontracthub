@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { routeHandler } from '@/lib/api/route-handler'
+import { routeHandler } from '@/lib/api/route-handler-next15'
 // import { generateCompanyRecommendations } from '@/lib/ai/claude-client' // Currently disabled for performance
 import { createServiceClient } from '@/lib/supabase/server'
 

@@ -119,7 +119,6 @@ kubectl exec -it kafka-0 -- kafka-topics.sh --bootstrap-server kafka:9092 --list
 - `api-gateway` - Kong API Gateway (port 8080)
 - `ocr-service` - Document processing with Mistral (port 8100)
 - `ai-service` - ML model orchestration (port 8200)
-- `analytics-service` - Real-time analytics (port 8300)
 - `realtime-service` - WebSocket collaboration (port 8400)
 - `worker-service` - Background job processing
 
@@ -128,7 +127,7 @@ kubectl exec -it kafka-0 -- kafka-topics.sh --bootstrap-server kafka:9092 --list
 - `redis-cluster` - 6-node Redis cluster
 - `weaviate` - Vector database cluster
 - `kafka-cluster` - Event streaming (3 brokers)
-- `clickhouse` - Time-series analytics
+- `clickhouse` - Time-series data storage
 
 ### Checking Docker Logs
 
@@ -273,7 +272,7 @@ docker system prune -a --volumes
 2. Microservices orchestration begins:
    - OCR Service processes documents in parallel
    - AI Service analyzes requirements with multi-model ensemble
-   - Analytics Service tracks processing metrics
+   - Worker Service tracks processing metrics
 3. Event-driven workflow via Kafka:
    - DocumentProcessed event triggers AI analysis
    - RequirementsExtracted event updates UI in real-time
@@ -395,7 +394,6 @@ docker logs medcontract-dev   # View app logs
 - Health Check: `GET /api/health`
 - Opportunities: `GET /api/opportunities/search`
 - Proposals: `POST /api/proposals`
-- Analytics: `GET /api/analytics`
 
 ### Environment Variables Reference
 See `.env.consolidated` for the complete list of required environment variables.

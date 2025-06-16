@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
+import { routeHandler, IRouteContext } from '@/lib/api/route-handler-next15'
 import { getOpportunitiesFromDatabase, calculateOpportunityMatch } from '@/lib/sam-gov/utils'
 import { DatabaseError, NotFoundError } from '@/lib/errors/types'
 import { dbLogger } from '@/lib/errors/logger'

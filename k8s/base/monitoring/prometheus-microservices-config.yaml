@@ -33,6 +33,23 @@ data:
             target_label: namespace
         metrics_path: '/metrics'
       
+      # OCR Service Cache Metrics
+      - job_name: 'ocr-cache-metrics'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ['medcontracthub']
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: ocr-service
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+        metrics_path: '/cache/metrics'
+        scrape_interval: 30s
+      
       # AI Service
       - job_name: 'ai-service'
         kubernetes_sd_configs:

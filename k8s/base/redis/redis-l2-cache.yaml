@@ -1,0 +1,195 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-l2-cache-config
+  namespace: medcontracthub
+data:
+  redis.conf: |
+    # Redis L2 Cache Configuration - Warm Data (7 day TTL)
+    port 6379
+    bind 0.0.0.0
+    protected-mode no
+    
+    # Memory configuration optimized for L2 cache
+    maxmemory 4gb
+    maxmemory-policy allkeys-lfu  # LFU for L2 - keep frequently used
+    
+    # Persistence enabled for L2 (snapshot-based)
+    save 900 1      # Save after 900 sec if at least 1 key changed
+    save 300 10     # Save after 300 sec if at least 10 keys changed
+    save 60 10000   # Save after 60 sec if at least 10000 keys changed
+    appendonly no   # AOF disabled, use RDB only
+    
+    # Performance optimizations
+    tcp-backlog 511
+    timeout 0
+    tcp-keepalive 300
+    
+    # Database configuration
+    databases 2  # 0 for cache, 1 for metadata
+    
+    # RDB configuration
+    dbfilename dump.rdb
+    dir /data
+    rdbcompression yes
+    rdbchecksum yes
+    
+    # Eviction and expiry
+    lazyfree-lazy-eviction yes
+    lazyfree-lazy-expire yes
+    lazyfree-lazy-server-del yes
+    replica-lazy-flush yes
+    
+    # Client output buffer limits
+    client-output-buffer-limit normal 0 0 0
+    client-output-buffer-limit replica 256mb 64mb 60
+    client-output-buffer-limit pubsub 32mb 8mb 60
+    
+    # Threading
+    io-threads 4
+    io-threads-do-reads yes
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-l2-cache
+  namespace: medcontracthub
+  labels:
+    app: redis-l2-cache
+    tier: cache
+    level: l2
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: redis
+  selector:
+    app: redis-l2-cache
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-l2-cache
+  namespace: medcontracthub
+  labels:
+    app: redis-l2-cache
+    tier: cache
+    level: l2
+spec:
+  serviceName: redis-l2-cache
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-l2-cache
+  template:
+    metadata:
+      labels:
+        app: redis-l2-cache
+        tier: cache
+        level: l2
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9121"
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command: ["redis-server"]
+        args: ["/etc/redis/redis.conf"]
+        ports:
+        - containerPort: 6379
+          name: redis
+        resources:
+          requests:
+            cpu: 250m
+            memory: 4Gi
+          limits:
+            cpu: 500m
+            memory: 4.5Gi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/redis
+        - name: data
+          mountPath: /data
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - redis-cli BGSAVE && sleep 10
+      - name: redis-exporter
+        image: oliver006/redis_exporter:v1.55.0
+        ports:
+        - containerPort: 9121
+          name: metrics
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        env:
+        - name: REDIS_ADDR
+          value: "redis://localhost:6379"
+      volumes:
+      - name: config
+        configMap:
+          name: redis-l2-cache-config
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - redis-l2-cache
+              topologyKey: kubernetes.io/hostname
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi  # Persistent storage for L2 cache
+---
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: redis-l2-cache-monitor
+  namespace: medcontracthub
+  labels:
+    app: redis-l2-cache
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: redis-l2-cache
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics

@@ -23,13 +23,27 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
   const error = null // Mock auth doesn't have errors
   const router = useRouter()
 
+  // Check for development auth bypass
+  const isDevelopmentBypass = process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEVELOPMENT_AUTH_BYPASS === 'true'
+
   useEffect(() => {
+    // Skip redirect in development with auth bypass
+    if (isDevelopmentBypass) {
+      console.log('[AuthGuard] Development auth bypass enabled, skipping redirect')
+      return
+    }
+
     // If not loading and no user, redirect to login
     if (!loading && !user) {
       console.log('[AuthGuard] No user found, redirecting to login')
       router.push('/login')
     }
-  }, [user, loading, router])
+  }, [user, loading, router, isDevelopmentBypass])
+
+  // In development with auth bypass, skip all checks
+  if (isDevelopmentBypass) {
+    return <>{children}</>
+  }
 
   // Show loading state
   if (loading) {

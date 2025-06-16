@@ -8,7 +8,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { routeHandler } from '@/lib/api/route-handler'
+import { routeHandler } from '@/lib/api/route-handler-next15'
 import { getSubscriptionDetails, updateSubscription, cancelSubscription } from '@/lib/stripe/subscription-manager'
 import { getUsageSummary } from '@/lib/usage/tracker'
 import { updateSubscriptionSchema } from '@/lib/validation/schemas/billing'

@@ -147,7 +147,7 @@ export default function LandingPage() {
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Monitor your win rate and optimize your strategy with detailed analytics and insights.
+                  Monitor your win rate and optimize your strategy with detailed performance metrics and insights.
                 </CardDescription>
               </CardContent>
             </Card>

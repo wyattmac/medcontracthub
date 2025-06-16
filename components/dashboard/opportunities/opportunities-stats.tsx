@@ -48,7 +48,7 @@ async function fetchOpportunityStats({ signal }: { signal?: AbortSignal }) {
   }, 15000) // 15 second timeout for stats
 
   try {
-    const response = await fetch('/api/analytics/stats', {
+    const response = await fetch('/api/opportunities/stats', {
       signal,
       headers: {
         'Content-Type': 'application/json',
@@ -63,11 +63,11 @@ async function fetchOpportunityStats({ signal }: { signal?: AbortSignal }) {
       } else if (response.status === 429) {
         throw new Error('Too many requests: Please wait a moment')
       } else if (response.status === 503) {
-        throw new Error('Analytics temporarily unavailable')
+        throw new Error('Statistics temporarily unavailable')
       } else if (response.status >= 500) {
         throw new Error('Server error: Stats temporarily unavailable')
       } else if (response.status === 404) {
-        throw new Error('Analytics endpoint not found')
+        throw new Error('Statistics endpoint not found')
       } else {
         throw new Error(`Failed to load stats: ${response.status}`)
       }

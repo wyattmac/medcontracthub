@@ -15,6 +15,9 @@ class ProcessingOptions(BaseModel):
     language: str = "en"
     dpi: int = 300
     enhance_quality: bool = True
+    check_community: bool = True
+    share_to_community: bool = False
+    minimum_confidence: float = 0.75
 
 
 class OCRRequest(BaseModel):
@@ -55,6 +58,40 @@ class OCRResponse(BaseModel):
     tables: List[Dict[str, Any]] = Field(default_factory=list)
     requirements: List[Dict[str, Any]] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    community_match: Optional['CommunityMatch'] = None
+    
+class CommunityMatch(BaseModel):
+    """Information about a matched community extraction"""
+    extraction_id: str
+    similarity_score: float = Field(..., ge=0.0, le=1.0)
+    confidence_score: float = Field(..., ge=0.0, le=1.0)
+    usage_count: int
+    time_saved_ms: int
+    api_cost_saved: float
+
+class CommunitySearchRequest(BaseModel):
+    """Request model for searching community extractions"""
+    text_sample: str = Field(..., min_length=50, description="Sample text to search for similar documents")
+    document_type: Optional[str] = None
+    similarity_threshold: float = Field(default=0.8, ge=0.0, le=1.0)
+    limit: int = Field(default=10, ge=1, le=50)
+
+class CommunityContributionRequest(BaseModel):
+    """Request model for contributing an extraction to the community"""
+    document_id: str
+    confirm_anonymized: bool = Field(..., description="User confirms data has been reviewed and is safe to share")
+    
+class CommunityStats(BaseModel):
+    """Statistics about community OCR sharing"""
+    unique_documents: int
+    total_extractions: int
+    average_usage_per_extraction: float
+    total_uses: int
+    document_types: int
+    total_reuses: int
+    time_saved_hours: float
+    cost_saved: float
+    deduplication_rate: float
 
 
 class HealthCheck(BaseModel):

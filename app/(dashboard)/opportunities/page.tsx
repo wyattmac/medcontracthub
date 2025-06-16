@@ -62,19 +62,6 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         </div>
       </div>
 
-      {/* Real-time Stats - Load after main content for better UX */}
-      <SectionErrorBoundary 
-        name="Statistics" 
-        fallback={
-          <Card className="p-6">
-            <p className="text-sm text-muted-foreground">Statistics temporarily unavailable</p>
-          </Card>
-        }
-      >
-        <Suspense fallback={<StatsLoadingSkeleton />}>
-          <OpportunitiesStats />
-        </Suspense>
-      </SectionErrorBoundary>
 
       {/* Live Opportunities Container */}
       <SectionErrorBoundary name="Opportunities List">
@@ -83,29 +70,6 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         </Suspense>
       </SectionErrorBoundary>
 
-      {/* Integration Status - Success */}
-      <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <h3 className="font-semibold text-green-900">✅ SAM.gov Integration Active</h3>
-          </div>
-          <p className="text-green-800 mt-2">
-            Successfully connected to SAM.gov API. Displaying live federal contract opportunities 
-            with real-time updates and AI-powered matching based on your NAICS codes.
-          </p>
-          <div className="flex items-center gap-4 mt-3 text-sm text-green-700">
-            <div className="flex items-center gap-1">
-              <RefreshCw className="h-4 w-4" />
-              <span>Auto-sync enabled</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <TrendingUp className="h-4 w-4" />
-              <span>Real-time matching</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
       
       {/* Performance Indicator (Development Only) */}
       <PerformanceIndicator />

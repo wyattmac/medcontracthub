@@ -1,0 +1,155 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cache-alerts
+  namespace: monitoring
+data:
+  cache-alerts.yaml: |
+    groups:
+    - name: cache_performance
+      interval: 30s
+      rules:
+      
+      # L1 Cache Hit Rate Alert
+      - alert: L1CacheHitRateLow
+        expr: |
+          (
+            sum(rate(ocr_cache_hits_total{tier="l1_hot"}[5m])) / 
+            (sum(rate(ocr_cache_hits_total{tier="l1_hot"}[5m])) + sum(rate(ocr_cache_misses_total[5m])))
+          ) < 0.7
+        for: 5m
+        labels:
+          severity: warning
+          service: ocr-service
+          component: cache
+        annotations:
+          summary: "L1 cache hit rate is below 70%"
+          description: "L1 cache hit rate is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+          runbook_url: "https://docs.medcontracthub.com/runbooks/cache-performance"
+      
+      # L2 Cache Hit Rate Alert
+      - alert: L2CacheHitRateLow
+        expr: |
+          (
+            sum(rate(ocr_cache_hits_total{tier="l2_warm"}[5m])) / 
+            (sum(rate(ocr_cache_hits_total{tier="l2_warm"}[5m])) + sum(rate(ocr_cache_misses_total[5m])))
+          ) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          service: ocr-service
+          component: cache
+        annotations:
+          summary: "L2 cache hit rate is below 50%"
+          description: "L2 cache hit rate is {{ $value | humanizePercentage }}"
+      
+      # Overall Cache Hit Rate Critical
+      - alert: OverallCacheHitRateCritical
+        expr: |
+          (
+            sum(rate(ocr_cache_hits_total[5m])) / 
+            (sum(rate(ocr_cache_hits_total[5m])) + sum(rate(ocr_cache_misses_total[5m])))
+          ) < 0.5
+        for: 10m
+        labels:
+          severity: critical
+          service: ocr-service
+          component: cache
+        annotations:
+          summary: "Overall cache hit rate critically low"
+          description: "Overall cache hit rate is {{ $value | humanizePercentage }}, indicating poor cache performance"
+      
+      # Cache Memory Usage Alert
+      - alert: L1CacheMemoryHigh
+        expr: |
+          redis_memory_used_bytes{app="redis-l1-cache"} / 
+          redis_memory_max_bytes{app="redis-l1-cache"} > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: redis-l1-cache
+          component: cache
+        annotations:
+          summary: "L1 cache memory usage above 90%"
+          description: "L1 cache is using {{ $value | humanizePercentage }} of available memory"
+      
+      - alert: L2CacheMemoryHigh
+        expr: |
+          redis_memory_used_bytes{app="redis-l2-cache"} / 
+          redis_memory_max_bytes{app="redis-l2-cache"} > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: redis-l2-cache
+          component: cache
+        annotations:
+          summary: "L2 cache memory usage above 90%"
+          description: "L2 cache is using {{ $value | humanizePercentage }} of available memory"
+      
+      # Cache Eviction Rate Alert
+      - alert: HighCacheEvictionRate
+        expr: rate(ocr_cache_evictions_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: ocr-service
+          component: cache
+        annotations:
+          summary: "High cache eviction rate detected"
+          description: "Cache eviction rate is {{ $value }} per second, indicating memory pressure"
+      
+      # Redis Latency Alert
+      - alert: RedisHighLatency
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(redis_commands_duration_seconds_bucket[5m])) by (app, le)
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+          component: cache
+        annotations:
+          summary: "Redis latency is high"
+          description: "Redis P95 latency is {{ $value }}s for {{ $labels.app }}"
+      
+      # Vector Search Performance Alert
+      - alert: VectorSearchSlowResponse
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(weaviate_search_duration_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: weaviate
+          component: vector-search
+        annotations:
+          summary: "Vector search response time is slow"
+          description: "Vector search P95 latency is {{ $value }}s"
+      
+      # Cache Promotion Rate Alert
+      - alert: LowCachePromotionRate
+        expr: |
+          rate(ocr_cache_promotions_total[1h]) < 0.1 and 
+          sum(ocr_cache_hits_total) > 1000
+        for: 30m
+        labels:
+          severity: info
+          service: ocr-service
+          component: cache
+        annotations:
+          summary: "Low cache promotion rate"
+          description: "Cache promotion rate is {{ $value }} per second, indicating data may not be moving to faster tiers"
+      
+      # Cache Service Down Alert
+      - alert: CacheServiceDown
+        expr: up{job="redis-l1-cache"} == 0 or up{job="redis-l2-cache"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+          component: cache
+        annotations:
+          summary: "Cache service is down"
+          description: "{{ $labels.job }} is not responding"

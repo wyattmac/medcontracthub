@@ -1,0 +1,174 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-l1-cache-config
+  namespace: medcontracthub
+data:
+  redis.conf: |
+    # Redis L1 Cache Configuration - Hot Data (24hr TTL)
+    port 6379
+    bind 0.0.0.0
+    protected-mode no
+    
+    # Memory configuration optimized for L1 cache
+    maxmemory 2gb
+    maxmemory-policy allkeys-lru
+    
+    # Persistence disabled for L1 (pure cache)
+    save ""
+    appendonly no
+    
+    # Performance optimizations
+    tcp-backlog 511
+    timeout 0
+    tcp-keepalive 300
+    
+    # Database configuration
+    databases 2  # 0 for cache, 1 for metadata
+    
+    # Eviction and expiry
+    lazyfree-lazy-eviction yes
+    lazyfree-lazy-expire yes
+    lazyfree-lazy-server-del yes
+    replica-lazy-flush yes
+    
+    # Client output buffer limits
+    client-output-buffer-limit normal 0 0 0
+    client-output-buffer-limit replica 256mb 64mb 60
+    client-output-buffer-limit pubsub 32mb 8mb 60
+    
+    # Threading
+    io-threads 4
+    io-threads-do-reads yes
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-l1-cache
+  namespace: medcontracthub
+  labels:
+    app: redis-l1-cache
+    tier: cache
+    level: l1
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: redis
+  selector:
+    app: redis-l1-cache
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-l1-cache
+  namespace: medcontracthub
+  labels:
+    app: redis-l1-cache
+    tier: cache
+    level: l1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-l1-cache
+  template:
+    metadata:
+      labels:
+        app: redis-l1-cache
+        tier: cache
+        level: l1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9121"
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command: ["redis-server"]
+        args: ["/etc/redis/redis.conf"]
+        ports:
+        - containerPort: 6379
+          name: redis
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            cpu: 1000m
+            memory: 2.5Gi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/redis
+        - name: data
+          mountPath: /data
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      - name: redis-exporter
+        image: oliver006/redis_exporter:v1.55.0
+        ports:
+        - containerPort: 9121
+          name: metrics
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        env:
+        - name: REDIS_ADDR
+          value: "redis://localhost:6379"
+      volumes:
+      - name: config
+        configMap:
+          name: redis-l1-cache-config
+      - name: data
+        emptyDir:
+          sizeLimit: 3Gi  # Extra space for memory overhead
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - redis-l1-cache
+              topologyKey: kubernetes.io/hostname
+---
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: redis-l1-cache-monitor
+  namespace: medcontracthub
+  labels:
+    app: redis-l1-cache
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: redis-l1-cache
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics

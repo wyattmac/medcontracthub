@@ -1,4 +1,4 @@
-import { SamGovClient } from './client';
+import { SAMApiClient } from './client';
 import { logger } from '@/lib/errors/logger';
 import type { Opportunity } from '@/shared/types/database';
 
@@ -11,12 +11,12 @@ export interface AttachmentInfo {
 }
 
 export class SamGovAttachmentExtractor {
-  private client: SamGovClient;
+  private client: SAMApiClient;
   private apiKey: string;
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
-    this.client = new SamGovClient(apiKey);
+    this.client = new SAMApiClient({ apiKey });
   }
 
   /**

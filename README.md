@@ -114,7 +114,7 @@ make prod     # Port 3002 (production simulation)
 - **Event-Driven Processing** handling 50K+ messages/second via Kafka
 - **Real-Time Collaboration** with WebSocket service and operational transformation
 - **Semantic Search** powered by Weaviate vector database
-- **Predictive Analytics** with ClickHouse time-series analytics
+- **Performance Monitoring** with ClickHouse time-series storage
 
 ### **🚀 Key Features**
 
@@ -147,14 +147,14 @@ make prod     # Port 3002 (production simulation)
 
 #### Enterprise Dashboard
 - **Virtual Scrolling** for 20k+ opportunities with sub-second load times
-- **Real-time Analytics** with performance tracking
+- **Real-time Performance** tracking and monitoring
 - **Bulk Export** capabilities (PDF/Excel)
 - **Mobile-First Design** optimized for all devices (375px+)
 
 ### **💳 Pricing Structure**
 - **Starter**: $29/month - Small distributors
 - **Professional**: $99/month - Full feature access
-- **Enterprise**: $299/month - Advanced analytics
+- **Enterprise**: $299/month - Advanced features
 - **14-day free trial** for all plans
 
 ---
@@ -179,7 +179,7 @@ make prod     # Port 3002 (production simulation)
 - **PostgreSQL**: Event sourcing and transactional data
 - **Redis Cluster**: Multi-tier distributed caching
 - **Weaviate**: Vector embeddings and semantic search
-- **ClickHouse**: Time-series analytics
+- **ClickHouse**: Time-series data storage
 - **Kafka**: Event streaming backbone
 - **S3**: Document storage with CDN
 
@@ -404,7 +404,7 @@ CREATE TABLE proposal_documents (
 - Email notifications and deadline reminder system
 
 ### **🚀 Phase 3: Enterprise Features (Next Quarter)**
-- Advanced analytics dashboard with export capabilities
+- Advanced dashboard with export capabilities
 - Team collaboration and role management
 - CRM/ERP system integrations via REST API
 - Mobile application for field operations

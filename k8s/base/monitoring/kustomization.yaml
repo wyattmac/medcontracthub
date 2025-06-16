@@ -9,9 +9,9 @@ resources:
 - prometheus-microservices-config.yaml
 - prometheus-alerts.yaml
 - microservices-alerts.yaml
+- cache-alerts.yaml
 
 # ServiceMonitors
-- service-monitors/analytics-service-monitor.yaml
 - service-monitors/realtime-service-monitor.yaml
 - service-monitors/worker-service-monitor.yaml
 - service-monitors/kafka-exporter-monitor.yaml
@@ -38,3 +38,4 @@ configMapGenerator:
   - business-metrics.json=grafana-dashboards/medcontracthub-business-metrics.json
   - cost-monitoring.json=grafana-dashboards/medcontracthub-cost-monitoring.json
   - slo-dashboard.json=grafana-dashboards/medcontracthub-slo-dashboard.json
+  - multi-level-cache.json=grafana-dashboards/multi-level-cache-performance.json

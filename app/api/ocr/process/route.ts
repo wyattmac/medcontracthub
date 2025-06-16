@@ -7,7 +7,7 @@
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { routeHandler } from '@/lib/api/route-handler'
+import { routeHandler } from '@/lib/api/route-handler-next15'
 import { SAMDocumentProcessor } from '@/lib/sam-gov/document-processor'
 import { DatabaseError, NotFoundError } from '@/lib/errors/types'
 import { syncLogger } from '@/lib/errors/logger'
@@ -17,13 +17,15 @@ import { withUsageCheck } from '@/lib/usage/tracker'
 const processRequestSchema = z.object({
   opportunityId: z.string().uuid(),
   processAllDocuments: z.boolean().default(true),
-  documentIndices: z.array(z.number()).optional()
+  documentIndices: z.array(z.number()).optional(),
+  checkCommunity: z.boolean().default(true),
+  shareToCommunity: z.boolean().default(false)
 })
 
 export const POST = routeHandler.POST(
   async ({ request, user, supabase }) => {
     const body = await request.json()
-    const { opportunityId, processAllDocuments, documentIndices } = processRequestSchema.parse(body)
+    const { opportunityId, processAllDocuments, documentIndices, checkCommunity, shareToCommunity } = processRequestSchema.parse(body)
 
     // Check if opportunity exists and belongs to user's saved opportunities
     const { data: opportunity, error: oppError } = await supabase

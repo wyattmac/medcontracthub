@@ -20,7 +20,7 @@ interface OpportunitiesLayoutProps {
 
 export function OpportunitiesLayout({ children, searchParams }: OpportunitiesLayoutProps) {
   const [isFiltersSidebarOpen, setIsFiltersSidebarOpen] = useState(false)
-  const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false)
+  const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(true)
   
   return (
     <div className="flex h-full gap-6">

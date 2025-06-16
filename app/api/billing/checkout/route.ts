@@ -7,7 +7,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { routeHandler } from '@/lib/api/route-handler'
+import { routeHandler } from '@/lib/api/route-handler-next15'
 import { createCheckoutSession } from '@/lib/stripe/subscription-manager'
 import { logUnauthorizedAccess } from '@/lib/security/security-monitor'
 import { checkoutRequestSchema } from '@/lib/validation/schemas/billing'

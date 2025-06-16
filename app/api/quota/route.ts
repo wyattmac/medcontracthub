@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { routeHandler } from '@/lib/api/route-handler'
+import { routeHandler } from '@/lib/api/route-handler-next15'
 import { getSAMQuotaManager } from '@/lib/sam-gov/quota-manager'
 import { DatabaseError } from '@/lib/errors/types'
 

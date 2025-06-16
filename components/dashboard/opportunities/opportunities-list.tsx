@@ -119,6 +119,7 @@ function OpportunityCard({ opportunity }: { opportunity: OpportunityWithMatch })
             <SaveOpportunityButton 
               opportunityId={opportunity.id}
               isSaved={opportunity.isSaved}
+              opportunityData={opportunity}
             />
             
             {opportunity.sam_url && (

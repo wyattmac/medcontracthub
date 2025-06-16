@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { withErrorHandler } from '@/lib/api/error-interceptor'
 import { z } from 'zod'
-import { ValidationError, UnauthorizedError, NotFoundError } from '@/lib/errors/types'
+import { ValidationError, AuthenticationError, NotFoundError } from '@/lib/errors/types'
 
 // Request validation schemas
 const updateResponseSchema = z.object({
@@ -20,12 +19,13 @@ interface RouteParams {
 }
 
 // PUT /api/compliance/responses/[id] - Update compliance response
-export const PUT = withErrorHandler(async (request: NextRequest, { params }: RouteParams) => {
+export const PUT = async (request: NextRequest, { params }: RouteParams) => {
+  try {
   const supabase = createServiceClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
-    throw new UnauthorizedError('Authentication required')
+    throw new AuthenticationError('Authentication required')
   }
 
   const responseId = params.id
@@ -128,6 +128,28 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: Rou
     success: true,
     data: updatedResponse
   })
-}, {
-  requireAuth: true
-})
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 401 }
+      )
+    }
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { error: error.message, details: error.errors },
+        { status: 400 }
+      )
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 404 }
+      )
+    }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

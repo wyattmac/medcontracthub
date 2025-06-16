@@ -7,7 +7,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { routeHandler } from '@/lib/api/route-handler'
+import { routeHandler } from '@/lib/api/route-handler-next15'
 import { createBillingPortalSession } from '@/lib/stripe/subscription-manager'
 import { NotFoundError } from '@/lib/errors/types'
 import { billingPortalRequestSchema } from '@/lib/validation/schemas/billing'

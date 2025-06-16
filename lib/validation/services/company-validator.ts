@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { companyBusinessSchema, companyWithComputedSchema } from '../business-rules'
+import { companyBusinessSchema } from '../business-rules'
+import { companyWithComputedSchema } from '../computed-properties'
 import { ValidationError } from '@/lib/errors/types'
 import { apiLogger } from '@/lib/errors/logger'
 import { US_STATE_CODES, CERTIFICATION_TYPES } from '../constants'

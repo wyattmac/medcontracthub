@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { routeHandler, IRouteContext } from '@/lib/api/route-handler'
+import { routeHandler, IRouteContext } from '@/lib/api/route-handler-next15'
 // import { analyzeOpportunity } from '@/lib/ai/claude-client' // Currently disabled for performance
 import { NotFoundError } from '@/lib/errors/types'
 import { aiLogger } from '@/lib/errors/logger'

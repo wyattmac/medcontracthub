@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { proposalBusinessSchema, proposalWithComputedSchema } from '../business-rules'
+import { proposalBusinessSchema } from '../business-rules'
+import { proposalWithComputedSchema } from '../computed-properties'
 import { ValidationError } from '@/lib/errors/types'
 import { apiLogger } from '@/lib/errors/logger'
 

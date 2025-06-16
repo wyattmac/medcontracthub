@@ -8,7 +8,7 @@
 
 import { z } from 'zod'
 import { subscriptionBusinessSchema } from '../business-rules'
-import { ValidationError, UserFriendlyError } from '@/lib/errors/types'
+import { ValidationError } from '@/lib/errors/types'
 import { apiLogger } from '@/lib/errors/logger'
 import { emailSchema, currencySchema } from '../shared-schemas'
 import { 
@@ -58,7 +58,7 @@ export class BillingValidator {
       return checkoutRequestSchema.parse(data)
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new UserFriendlyError(
+        throw new ValidationError(
           'Invalid checkout request',
           formatZodError(error),
           'VALIDATION_ERROR'
@@ -98,7 +98,7 @@ export class BillingValidator {
       return billingPortalRequestSchema.parse(data)
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new UserFriendlyError(
+        throw new ValidationError(
           'Invalid portal request',
           formatZodError(error),
           'VALIDATION_ERROR'
@@ -116,7 +116,7 @@ export class BillingValidator {
       return updateSubscriptionSchema.parse(data)
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new UserFriendlyError(
+        throw new ValidationError(
           'Invalid subscription update',
           formatZodError(error),
           'VALIDATION_ERROR'
@@ -368,7 +368,7 @@ export class BillingValidator {
       planTypeSchema.parse(currentPlan)
       planTypeSchema.parse(newPlan)
     } catch (_error) {
-      throw new UserFriendlyError(
+      throw new ValidationError(
         'Invalid plan type',
         'Please select a valid subscription plan',
         'VALIDATION_ERROR'
@@ -376,7 +376,7 @@ export class BillingValidator {
     }
 
     if (currentPlan === newPlan) {
-      throw new UserFriendlyError(
+      throw new ValidationError(
         'Invalid plan change',
         'You are already on this plan',
         'VALIDATION_ERROR'
@@ -384,7 +384,7 @@ export class BillingValidator {
     }
 
     if (!allowDowngrade && this.canDowngradePlan(currentPlan, newPlan)) {
-      throw new UserFriendlyError(
+      throw new ValidationError(
         'Plan downgrade not allowed',
         'Please contact support to downgrade your plan',
         'VALIDATION_ERROR'

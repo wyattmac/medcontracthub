@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { withErrorHandler } from '@/lib/api/error-interceptor'
 import { z } from 'zod'
-import { ValidationError, UnauthorizedError } from '@/lib/errors/types'
+import { ValidationError, AuthenticationError } from '@/lib/errors/types'
 import { ComplianceExtractor } from '@/lib/compliance/extractor'
 import { RequirementSection } from '@/types/compliance.types'
 
@@ -14,13 +13,14 @@ const extractComplianceSchema = z.object({
   sections_to_extract: z.array(z.enum(['L', 'M', 'C', 'Other'])).optional().default(['L', 'M'])
 })
 
-export const POST = withErrorHandler(async (request: NextRequest) => {
+export const POST = async (request: NextRequest) => {
+  try {
   // Authenticate user
   const supabase = createServiceClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
-    throw new UnauthorizedError('Authentication required')
+    throw new AuthenticationError('Authentication required')
   }
 
   // Parse and validate request
@@ -166,10 +166,22 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
     throw error
   }
-}, {
-  requireAuth: true,
-  rateLimit: {
-    requests: 10,
-    windowMs: 60 * 60 * 1000 // 10 extractions per hour
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 401 }
+      )
+    }
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { error: error.message, details: error.errors },
+        { status: 400 }
+      )
+    }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
   }
-})
+}

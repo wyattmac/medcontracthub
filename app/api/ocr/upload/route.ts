@@ -1,4 +1,4 @@
-import { routeHandler } from '@/lib/api/route-handler'
+import { routeHandler } from '@/lib/api/route-handler-next15'
 import { mistralOCR } from '@/lib/ai/mistral-ocr-client'
 import { NextResponse } from 'next/server'
 import { ValidationError } from '@/lib/errors/types'

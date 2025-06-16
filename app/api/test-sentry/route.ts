@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { routeHandler } from '@/lib/api/route-handler'
+import { routeHandler } from '@/lib/api/route-handler-next15'
 import { ValidationError } from '@/lib/errors/types'
 import { captureMessage, captureException, trackEvent } from '@/lib/monitoring/sentry'
 

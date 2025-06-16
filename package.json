@@ -54,7 +54,9 @@
     "monitor:start": "curl -X POST http://localhost:3000/api/monitoring/control -H 'Content-Type: application/json' -d '{\"action\":\"start\"}'",
     "monitor:stop": "curl -X POST http://localhost:3000/api/monitoring/control -H 'Content-Type: application/json' -d '{\"action\":\"stop\"}'",
     "monitor:status": "curl -s http://localhost:3000/api/monitoring/control | jq .",
-    "monitor:health-check": "curl -X POST http://localhost:3000/api/monitoring/control -H 'Content-Type: application/json' -d '{\"action\":\"health-check\"}' | jq ."
+    "monitor:health-check": "curl -X POST http://localhost:3000/api/monitoring/control -H 'Content-Type: application/json' -d '{\"action\":\"health-check\"}' | jq .",
+    "community:migrate": "tsx scripts/migrate-community-extractions.ts",
+    "scripts:test-saved-opportunities": "tsx scripts/test-saved-opportunities.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",

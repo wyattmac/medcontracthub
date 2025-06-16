@@ -3,27 +3,11 @@
  * Route: /dashboard/saved
  */
 
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
-import { Database } from '@/types/database.types'
+import { Suspense } from 'react'
 import { SavedOpportunitiesContainer } from '@/components/dashboard/saved/saved-opportunities-container'
 import { SectionErrorBoundary } from '@/components/ui/error-boundary'
 
-export default async function SavedOpportunitiesPage() {
-  const cookieStore = await cookies()
-  const supabase = createServerComponentClient<Database>({ cookies: () => cookieStore })
-
-  // Check authentication
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    redirect('/login')
-  }
-
+export default function SavedOpportunitiesPage() {
   return (
     <div className="space-y-6">
       <div>
@@ -34,8 +18,28 @@ export default async function SavedOpportunitiesPage() {
       </div>
 
       <SectionErrorBoundary name="Saved Opportunities">
-        <SavedOpportunitiesContainer userId={user.id} />
+        <Suspense fallback={<SavedOpportunitiesLoading />}>
+          <SavedOpportunitiesContainer />
+        </Suspense>
       </SectionErrorBoundary>
+    </div>
+  )
+}
+
+function SavedOpportunitiesLoading() {
+  return (
+    <div className="space-y-4">
+      <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="border rounded-lg p-6 space-y-3 animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+          <div className="h-4 bg-gray-100 rounded w-1/2"></div>
+          <div className="flex gap-2">
+            <div className="h-6 bg-gray-100 rounded w-20"></div>
+            <div className="h-6 bg-gray-100 rounded w-24"></div>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

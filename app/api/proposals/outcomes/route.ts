@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { withErrorHandler } from '@/lib/api/error-interceptor'
 import { createServiceClient } from '@/lib/supabase/server'
-import { UnauthorizedError, ValidationError, NotFoundError } from '@/lib/errors/types'
+import { AuthenticationError, ValidationError, NotFoundError } from '@/lib/errors/types'
 import { ProposalLearningSystem } from '@/lib/ai/proposal-learning-system'
 import { logger } from '@/lib/errors/logger'
 
@@ -29,13 +28,14 @@ const recordOutcomeSchema = z.object({
   })).optional()
 })
 
-export const POST = withErrorHandler(async (request: NextRequest) => {
+export const POST = async (request: NextRequest) => {
+  try {
   // Authenticate user
   const supabase = createServiceClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
-    throw new UnauthorizedError('Authentication required')
+    throw new AuthenticationError('Authentication required')
   }
 
   // Parse and validate request
@@ -78,7 +78,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     .single()
 
   if (!profile || profile.company_id !== proposal.company_id) {
-    throw new UnauthorizedError('You do not have access to this proposal')
+    throw new AuthenticationError('You do not have access to this proposal')
   }
 
   try {
@@ -128,17 +128,40 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     logger.error('Error recording proposal outcome', error as Error)
     throw error
   }
-}, {
-  requireAuth: true
-})
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 401 }
+      )
+    }
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { error: error.message, details: error.errors },
+        { status: 400 }
+      )
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 404 }
+      )
+    }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
 
 // GET endpoint to retrieve outcomes and insights
-export const GET = withErrorHandler(async (request: NextRequest) => {
+export const GET = async (request: NextRequest) => {
+  try {
   const supabase = createServiceClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
-    throw new UnauthorizedError('Authentication required')
+    throw new AuthenticationError('Authentication required')
   }
 
   // Get user's company
@@ -237,6 +260,28 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     logger.error('Error retrieving proposal outcomes', error as Error)
     throw error
   }
-}, {
-  requireAuth: true
-})
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 401 }
+      )
+    }
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { error: error.message, details: error.errors },
+        { status: 400 }
+      )
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 404 }
+      )
+    }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

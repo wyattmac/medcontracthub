@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { routeHandler } from '@/lib/api/route-handler'
+import { routeHandler } from '@/lib/api/route-handler-next15'
 import { braveSearchClient } from '@/lib/search/brave-client'
 import { cache } from '@/lib/utils/cache'
 import { ValidationError } from '@/lib/errors/types'

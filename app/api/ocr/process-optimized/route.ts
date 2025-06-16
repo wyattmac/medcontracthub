@@ -7,7 +7,7 @@
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { routeHandler } from '@/lib/api/route-handler'
+import { routeHandler } from '@/lib/api/route-handler-next15'
 import { optimizedProcessor } from '@/lib/sam-gov/optimized-document-processor'
 import { NotFoundError } from '@/lib/errors/types'
 import { syncLogger } from '@/lib/errors/logger'

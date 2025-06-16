@@ -64,7 +64,32 @@ function SavedOpportunityCard({
   onUpdate: () => void 
 }) {
   const { opportunity } = savedOpportunity
-  const deadline = formatDeadline(opportunity.response_deadline)
+  
+  // Handle missing opportunity data
+  if (!opportunity) {
+    console.error('SavedOpportunityCard: Missing opportunity data', {
+      savedOpportunity,
+      hasOpportunityProp: 'opportunity' in savedOpportunity,
+      keys: Object.keys(savedOpportunity)
+    })
+    // Try to use the savedOpportunity directly if it has the expected fields
+    if (savedOpportunity.title && savedOpportunity.id) {
+      console.log('SavedOpportunityCard: Using savedOpportunity data directly')
+      // Return a minimal card with available data
+      return (
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold">{savedOpportunity.title}</h3>
+            <p className="text-sm text-muted-foreground mt-1">ID: {savedOpportunity.id}</p>
+            <p className="text-sm text-red-500 mt-2">⚠️ Opportunity data structure issue - please refresh</p>
+          </CardContent>
+        </Card>
+      )
+    }
+    return null
+  }
+  
+  const deadline = formatDeadline(opportunity?.response_deadline)
   
   // Check if reminder is due soon
   const reminderDueSoon = savedOpportunity.reminder_date && 
@@ -83,7 +108,7 @@ function SavedOpportunityCard({
     }
   }
 
-  const matchBadge = getMatchBadge(opportunity.matchScore * 100)
+  const matchBadge = getMatchBadge((opportunity?.matchScore || 0) * 100)
 
   // Determine urgency styling for deadline
   const getUrgencyStyle = (urgency: string) => {
@@ -107,7 +132,7 @@ function SavedOpportunityCard({
             <div className="flex items-center gap-2 mb-2">
               <Badge variant={matchBadge.variant} className="shrink-0">
                 <Target className="w-3 h-3 mr-1" />
-                {Math.round(opportunity.matchScore * 100)}% Match
+                {Math.round((opportunity?.matchScore || 0) * 100)}% Match
               </Badge>
               <div className={`w-2 h-2 rounded-full ${matchBadge.color}`} />
               <span className="text-xs text-muted-foreground">{matchBadge.label}</span>

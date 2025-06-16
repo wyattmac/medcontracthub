@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { withErrorHandler } from '@/lib/api/error-interceptor'
 import { z } from 'zod'
-import { ValidationError, UnauthorizedError } from '@/lib/errors/types'
+import { ValidationError, AuthenticationError } from '@/lib/errors/types'
 
 // Request validation schemas
 const createMatrixSchema = z.object({
@@ -19,12 +18,13 @@ const listMatricesSchema = z.object({
 })
 
 // GET /api/compliance/matrices - List compliance matrices
-export const GET = withErrorHandler(async (request: NextRequest) => {
+export const GET = async (request: NextRequest) => {
+  try {
   const supabase = createServiceClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
-    throw new UnauthorizedError('Authentication required')
+    throw new AuthenticationError('Authentication required')
   }
 
   // Parse query parameters
@@ -111,15 +111,34 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       total_pages: Math.ceil((count || 0) / page_size)
     }
   })
-})
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 401 }
+      )
+    }
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { error: error.message, details: error.errors },
+        { status: 400 }
+      )
+    }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
 
 // POST /api/compliance/matrices - Create new compliance matrix
-export const POST = withErrorHandler(async (request: NextRequest) => {
+export const POST = async (request: NextRequest) => {
+  try {
   const supabase = createServiceClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
-    throw new UnauthorizedError('Authentication required')
+    throw new AuthenticationError('Authentication required')
   }
 
   const body = await request.json()
@@ -178,10 +197,22 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       completion_percentage: 0
     }
   }, { status: 201 })
-}, {
-  requireAuth: true,
-  rateLimit: {
-    requests: 30,
-    windowMs: 60 * 1000 // 30 per minute
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 401 }
+      )
+    }
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { error: error.message, details: error.errors },
+        { status: 400 }
+      )
+    }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
   }
-})
+}

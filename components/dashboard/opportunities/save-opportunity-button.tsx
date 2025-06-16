@@ -24,8 +24,9 @@ export function SaveOpportunityButton({
   isSaved: initialIsSaved,
   variant = 'ghost',
   size = 'sm',
-  showText = false
-}: ISaveOpportunityButtonProps) {
+  showText = false,
+  opportunityData
+}: ISaveOpportunityButtonProps & { opportunityData?: any }) {
   const router = useRouter()
   const csrf = useCSRF()
   const [isSaved, setIsSaved] = useState(initialIsSaved)
@@ -35,58 +36,44 @@ export function SaveOpportunityButton({
     e.preventDefault() // Prevent navigation if button is in a Link
     e.stopPropagation()
 
+    // Optimistic update - immediately update UI
+    const previousState = isSaved
+    setIsSaved(!isSaved)
     setIsLoading(true)
     
     try {
-      // In development, use the simplified endpoint
-      const isDevelopment = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-      const endpoint = isDevelopment ? '/api/opportunities/save-dev' : '/api/opportunities/save'
+      // Always use the real save endpoint
+      const endpoint = '/api/opportunities/save'
       
-      const response = isDevelopment ? 
-        await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            opportunityId,
-            action: isSaved ? 'unsave' : 'save'
-          })
-        }) :
-        await csrf.fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            opportunityId,
-            action: isSaved ? 'unsave' : 'save'
-          })
+      const response = await csrf.fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          opportunityId,
+          action: previousState ? 'unsave' : 'save'
         })
+      })
 
       const result = await response.json()
 
       if (response.ok) {
-        setIsSaved(!isSaved)
-        toast.success(result.message || (isSaved ? 'Opportunity removed from saved' : 'Opportunity saved successfully'))
-        router.refresh() // Refresh to update the data
+        // Success - show toast but don't update state (already updated optimistically)
+        toast.success(result.message || (previousState ? 'Opportunity removed from saved' : 'Opportunity saved successfully'))
+        
+        // Refresh in background without blocking UI
+        setTimeout(() => {
+          router.refresh()
+        }, 100)
       } else {
-        // In development, just toggle the state locally even if the API fails
-        const isDevelopment = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-        if (isDevelopment) {
-          setIsSaved(!isSaved)
-          toast.success(isSaved ? 'Opportunity unsaved (local only)' : 'Opportunity saved (local only)')
-        } else {
-          toast.error(result.error || 'Failed to save opportunity')
-        }
+        // Error - revert the optimistic update
+        setIsSaved(previousState)
+        toast.error(result.error || 'Failed to save opportunity')
       }
     } catch (error) {
       console.error('Error saving opportunity:', error)
-      
-      // In development, just toggle the state locally
-      const isDevelopment = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-      if (isDevelopment) {
-        setIsSaved(!isSaved)
-        toast.success(isSaved ? 'Opportunity unsaved (local only)' : 'Opportunity saved (local only)')
-      } else {
-        toast.error('An error occurred while saving the opportunity')
-      }
+      // Revert the optimistic update
+      setIsSaved(previousState)
+      toast.error('An error occurred while saving the opportunity')
     } finally {
       setIsLoading(false)
     }
