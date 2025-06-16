@@ -125,18 +125,18 @@ export function OpportunitiesContainer({ searchParams }: IOpportunitiesContainer
       }, 30000) // 30 second timeout
 
       try {
-        // Use the ultra-fast search endpoint for sub-1 second performance
-        let response = await fetch(`/api/opportunities/search-fast?${params.toString()}`, {
+        // Start with the optimized search endpoint that works
+        let response = await fetch(`/api/opportunities/search-optimized?${params.toString()}`, {
           signal,
           headers: {
             'Content-Type': 'application/json',
           }
         })
         
-        // Fallback to optimized endpoint if fast endpoint fails
+        // Fallback to fast endpoint if optimized fails
         if (!response.ok && response.status === 404) {
-          console.log('Fast search endpoint not found, falling back to optimized search')
-          response = await fetch(`/api/opportunities/search-optimized?${params.toString()}`, {
+          console.log('Optimized search endpoint not found, trying fast search')
+          response = await fetch(`/api/opportunities/search-fast?${params.toString()}`, {
             signal,
             headers: {
               'Content-Type': 'application/json',
