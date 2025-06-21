@@ -25,7 +25,7 @@ const processRequestSchema = z.object({
 export const POST = routeHandler.POST(
   async ({ request, user, supabase }) => {
     const body = await request.json()
-    const { opportunityId, processAllDocuments, documentIndices, checkCommunity, shareToCommunity } = processRequestSchema.parse(body)
+    const { opportunityId, processAllDocuments, documentIndices } = processRequestSchema.parse(body)
 
     // Check if opportunity exists and belongs to user's saved opportunities
     const { data: opportunity, error: oppError } = await supabase

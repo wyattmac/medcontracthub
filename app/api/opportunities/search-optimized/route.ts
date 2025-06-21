@@ -8,7 +8,7 @@
  * - Smart caching
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { enhancedRouteHandler } from '@/lib/api/enhanced-route-handler'
 import { DatabaseError } from '@/lib/errors/types'

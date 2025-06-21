@@ -1,11 +1,10 @@
 import { Suspense } from 'react'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { OpportunitiesContainer } from '@/components/dashboard/opportunities/opportunities-container'
 import { OpportunitiesLayout } from '@/components/dashboard/opportunities/opportunities-layout'
-import { OpportunitiesStats } from '@/components/dashboard/opportunities/opportunities-stats'
 import { SectionErrorBoundary } from '@/components/ui/error-boundary'
 import { PerformanceIndicator } from '@/components/dashboard/opportunities/performance-indicator'
-import { TrendingUp, Zap, Database, RefreshCw } from 'lucide-react'
+import { Zap, Database } from 'lucide-react'
 
 // Force dynamic rendering since this page shows user-specific data
 export const dynamic = 'force-dynamic'
@@ -77,25 +76,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   )
 }
 
-// Loading Skeletons
-function StatsLoadingSkeleton() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {[...Array(4)].map((_, i) => (
-        <Card key={i} className="animate-pulse">
-          <CardHeader className="pb-2">
-            <div className="h-4 bg-gray-200 rounded w-24"></div>
-            <div className="h-8 bg-gray-300 rounded w-16"></div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-4 bg-gray-200 rounded w-32"></div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  )
-}
-
+// Loading Skeleton
 function OpportunitiesLoadingSkeleton() {
   return (
     <div className="space-y-4">

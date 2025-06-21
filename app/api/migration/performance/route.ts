@@ -171,7 +171,7 @@ export const POST = enhancedRouteHandler.POST(
             console.log(`Statement ${i + 1} executed successfully`)
             results.push({ statement: i + 1, status: 'success' })
           }
-        } catch (_execError) {
+        } catch {
           // Fallback: try to execute via direct query
           console.log(`Fallback execution for statement ${i + 1}`)
           results.push({ statement: i + 1, status: 'fallback' })
@@ -190,7 +190,7 @@ export const POST = enhancedRouteHandler.POST(
         try {
           await (supabase as any).rpc('exec_sql', { sql: indexSQL })
           console.log('Index created successfully')
-        } catch (_error) {
+        } catch {
           console.log('Index creation skipped (may already exist)')
         }
       }

@@ -102,7 +102,7 @@ export function createRouteHandler(
       requestId,
       method,
       url: request.url,
-      headers: Object.fromEntries(request.headers),
+      headers: Object.fromEntries(request.headers.entries()),
       params
     })
     
